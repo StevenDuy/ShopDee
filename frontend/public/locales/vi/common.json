@@ -1,0 +1,22 @@
+{
+  "common": {
+    "welcome": "Chào mừng đến với ShopDee",
+    "search": "Tìm kiếm sản phẩm...",
+    "dark_mode": "Nền Tối",
+    "light_mode": "Nền Sáng",
+    "currency_vnd": "VNĐ",
+    "currency_usd": "USD",
+    "home": "Trang Chủ",
+    "products": "Sản phẩm",
+    "cart": "Giỏ hàng",
+    "chat": "Trò chuyện",
+    "alerts": "Thông báo",
+    "profile": "Tài khoản",
+    "logout": "Đăng xuất"
+  },
+  "roles": {
+    "customer": "Khách hàng",
+    "seller": "Người bán",
+    "admin": "Quản trị viên"
+  }
+}

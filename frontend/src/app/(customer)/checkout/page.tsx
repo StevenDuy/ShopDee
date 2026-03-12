@@ -1,0 +1,172 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { CreditCard, ArrowLeft, CheckCircle, MapPin } from "lucide-react";
+import axios from "axios";
+import { useCartStore } from "@/store/useCartStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
+
+interface Address { id: number; address_line_1: string; city: string; country: string; is_default: boolean }
+
+const PAYMENT_METHODS = [
+  { value: "cod",           label: "Cash on Delivery",  emoji: "💵" },
+  { value: "bank_transfer", label: "Bank Transfer",      emoji: "🏦" },
+  { value: "momo",          label: "MoMo Wallet",        emoji: "📱" },
+  { value: "vnpay",         label: "VNPay",              emoji: "💳" },
+];
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { items, totalPrice, clearCart } = useCartStore();
+  const { token, user } = useAuthStore();
+  const { formatPrice } = useCurrencyStore();
+
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddr, setSelectedAddr] = useState<number | null>(null);
+  const [payMethod, setPayMethod] = useState("cod");
+  const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!token) { router.replace("/login"); return; }
+    if (items.length === 0) { router.replace("/cart"); return; }
+    axios.get("http://localhost:8000/api/profile/addresses", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => { setAddresses(r.data); const def = r.data.find((a: Address) => a.is_default); if (def) setSelectedAddr(def.id); })
+      .catch(() => {});
+  }, [token, items, router]);
+
+  const subtotal = totalPrice();
+  const shipping = subtotal > 500000 ? 0 : 30000;
+  const total    = subtotal + shipping;
+
+  // Group items by seller
+  const bySeller = items.reduce<Record<number, typeof items>>((acc, item) => {
+    if (!acc[item.sellerId]) acc[item.sellerId] = [];
+    acc[item.sellerId].push(item);
+    return acc;
+  }, {});
+
+  const handlePlaceOrder = async () => {
+    if (!selectedAddr) { alert("Please select a shipping address."); return; }
+    setLoading(true);
+    try {
+      await Promise.all(
+        Object.entries(bySeller).map(([sellerId, sellerItems]) =>
+          axios.post("http://localhost:8000/api/orders", {
+            seller_id: Number(sellerId),
+            shipping_address_id: selectedAddr,
+            payment_method: payMethod,
+            notes: note,
+            items: sellerItems.map((i) => ({ product_id: i.productId, quantity: i.quantity, unit_price: i.salePrice ?? i.price })),
+          }, { headers: { Authorization: `Bearer ${token}` } })
+        )
+      );
+      clearCart();
+      setSuccess(true);
+      setTimeout(() => router.push("/profile/orders"), 3000);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      alert(e.response?.data?.message ?? "Failed to place order. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6">
+      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }}>
+        <CheckCircle size={80} className="text-green-500" />
+      </motion.div>
+      <h1 className="text-2xl font-bold">Order Placed Successfully!</h1>
+      <p className="text-muted-foreground">Redirecting to your orders...</p>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen px-6 md:px-10 py-8 max-w-5xl mx-auto">
+      <button onClick={() => router.back()} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
+        <ArrowLeft size={18} /> Back to Cart
+      </button>
+      <h1 className="text-2xl font-bold mb-8 flex items-center gap-2"><CreditCard size={24} /> Checkout</h1>
+
+      <div className="grid md:grid-cols-5 gap-8">
+        <div className="md:col-span-3 space-y-6">
+          {/* Shipping Address */}
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <h2 className="font-semibold mb-4 flex items-center gap-2"><MapPin size={18} /> Shipping Address</h2>
+            {addresses.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No saved addresses. <a href="/profile" className="text-primary underline">Add one in your profile.</a></p>
+            ) : (
+              <div className="space-y-3">
+                {addresses.map((addr) => (
+                  <label key={addr.id} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${selectedAddr === addr.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"}`}>
+                    <input type="radio" name="address" checked={selectedAddr === addr.id} onChange={() => setSelectedAddr(addr.id)} className="mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium">{addr.address_line_1}</p>
+                      <p className="text-sm text-muted-foreground">{addr.city}, {addr.country}</p>
+                      {addr.is_default && <span className="text-xs text-primary">Default</span>}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Payment Method */}
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <h2 className="font-semibold mb-4">Payment Method</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {PAYMENT_METHODS.map((m) => (
+                <label key={m.value} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${payMethod === m.value ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"}`}>
+                  <input type="radio" name="payment" value={m.value} checked={payMethod === m.value} onChange={() => setPayMethod(m.value)} />
+                  <span className="text-lg">{m.emoji}</span>
+                  <span className="text-sm font-medium">{m.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <h2 className="font-semibold mb-3">Order Notes (optional)</h2>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+              placeholder="Notes for the seller..."
+              className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="md:col-span-2">
+          <div className="bg-card border border-border rounded-2xl p-6 sticky top-24 space-y-4">
+            <h2 className="font-semibold">Order Summary</h2>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {items.map((item) => (
+                <div key={item.productId} className="flex items-center gap-3 text-sm">
+                  <img src={item.image} alt={item.title} className="w-10 h-10 rounded-lg object-cover bg-muted" />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate font-medium">{item.title}</p>
+                    <p className="text-muted-foreground">x{item.quantity}</p>
+                  </div>
+                  <p className="font-medium shrink-0">{formatPrice((item.salePrice ?? item.price) * item.quantity)}</p>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-border pt-4 space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatPrice(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className={!shipping ? "text-green-600" : ""}>{shipping ? formatPrice(shipping) : "FREE"}</span></div>
+              <div className="flex justify-between font-bold text-base pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatPrice(total)}</span></div>
+            </div>
+            <button onClick={handlePlaceOrder} disabled={loading}
+              className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
+              {loading ? <span className="animate-spin w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full" /> : "🛍️ Place Order"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

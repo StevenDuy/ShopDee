@@ -1,0 +1,22 @@
+{
+  "common": {
+    "welcome": "Welcome to ShopDee",
+    "search": "Search for products...",
+    "dark_mode": "Dark Mode",
+    "light_mode": "Light Mode",
+    "currency_vnd": "VND",
+    "currency_usd": "USD",
+    "home": "Home",
+    "products": "Products",
+    "cart": "Cart",
+    "chat": "Chat",
+    "alerts": "Alerts",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "roles": {
+    "customer": "Customer",
+    "seller": "Seller",
+    "admin": "Admin"
+  }
+}

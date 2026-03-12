@@ -1,0 +1,360 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Store, MapPin, Phone, Mail, User, Save, Upload, Trash2, Plus, Edit2 } from "lucide-react";
+import { useAuthStore } from "@/store/useAuthStore";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+export default function SellerSettingsPage() {
+  const { token, user, fetchUser } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
+
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    bio: "",
+  });
+
+  const [addresses, setAddresses] = useState<any[]>([]);
+
+  // Address Modal State
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
+  const [addressForm, setAddressForm] = useState({
+    address_line_1: "",
+    city: "",
+    country: "",
+    type: "store",
+    is_default: false
+  });
+
+  const fetchData = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_URL}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = res.data;
+      setFormData({
+        name: data.name || "",
+        phone: data.profile?.phone || "",
+        bio: data.profile?.bio || "",
+      });
+      setAddresses(data.addresses || []);
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [token]);
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    try {
+      setSaving(true);
+      setMessage({ type: "", text: "" });
+      await axios.put(`${API_URL}/profile`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessage({ type: "success", text: "Store profile updated successfully!" });
+      fetchUser(); // refresh user store
+    } catch (err: any) {
+      setMessage({ type: "error", text: "Failed to update profile." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openAddressModal = (addr: any = null) => {
+    if (addr) {
+      setEditingAddressId(addr.id);
+      setAddressForm({
+        address_line_1: addr.address_line_1,
+        city: addr.city,
+        country: addr.country,
+        type: addr.type,
+        is_default: !!addr.is_default
+      });
+    } else {
+      setEditingAddressId(null);
+      setAddressForm({
+        address_line_1: "",
+        city: "",
+        country: "",
+        type: "store",
+        is_default: false
+      });
+    }
+    setIsAddressModalOpen(true);
+  };
+
+  const handleAddressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    try {
+      if (editingAddressId) {
+        await axios.put(`${API_URL}/profile/addresses/${editingAddressId}`, addressForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        await axios.post(`${API_URL}/profile/addresses`, addressForm, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      setIsAddressModalOpen(false);
+      fetchData();
+    } catch (err) {
+      console.error("Failed to save address", err);
+    }
+  };
+
+  const handleDeleteAddress = async (id: number) => {
+    if (!token || !confirm("Delete this address?")) return;
+    try {
+      await axios.delete(`${API_URL}/profile/addresses/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) {
+      console.error("Failed to delete address", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto p-4 md:p-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Shop Settings</h1>
+        <p className="text-muted-foreground mt-1">Manage your public store profile and addresses.</p>
+      </div>
+
+      {message.text && (
+        <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
+          {message.text}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Settings Form */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-border bg-muted/20 flex items-center gap-3">
+              <Store className="text-primary" size={20} />
+              <h2 className="text-lg font-bold">Store Details</h2>
+            </div>
+            <form onSubmit={handleProfileSubmit} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Store Name <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <input 
+                    type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="Enter store name"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Customer Service Phone</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <input 
+                    type="text" 
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="+1234567890"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Store Description / Bio</label>
+                <textarea 
+                  value={formData.bio}
+                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                  className="w-full px-4 py-3 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] resize-y"
+                  placeholder="Tell customers about your store..."
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button 
+                  type="submit" 
+                  disabled={saving}
+                  className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  <Save size={18} />
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Addresses Sidebar */}
+        <div className="space-y-6">
+          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+            <div className="p-5 border-b border-border bg-muted/20 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MapPin className="text-primary" size={20} />
+                <h2 className="text-lg font-bold">Addresses</h2>
+              </div>
+              <button 
+                onClick={() => openAddressModal()}
+                className="p-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-colors"
+                title="Add New Address"
+              >
+                <Plus size={18} />
+              </button>
+            </div>
+            
+            <div className="p-4 flex-1 overflow-y-auto space-y-3">
+              {addresses.length === 0 ? (
+                <div className="text-center p-6 text-muted-foreground">
+                  <MapPin size={32} className="mx-auto mb-3 opacity-20" />
+                  <p className="text-sm">No addresses added yet.</p>
+                </div>
+              ) : (
+                addresses.map((addr) => (
+                  <div key={addr.id} className="relative p-4 border border-border rounded-xl hover:border-primary/50 transition-colors group">
+                    <div className="flex justify-between items-start mb-2">
+                       <span className="inline-block px-2 py-0.5 bg-accent text-xs font-semibold rounded-md uppercase tracking-wider text-muted-foreground">
+                         {addr.type}
+                       </span>
+                       {addr.is_default ? (
+                         <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Default</span>
+                       ) : null}
+                    </div>
+                    <p className="text-sm font-medium mt-2">{addr.address_line_1}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{addr.city}, {addr.country}</p>
+                    
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      <button onClick={() => openAddressModal(addr)} className="p-1.5 bg-background shadow-sm border border-border rounded-md text-muted-foreground hover:text-primary">
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => handleDeleteAddress(addr.id)} className="p-1.5 bg-background shadow-sm border border-border rounded-md text-muted-foreground hover:text-destructive">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Address Modal */}
+      {isAddressModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h3 className="text-lg font-bold">{editingAddressId ? 'Edit Address' : 'Add New Address'}</h3>
+              <button onClick={() => setIsAddressModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <Plus className="rotate-45" size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddressSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Address Type</label>
+                <select 
+                  value={addressForm.type}
+                  onChange={(e) => setAddressForm({...addressForm, type: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="store">Store Location</option>
+                  <option value="shipping">Shipping Origin</option>
+                  <option value="billing">Billing Info</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Street Address</label>
+                <input 
+                  type="text" 
+                  value={addressForm.address_line_1}
+                  onChange={(e) => setAddressForm({...addressForm, address_line_1: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">City</label>
+                  <input 
+                    type="text" 
+                    value={addressForm.city}
+                    onChange={(e) => setAddressForm({...addressForm, city: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Country</label>
+                  <input 
+                    type="text" 
+                    value={addressForm.country}
+                    onChange={(e) => setAddressForm({...addressForm, country: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input 
+                  type="checkbox" 
+                  id="is_default"
+                  checked={addressForm.is_default}
+                  onChange={(e) => setAddressForm({...addressForm, is_default: e.target.checked})}
+                  className="rounded border-input text-primary focus:ring-primary shadow-sm"
+                />
+                <label htmlFor="is_default" className="text-sm font-medium cursor-pointer">Set as default address</label>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsAddressModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-6 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-xl hover:bg-primary/90 transition-colors"
+                >
+                  Save Address
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
