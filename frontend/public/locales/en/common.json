@@ -11,6 +11,7 @@
     "cart": "Cart",
     "chat": "Chat",
     "alerts": "Alerts",
+    "messages": "Inbox",
     "profile": "Profile",
     "logout": "Logout"
   },

@@ -115,4 +115,33 @@ class ChatController extends Controller
 
         return response()->json($message, 201);
     }
+
+    // New: Search for users to message
+    public function searchUsers(Request $request)
+    {
+        $user = $request->user();
+        $search = $request->get('search');
+        
+        $query = User::with('profile')->where('id', '!=', $user->id);
+
+        if ($user->role_id === 1) {
+            // Admin can see everyone
+        } elseif ($user->role_id === 2) {
+            // Seller can see Customers
+            $query->where('role_id', 3);
+        } else {
+            // Customer can see Sellers
+            $query->where('role_id', 2);
+        }
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->limit(20)->get();
+        return response()->json($users);
+    }
 }

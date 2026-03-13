@@ -20,8 +20,7 @@ const navItems = [
   { href: "/",          icon: Home,          labelKey: "home" },
   { href: "/products",  icon: ShoppingBag,   labelKey: "products" },
   { href: "/cart",      icon: ShoppingCart,  labelKey: "cart",    badge: true },
-  { href: "/chat",      icon: MessageCircle, labelKey: "chat" },
-  { href: "/notifications", icon: Bell,      labelKey: "alerts" },
+  { href: "/messages",  icon: MessageCircle, labelKey: "messages" },
   { href: "/profile",   icon: User,          labelKey: "profile" },
 ];
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, LayoutDashboard, Users, ShieldAlert, Settings, Store, Menu } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, ShieldAlert, Settings, Store, Menu, MessageCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useState } from "react";
 
@@ -10,6 +10,7 @@ const menuItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/users", icon: Users, label: "User Management" },
   { href: "/admin/moderation", icon: ShieldAlert, label: "Moderation" },
+  { href: "/admin/messages", icon: MessageCircle, label: "Inbox" },
   { href: "/admin/settings", icon: Settings, label: "System Config" },
 ];
 

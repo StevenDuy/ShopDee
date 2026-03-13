@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, LayoutDashboard, Package, ShoppingCart, DollarSign, Settings, Store, Menu } from "lucide-react";
+import { LogOut, LayoutDashboard, Package, ShoppingCart, DollarSign, Settings, Store, Menu, MessageCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useState } from "react";
 import { UserDropdown } from "@/components/common/UserDropdown";
@@ -11,6 +11,7 @@ const menuItems = [
   { href: "/seller", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/seller/products", icon: Package, label: "Products" },
   { href: "/seller/orders", icon: ShoppingCart, label: "Orders" },
+  { href: "/seller/messages", icon: MessageCircle, label: "Messages" },
   { href: "/seller/finance", icon: DollarSign, label: "Finance" },
   { href: "/seller/settings", icon: Settings, label: "Shop Settings" },
 ];

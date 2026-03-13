@@ -45,7 +45,7 @@ export default function CartPage() {
                 exit={{ opacity: 0, x: 20 }}
                 className="bg-card border border-border rounded-2xl p-5 flex items-center gap-5"
               >
-                <Link href={`/products/${item.productId}`} className="w-20 h-20 rounded-xl overflow-hidden bg-muted shrink-0">
+                <Link href={`/products/${item.slug}`} className="w-20 h-20 rounded-xl overflow-hidden bg-muted shrink-0">
                   <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
                 </Link>
 

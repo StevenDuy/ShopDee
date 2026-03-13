@@ -58,8 +58,20 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     setLoading(true);
-    axios.get(`${API}/products/${slug}`).then((r) => { setProduct(r.data); setLoading(false); }).catch(() => router.push("/products"));
-    axios.get(`${API}/products/${slug}/reviews`).then((r) => { setReviews(r.data.data?.data ?? []); setAvgRating(r.data.avg_rating ?? 0); }).catch(() => { });
+    axios.get(`${API}/products/${slug}`)
+      .then((r) => {
+        const prod = r.data;
+        setProduct(prod);
+        setLoading(false);
+        // Fetch reviews using the product ID obtained from the product fetch
+        axios.get(`${API}/products/${prod.id}/reviews`)
+          .then((revRes) => {
+            setReviews(revRes.data.data?.data ?? []);
+            setAvgRating(revRes.data.avg_rating ?? 0);
+          })
+          .catch(() => { });
+      })
+      .catch(() => router.push("/products"));
   }, [slug, router]);
 
   if (loading) return (
@@ -85,7 +97,7 @@ export default function ProductDetailPage() {
       router.push("/login?redirect=" + `/products/${slug}`);
       return;
     }
-    addItem({ id: product.id, productId: product.id, title: product.title, image: images[activeImg].full_url, price: product.price, salePrice: product.sale_price, sellerId: product.seller.id, sellerName: product.seller.name, attributes: selAttrs, quantity: qty });
+    addItem({ id: product.id, productId: product.id, slug: product.slug, title: product.title, image: images[activeImg].full_url, price: product.price, salePrice: product.sale_price, sellerId: product.seller.id, sellerName: product.seller.name, attributes: selAttrs, quantity: qty });
     setAddedMsg(true);
     setTimeout(() => setAddedMsg(false), 2000);
   };
