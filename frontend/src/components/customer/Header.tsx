@@ -14,6 +14,8 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
 
+import { UserDropdown } from "@/components/common/UserDropdown";
+
 const navItems = [
   { href: "/",          icon: Home,          labelKey: "home" },
   { href: "/products",  icon: ShoppingBag,   labelKey: "products" },
@@ -47,7 +49,7 @@ export function CustomerHeader() {
     <motion.aside
       animate={{ width: collapsed ? 72 : 240 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="h-screen flex flex-col bg-card border-r border-border sticky top-0 shrink-0 overflow-hidden z-40"
+      className="h-screen flex flex-col bg-card border-r border-border sticky top-0 shrink-0 overflow-visible z-50"
     >
       {/* Logo */}
       <div className="flex items-center justify-between px-4 py-5 border-b border-border">
@@ -66,22 +68,10 @@ export function CustomerHeader() {
         </button>
       </div>
 
-      {/* User avatar */}
-      {user && (
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-          <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="overflow-hidden">
-                <p className="text-sm font-semibold truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
+      {/* User Dropdown */}
+      <div className="px-3 py-4 border-b border-border">
+        <UserDropdown collapsed={collapsed} align="top" />
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-2">
@@ -113,43 +103,11 @@ export function CustomerHeader() {
         })}
       </nav>
 
-      {/* Bottom Toolbar */}
-      <div className="border-t border-border px-2 py-3 space-y-1">
-        <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-accent transition-colors text-muted-foreground">
-          {mounted && (theme === "dark" ? <Sun size={18} /> : <Moon size={18} />)}
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                {mounted ? (theme === "dark" ? t("light_mode") : t("dark_mode")) : ""}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
-
-        <button onClick={toggleLang}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-accent transition-colors text-muted-foreground">
-          <Globe size={18} />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                {mounted ? (i18n.language === "vi" ? "🇻🇳 Tiếng Việt" : "🇺🇸 English") : ""}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
-
-        <button onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground">
-          <LogOut size={18} />
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                {mounted ? t("logout") : ""}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
+      {/* Bottom Info or anything else if needed */}
+      <div className="p-4">
+        <p className="text-[10px] text-center text-muted-foreground uppercase opacity-50 font-bold tracking-widest leading-relaxed">
+          Powered by <br/> Antigravity
+        </p>
       </div>
     </motion.aside>
   );

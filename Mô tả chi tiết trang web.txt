@@ -1,0 +1,181 @@
+ShopDee
+Laravel + next js. + database xampp localhost + sources hình ảnh, video mẫu.
+Mô tả chi tiết trang web:
+1. Phải có:
+1.1. Phải có chức năng nền sáng tối.
+1.2. Phải có ngôn ngữ tiếng anh tiếng việt.
+1.3. Phải có chức năng thay đổi tiền tệ.
+1.4. Phải có tương thích nhiều thiết bị.
+1.5. Buộc phải có Header và Footer:
+1.5.1. hiển thị chức năng các header tương ứng với các role và nằm bên trái.
+1.5.2. footer chỉ hiển thị với customer.
+1.6. mục chat: tính năng chat như các sàn thương mại khác, đặc biệt nên lấy của shopee như có thể gửi link sản phẩm gửi hình ảnh hoặc video hoặc có thể gọi điện bằng mạng hoặc gọi số điện thoại.
+2. Role Customer Header:
+2.1. "Home":
+2.1.1.Frontend:
+- banner (sản phẩm nổi bật).
+- bán chạy nhất.
+- mới ra mắt.
+- nút view all trên các danh mục bán chạy, mới ra mắt,...
+2.1.2. Backend:
+- bấm vào div sản phẩm sẽ hiện ra chi tiết sản phẩm ở trang "Product Details".
+- bấm vào view all ở mục tương ứng sẽ hiện ra ỏ trang "Products".
+- hover vào các div sẽ phóng to hình ra một tí.
+2.2. "Products":
+2.2.1. Frontend:
+- thanh tìm kiếm.
+- các nút lọc: nút theo giá, nút theo ngày, nút theo bán chạy.
+- sản phẩm theo tìm kiếm theo lọc.
+2.2.2. Backend:
+- search tìm kiếm sản phẩm sẽ đưa ra kết quả.
+- lọc sản phẩm theo các nút giá ngày hoặc bán chạy, nếu nhấn lại lần nữa sẽ đảo chiều lọc.
+- nhấn vào div sản phẩm để xem chi tiết sản phẩm.
+2.3. "Product Details"
+2.3.1. Frontend:
+- ảnh sản phẩm chính và nhiều ảnh phụ.
+- video sản phẩm 
+- tên sản phẩm.
+- giá sản phẩm.
+- số lượng sản phẩm còn lại.
+- mô tả sản phẩm.
+- thông số sản phẩm.
+- đánh giá từ người mua.
+- nút mua và nút thêm vào giỏ hàng.
+- có thể bạn sẽ thích.
+- người bán.
+2.3.2. Backend:
+- div lớn chứa mô tả sản phẩm, thông số, đánh giá.
+- chọn chuyển đổi 3 mục để xem sản phẩm, thông số, đánh giá.
+- bấm viết đánh giá để đánh giá sản phẩm. yêu cầu người dùng đăng nhập.
+- bấm mua hiện form chọn loại mặt hàng và số lượng vị trí giao hàng, add to cart tương tự.
+2.4. "Chat":
+2.4.1. Frontend:
+- trang nhắn tin.
+- nút thêm tin nhắn.
+- nút gọi.
+- lịch sử người đã nhắn tin.
+2.4.2. Backend:
+- trang nhắn tin hiện lịch sử nhắn tin với shop.
+- bấm vào shop hiển thị lịch sử với shop.
+- nút thêm thêm tin nhắn với shop khác.
+- có thể thêm ảnh hoặc video.
+- có thể gọi shop.
+2.5. "Thông báo":
+2.5.1. Frontend:
+- hiển thị thông báo của admin đơn hàng,...
+2.5.2. Backend:
+- nhấn vào thông báo để xem chi tiết thông báo.
+- nếu là đơn hàng thì sẽ hiển thị trang thái đơn hàng. có thể nhấn vào 1 lần nữa vào đơn hàng để hiển thị ra sản phẩm trong trang "Product Details".
+2.6. "Profile":
+2.6.1. Frontend:
+- Hồ sơ.
+- Ngân hàng.
+- Địa chỉ.
+- đổi mật khẩu.
+- Đơn hàng.
+2.6.2. Backend:
+- sửa hồ sở như tên hiển thị giới tính ngày tháng năm sinh email số điện thoại.
+- Ngân hàng hiển thị coming soon.
+- địa chỉ có thể thêm nhiều địa chỉ và đặt 1 địa chỉ làm mặc định, tích hợp google map để chọn vị trí trên bản đồ nhanh hơn, sau này có thể thêm địa chỉ chính xác khi người dùng bấm dò vị trí hiện tại.
+- đổi mật khẩu hiển thị form đổi mật khẩu như các trang thương mại khác.
+- đơn hàng hiển thị tất cả lịch sử chờ thanh toán vận chuyển chờ giao hoàn thành và hiển thị sản phẩm đã đặt đã hủy và có nút bám xác nhận hàng hoặc hủy trong đây. hiển thị tên shop và có thể bấm vào chat với shop như trang shopee.
+3. Role Seller Header:
+3.1. "Home":
+3.1.1. Frontend:
+- nút thêm sản phẩm.
+- tổng quan về doanh thu.
+- tổng đơn hàng cần xác nhận.
+- đang giao.
+- gần hết sản phẩm.
+- tổng đơn hoàn tiền.
+3.1.2. Backend:
+- bấm thêm sản phẩm chuyển đến trang "Products"
+- hiển thị doanh thu trong tuần có thể bấm để xem trong tháng trong năm hoặc trong ngày.
+- bấm vào tổng đơn hàng cần xác nhận chuyển sang trang "Orders".
+- bấm vào đang giao chuyển sang trang "Orders" mục đang thực hiện giao hàng.
+- bấm vào gần hết sản phẩm để chuyển sang trang "Products" mục sản phẩm gần hết.
+3.2. "Products":
+3.2.1. Frontend:
+- hiển thị sản phẩm của mình tạo.
+- hiện nút thêm sửa xóa tìm kiếm.
+- hiển thị sản phẩm gần hết
+3.2.2. Backend:
+- thêm sửa xóa sản phẩm bao gồm: ảnh đại diện, nhiều ảnh phụ. thông số kĩ thuật thêm thủ công bằng bảng với 2 cột là cột tên thông số và cột thứ 2 là thông số, có thể thêm nhiều hàng tùy thích, có thể thêm video và tự động sếp video ở cuối thumbnail, mô tả sản phẩm có thể thêm hình vào mô tả sản phẩm, có phần thêm sửa loại sản phẩm cho người dùng lựa mua, có số lượng, giá bán.
+- hiển thị sản phẩm mình tạo
+- hiển thị sản phẩm sắp hết, bấm vào để xem chi tiết sản phẩm sắp thế có thể thêm sửa xóa.
+- sắp xếp bằng cách nhắn vào cột tương ứng bấm lần nữa để đảo ngược.
+3.3. "Orders":
+3.3.1. Frontend:
+- hiển thị thanh search đơn hàng.
+- Hiển thị trạng thái đơn hàng cần duyệt, bao gồm cả trả hàng.
+- hiển thị nút chat với người đặt hàng.
+3.3.2. Backend:
+- có thể bấm nhận đơn và đã vận chuyển. đến nơi sẽ trả về kết quả đã giao. Customer có thể xác nhận đơn đã nhận hoặc bấm hoàn trả hảng.
+3.4. "Finance":
+3.4.1. Frontend:
+- hiển thị tổng thu.
+- hiển thị khả dụng có thể rút.
+- hiển thị Pending Release.
+- hiển thị lịch sử nhận rút trừ tiền.
+- nút xuất pdf thống kê.
+3.4.2. Backend:
+- có nút rút tiền về tài khoản.
+- có nút Refund đơn hàng nếu duyệt đơn hoàn được nếu không có thể từ chối, và được chuyển đến role admin xử lí.
+3.5. "Profile":
+- hiển thị tên shop.
+- mô tả.
+- liên kết khác.
+- địa chỉ.
+3.5.2. Backend:
+- thêm sửa xóa được thông tin.
+- có thể thêm nhiều địa chỉ chi nhánh.
+4.6. "Thông báo":
+- tương tự với customer nhưng xử lí logic với phù hợp với seller,...
+4. Role Admin Header:
+4.1. "Home":
+4.1.1. Frontend:
+- Tổng Pending Approvals.
+- log hoạt động gần đây.
+- tổng doanh thu của nền tảng.
+4.1.2. Backend:
+- bẩm vào tổng pending approvals chuyển trang đến "Moderation".
+- bấm vào log hoạt động để chuyển đến trang "Moderation".
+- Bấm vào tổng doanh thu hiển thị nguồn tiền ra vào...
+4.2. "Users":
+4.2.1. Frontend:
+- Hiển thị danh sách người dùng( vai trò trạng thái ngày tham gia nút hành động).
+- nút pending request.
+- thanh search người dùng.
+4.2.2. Backend:
+- danh sách người dùng có thể bấm vào để xem chi tiết. có thể duyệt kích hoạt hoặc chặn hoặc đổi vai trò khi người dùng pending đổi role.
+- bấm vào chi tiết thông tin người dùng có hiện nút chat có thể chat với họ.
+- có thể theo dõi hành vi người dùng thông qua các log của người dùng đó.
+- nếu là customer thì như trên còn nếu là seller thì bấm vào chi tiết hiện trạng thái shop có thể cấm shop hoặc bật bật shop đây là shop uy tin đã kiểm duyệt.
+4.3. "Moderation":
+4.3.1. Frontend:
+- hiện danh mục kiểm duyệt như: sản phẩm, đánh giá, đoạn chat,... dựa vào người dùng báo cáo. tự xử lí logic nên có mục kiểm duyệt nào.
+- hiện nút xem chi tiết để biết chi tiết báo cáo để điều tra.
+- hiện nút phản hồi báo cáo.
+- hiện mức độ báo cáo.
+- ngày tháng năm giờ báo cáo.
+- người báo cáo, báo cáo ai báo cáo cái gì lí do gì.
+- xem log hệ thống người dùng hoặc mọi thứ tại đây.
+4.3.2. Backend:
+- hiện các danh mục kiểm duyệt phổ biến như kiểm duyệt sản phẩm, kiểm duyệt đánh giá, kiểm duyệt đoạn chat, có thể thêm danh mục kiểm duyệt và tạo danh mục kiểm duyệt cho chức năng đó và người dùng thấy nút báo cáo mới cho chức năng đó riêng(tính mở rộng sau này).
+- bấm xem chi tiết để hiện nơi họ đã báo cáo(như tin nhắn hiện ra chi tiết cuộc trò chuyện(người dùng có thể chọn đoạn tin nhắn từ đâu đến đâu để hiển thị cho admin xem), sản phẩm hoặc đánh giá,.... có tính mở rộng như danh mục báo cáo.
+- bấm phản hồi báo cáo để xem nên hành động gì với báo cáo đó như duyệt và cảnh báo người vi phạm hoặc kỉ luật hoặc chặn,... hoặc có thể từ chối vì lí do không chính đáng...
+-  sắp xếp được mức độ nặng nhẹ hoặc mới nhất cũ nhất hoặc nhiều người báo cáo nhất,... tự xử lí nên có cái nào.
+- log xem chi tiết có nhiều tính năng như xem log của từng người để biết hành vi của từng người hoặc hành vi chuyển khoản của người đó hoặc log hệ thống xem ai đã làm gì và luồng dữ liệu hoạt động tập lệnh ra sau đều nằm trong đây, có thể xử lí nếu có hành vi vi phạm,... tự xem các nền tảng thương mại điện tử khác mà phát triển theo nó và cải tiến hơn những cái chưa có.
+4.4. "System":
+- hiện nút quản lí thông báo.
+- cài đặt thuế phí vận chuyển.
+- cài đặt cấu hình chi tiết hệ thống website.
+- cấu hình giao diện theo sự kiện nào đó( phát triển sau).
+- bật tắt chế độ bảo trì hệ thống.
+- nhiều tính năng khác( có tính mở rộng để sau này có thể thêm chứ năng cho hệ thống nữa).
+4.5. "Profile":
+4.5.1. Frontend:
+- hiển thị thông tin thay đổi như các mục profile các admin trên các sàn thương mại điện tử khác.
+4.5.2. Backend:
+- tự xử lí logic.
+VIẾT TOÀN BỘ TRANG LOGIC LIÊN KẾT VỚI NHAU MÀ KHÔNG BỊ TRỐNG CÁC TRANG VÀ CÁC LOGIC KHÔNG DÙNG ĐƯỢC.
