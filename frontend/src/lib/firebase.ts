@@ -3,13 +3,13 @@ import { getStorage } from "firebase/storage";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAk49CFkUtNMPZRiyXCHiUhYLhtwBmGeDc",
-  authDomain: "shopdee-chat.firebaseapp.com",
-  projectId: "shopdee-chat",
-  storageBucket: "shopdee-chat.firebasestorage.app",
-  messagingSenderId: "974937269494",
-  appId: "1:974937269494:web:5e30df9c2be791e4f9b8d7",
-  measurementId: "G-DTW3ZTXYDK"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase (Singleton pattern to avoid multiple initializations in Next.js)
