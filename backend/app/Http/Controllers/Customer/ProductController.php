@@ -61,6 +61,7 @@ class ProductController extends Controller
             'category.parent',
             'media',
             'attributes',
+            'options.values',
             'seller',
             'reviews.customer.profile',
         ])->where('slug', $slug)->where('status', 'active')->firstOrFail();

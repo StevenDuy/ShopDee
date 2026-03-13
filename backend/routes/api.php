@@ -70,10 +70,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/products/{id}', [\App\Http\Controllers\Seller\ProductController::class, 'update']);
         Route::delete('/products/{id}', [\App\Http\Controllers\Seller\ProductController::class, 'destroy']);
 
+        // Categories
+        Route::post('/categories', [\App\Http\Controllers\Seller\CategoryController::class, 'store']);
+
         // Product Media
         Route::post('/products/{productId}/media', [\App\Http\Controllers\Seller\ProductMediaController::class, 'store']);
         Route::delete('/products/{productId}/media/{mediaId}', [\App\Http\Controllers\Seller\ProductMediaController::class, 'destroy']);
         Route::put('/products/{productId}/media/{mediaId}/primary', [\App\Http\Controllers\Seller\ProductMediaController::class, 'setPrimary']);
+
+        // Product Options
+        Route::get('/products/{productId}/options', [\App\Http\Controllers\Seller\ProductOptionController::class, 'index']);
+        Route::post('/products/{productId}/options/sync', [\App\Http\Controllers\Seller\ProductOptionController::class, 'sync']);
 
         // Orders
         Route::get('/orders', [\App\Http\Controllers\Seller\OrderController::class, 'index']);

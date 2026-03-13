@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -100,8 +101,31 @@ class ProductController extends Controller
         }
 
         $product = Product::where('seller_id', $request->user()->id)->findOrFail($id);
-        $product->delete();
 
-        return response()->json(['message' => 'Product deleted successfully']);
+        try {
+            // Manually delete related records to avoid FK constraint issues
+            // (in case DB was created without proper cascade)
+            $product->reviews()->delete();
+            $product->attributes()->delete();
+            $product->options()->each(function ($option) {
+                $option->values()->delete();
+                $option->delete();
+            });
+            // Media storage cleanup
+            foreach ($product->media as $media) {
+                $path = ltrim(str_replace('/storage/', '', $media->url), '/');
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                }
+            }
+            $product->media()->delete();
+
+            $product->delete();
+            return response()->json(['message' => 'Product deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Cannot delete product: ' . $e->getMessage()
+            ], 422);
+        }
     }
 }
