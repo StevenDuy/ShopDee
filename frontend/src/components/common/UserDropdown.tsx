@@ -130,19 +130,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
                 <span className="font-medium">{t("my_profile") || "Trang cá nhân"}</span>
               </button>
 
-              <button 
-                onClick={() => { 
-                  const path = user.role_id === 1 ? "/admin/inbox" : user.role_id === 2 ? "/seller/inbox" : "/inbox";
-                  router.push(path); 
-                  setIsOpen(false); 
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors group text-foreground"
-              >
-                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                  <MessageCircle size={14} />
-                </div>
-                <span className="font-medium flex-1 text-left">Inbox</span>
-              </button>
+
 
               <div className="h-px bg-border/50 my-1 mx-2" />
 

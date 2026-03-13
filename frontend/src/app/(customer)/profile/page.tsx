@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { User, Package, MapPin, Lock, CheckCircle, Truck, Clock, X } from "lucide-react";
@@ -26,7 +26,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TABS = [
   { id: "info",      label: "Profile Info", icon: User },
-  { id: "orders",   label: "My Orders",    icon: Package },
   { id: "addresses",label: "Addresses",    icon: MapPin },
   { id: "password", label: "Password",     icon: Lock },
 ];
@@ -35,7 +34,15 @@ export default function ProfilePage() {
   const router  = useRouter();
   const { token, user: authUser, logout } = useAuthStore();
   const { formatPrice } = useCurrencyStore();
-  const [activeTab, setActiveTab] = useState("info");
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabFromUrl || "info");
+
+  useEffect(() => {
+    if (tabFromUrl && TABS.some(t => t.id === tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   const [profile,   setProfile]   = useState<Profile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -58,7 +65,6 @@ export default function ProfilePage() {
       setProfile(r.data); setName(r.data.name); setPhone(r.data.profile?.phone ?? ""); setBio(r.data.profile?.bio ?? "");
     });
     axios.get(`${API}/profile/addresses`, { headers: authHeaders }).then((r) => setAddresses(r.data));
-    axios.get(`${API}/orders/my`, { headers: authHeaders }).then((r) => setOrders(r.data.data ?? []));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -134,41 +140,7 @@ export default function ProfilePage() {
         </motion.div>
       )}
 
-      {/* Orders */}
-      {activeTab === "orders" && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          {orders.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground bg-card border border-border rounded-2xl">
-              <Package size={48} className="mx-auto mb-3 opacity-30" />
-              <p>No orders yet</p>
-            </div>
-          ) : orders.map((order) => (
-            <div key={order.id} className="bg-card border border-border rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="font-semibold">Order #{order.id}</p>
-                  <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs font-medium px-3 py-1.5 rounded-full capitalize ${STATUS_COLORS[order.status] ?? "bg-muted text-muted-foreground"}`}>
-                    {order.status === "shipping" ? <><Truck size={12} className="inline mr-1" />Shipping</> : order.status === "completed" ? <><CheckCircle size={12} className="inline mr-1" />Completed</> : <><Clock size={12} className="inline mr-1" />{order.status}</>}
-                  </span>
-                  <span className="font-bold text-primary">{formatPrice(order.total_amount)}</span>
-                </div>
-              </div>
-              <div className="flex gap-3 flex-wrap">
-                {order.items.slice(0, 3).map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 bg-muted/50 rounded-xl p-2">
-                    <img src={item.product.media[0]?.url ?? `https://picsum.photos/seed/${item.id}/40/40`} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                    <div><p className="text-xs font-medium line-clamp-1">{item.product.title}</p><p className="text-xs text-muted-foreground">x{item.quantity}</p></div>
-                  </div>
-                ))}
-                {order.items.length > 3 && <div className="flex items-center text-xs text-muted-foreground">+{order.items.length - 3} more</div>}
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      )}
+
 
       {/* Addresses */}
       {activeTab === "addresses" && (

@@ -8,6 +8,7 @@ use App\Models\ChatMessage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Events\NewChatMessage;
 
 class ChatController extends Controller
 {
@@ -45,12 +46,17 @@ class ChatController extends Controller
         })->findOrFail($id);
 
         $messages = ChatMessage::where('conversation_id', $conversation->id)
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->paginate(30);
 
         return response()->json([
             'conversation' => $conversation,
-            'messages'     => $messages
+            'messages'     => $messages->items(),
+            'pagination'   => [
+                'current_page' => $messages->currentPage(),
+                'last_page'    => $messages->lastPage(),
+                'has_more'     => $messages->hasMorePages()
+            ]
         ]);
     }
 
@@ -110,8 +116,8 @@ class ChatController extends Controller
         // Push update to conversation updated_at for sorting
         $conversation->touch();
 
-        // Broadcast to Reverb would go here if we set up an Event
-        // event(new \App\Events\NewChatMessage($message));
+        // Broadcast to Reverb/Pusher
+        event(new NewChatMessage($message));
 
         return response()->json($message, 201);
     }

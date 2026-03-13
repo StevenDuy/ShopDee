@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Home, ShoppingBag, ShoppingCart, MessageCircle,
   Bell, User, LogOut, Moon, Sun,
-  Globe, DollarSign, Menu, X
+  Globe, DollarSign, Menu, X, Package
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
@@ -21,7 +21,7 @@ const navItems = [
   { href: "/products",  icon: ShoppingBag,   labelKey: "products" },
   { href: "/cart",      icon: ShoppingCart,  labelKey: "cart",    badge: true },
   { href: "/inbox",     icon: MessageCircle, labelKey: "messages" },
-  { href: "/profile",   icon: User,          labelKey: "profile" },
+  { href: "/orders", icon: Package, labelKey: "my_orders" },
 ];
 
 export function CustomerHeader() {

@@ -10,6 +10,10 @@ import {
   MoreVertical, User, ShieldAlert
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import echo from "@/lib/echo";
+import { storage } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import imageCompression from "browser-image-compression";
 
 const API = "http://localhost:8000/api";
 
@@ -36,8 +40,11 @@ export function UnifiedInbox() {
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConv, setActiveConv] = useState<any | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
+  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, has_more: false });
+  const [loadingMore, setLoadingMore] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const [notifications, setNotifications] = useState<any[]>([]);
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
@@ -46,6 +53,7 @@ export function UnifiedInbox() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
   
   const [form, setForm] = useState({ title: "", message: "", link: "", files: [] as File[] });
 
@@ -55,8 +63,28 @@ export function UnifiedInbox() {
   }, [token, activeTab]);
 
   useEffect(() => {
-    if (activeConv && token) fetchMessages(activeConv.id);
+    if (activeConv && token) fetchMessages(activeConv.id, 1);
   }, [activeConv, token]);
+
+  useEffect(() => {
+    if (!activeConv || !token || !echo) return;
+
+    const channel = echo.private(`chat.${activeConv.id}`);
+    
+    channel.listen('.App\\Events\\NewChatMessage', (e: any) => {
+        setMessages(prev => {
+            if (prev.some(m => m.id === e.message.id)) return prev;
+            return [...prev, e.message];
+        });
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    });
+
+    return () => {
+        echo.leave(`chat.${activeConv.id}`);
+    };
+  }, [activeConv, token]);
+
+
 
   const refreshData = async () => {
     setLoading(true);
@@ -72,26 +100,93 @@ export function UnifiedInbox() {
     finally { setLoading(false); }
   };
 
-  const fetchMessages = async (id: number) => {
+
+  const fetchMessages = async (id: number, page = 1) => {
+    if (page === 1) setLoading(true);
+    else setLoadingMore(true);
+    
+    // Lưu lại scroll height trước khi prepend
+    const container = scrollContainerRef.current;
+    const oldScrollHeight = container?.scrollHeight || 0;
+
     try {
-      const res = await axios.get(`${API}/chat/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      setMessages(res.data.messages || []);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      const res = await axios.get(`${API}/chat/${id}?page=${page}`, { headers: { Authorization: `Bearer ${token}` } });
+      const newMessages = [...res.data.messages].reverse(); 
+      
+      if (page === 1) {
+        setMessages(newMessages);
+        setPagination(res.data.pagination);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 200);
+      } else {
+        setMessages(prev => [...newMessages, ...prev]);
+        setPagination(res.data.pagination);
+        
+        // Điều chỉnh scroll để không bị nhảy
+        setTimeout(() => {
+          if (container) {
+            container.scrollTop = container.scrollHeight - oldScrollHeight;
+          }
+        }, 0);
+      }
     } catch (e) { console.error(e); }
+    finally { 
+      setLoading(false); 
+      setLoadingMore(false);
+    }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !activeConv || !token) return;
-    const msgData = { message_text: newMessage };
+  const handleCompressAndUpload = async (file: File) => {
+    try {
+      setUploading(true);
+      // 1. Nén ảnh
+      const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: true };
+      const compressedFile = await imageCompression(file, options);
+      
+      // 2. Upload Firebase
+      const fileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `chat_media/${fileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, compressedFile);
+
+      return new Promise<string>((resolve, reject) => {
+        uploadTask.on('state_changed', null, reject, async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(url);
+        });
+      });
+    } catch (err) {
+      console.error("Upload error", err);
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent, mediaUrl?: string) => {
+    if (e) e.preventDefault();
+    if (!newMessage.trim() && !mediaUrl || !activeConv || !token) return;
+    
+    const msgData = { 
+      message_text: newMessage,
+      media_url: mediaUrl 
+    };
     setNewMessage(""); 
     try {
       const res = await axios.post(`${API}/chat/${activeConv.id}`, msgData, { headers: { Authorization: `Bearer ${token}` } });
-      setMessages(prev => [...prev, res.data]);
+      setMessages(prev => {
+        if (prev.some(m => m.id === res.data.id)) return prev;
+        return [...prev, res.data];
+      });
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch (err: any) {
       console.error("Chat Error:", err.response?.data || err.message);
     }
+  };
+
+  const onFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = await handleCompressAndUpload(file);
+    if (url) await handleSendMessage(null as any, url);
   };
 
   const handleCreateNotification = async (e: React.FormEvent) => {
@@ -273,13 +368,31 @@ export function UnifiedInbox() {
                       <h3 className="font-black text-sm md:text-lg truncate max-w-[150px] md:max-w-none">{activeConv.other_user?.name || "Chat"}</h3>
                    </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar">
+                 <div 
+                   ref={scrollContainerRef}
+                   className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar flex flex-col"
+                 >
+                   {pagination.has_more && (
+                      <button 
+                        onClick={() => fetchMessages(activeConv.id, pagination.current_page + 1)}
+                        disabled={loadingMore}
+                        className="self-center text-[10px] font-black uppercase tracking-widest text-primary/60 hover:text-primary transition-all py-4 hover:scale-110 active:scale-95"
+                      >
+                        {loadingMore ? "Loading..." : "Load older messages"}
+                      </button>
+                   )}
+                   
                    {messages.map((msg, i) => {
                      const isMe = msg.sender_id === user?.id;
                      return (
                        <div key={msg.id || i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-2.5 md:px-5 md:py-3 shadow-sm ${isMe ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card border border-border/50 rounded-tl-none"}`}>
-                             <p className="text-[13px] md:text-sm leading-relaxed">{msg.message_text}</p>
+                             {msg.media_url && (
+                               <div className="mb-2 rounded-lg overflow-hidden border border-white/10 shadow-inner">
+                                 <img src={msg.media_url} alt="media" className="max-w-full h-auto object-cover hover:scale-105 transition-transform cursor-pointer" onClick={() => window.open(msg.media_url, '_blank')} />
+                               </div>
+                             )}
+                             {msg.message_text && <p className="text-[13px] md:text-sm leading-relaxed">{msg.message_text}</p>}
                              <div className={`text-[9px] mt-1.5 opacity-50 flex items-center gap-1 ${isMe ? "justify-end" : ""}`}>
                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                {isMe && <CheckCheck size={10} />}
@@ -290,16 +403,23 @@ export function UnifiedInbox() {
                    })}
                    <div ref={messagesEndRef} />
                 </div>
-                <form onSubmit={handleSendMessage} className="p-3 md:p-4 bg-card border-t border-border/50 flex gap-3">
-                   <input 
-                     type="text" 
-                     value={newMessage} 
-                     onChange={(e) => setNewMessage(e.target.value)} 
-                     placeholder="Say something..." 
-                     className="flex-1 bg-muted/50 rounded-xl md:rounded-2xl px-4 md:px-6 py-2.5 md:py-3 outline-none text-sm"
-                   />
-                   <button type="submit" disabled={!newMessage.trim()} className="bg-primary text-primary-foreground p-3 rounded-xl md:rounded-2xl shadow-lg disabled:opacity-20 transition-all shrink-0"><Send size={18} /></button>
-                </form>
+                <form onSubmit={handleSendMessage} className="p-3 md:p-4 bg-card border-t border-border/50 flex gap-3 items-center">
+                    <label className={`p-2 rounded-xl hover:bg-muted cursor-pointer transition-colors ${uploading ? "animate-pulse opacity-50" : ""}`}>
+                      <ImageIcon size={20} />
+                      <input type="file" accept="image/*" className="hidden" onChange={onFileSelect} disabled={uploading} />
+                    </label>
+                    <input 
+                      type="text" 
+                      value={newMessage} 
+                      onChange={(e) => setNewMessage(e.target.value)} 
+                      placeholder={uploading ? "Compressing & Uploading..." : "Say something..."}
+                      disabled={uploading}
+                      className="flex-1 bg-muted/50 rounded-xl md:rounded-2xl px-4 md:px-6 py-2.5 md:py-3 outline-none text-sm"
+                    />
+                    <button type="submit" disabled={(!newMessage.trim() && !uploading) || uploading} className="bg-primary text-primary-foreground p-3 rounded-xl md:rounded-2xl shadow-lg disabled:opacity-20 transition-all shrink-0">
+                      <Send size={18} />
+                    </button>
+                 </form>
              </motion.div>
           ) : selectedNotif ? (
              <motion.div key="notif" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="flex flex-col h-full bg-card overflow-y-auto absolute inset-0 md:relative z-20 p-6 md:p-20">
