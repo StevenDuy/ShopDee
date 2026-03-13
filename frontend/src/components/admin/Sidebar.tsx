@@ -10,7 +10,7 @@ const menuItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/users", icon: Users, label: "User Management" },
   { href: "/admin/moderation", icon: ShieldAlert, label: "Moderation" },
-  { href: "/admin/messages", icon: MessageCircle, label: "Inbox" },
+  { href: "/admin/inbox", icon: MessageCircle, label: "Inbox" },
   { href: "/admin/settings", icon: Settings, label: "System Config" },
 ];
 

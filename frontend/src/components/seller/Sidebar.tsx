@@ -11,7 +11,7 @@ const menuItems = [
   { href: "/seller", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/seller/products", icon: Package, label: "Products" },
   { href: "/seller/orders", icon: ShoppingCart, label: "Orders" },
-  { href: "/seller/messages", icon: MessageCircle, label: "Messages" },
+  { href: "/seller/inbox", icon: MessageCircle, label: "Inbox" },
   { href: "/seller/finance", icon: DollarSign, label: "Finance" },
   { href: "/seller/settings", icon: Settings, label: "Shop Settings" },
 ];

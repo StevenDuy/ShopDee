@@ -37,7 +37,7 @@ export function CustomerFooter() {
               <li><Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">My Profile</Link></li>
               <li><Link href="/profile/orders" className="text-muted-foreground hover:text-foreground transition-colors">Order History</Link></li>
               <li><Link href="/notifications" className="text-muted-foreground hover:text-foreground transition-colors">Notifications</Link></li>
-              <li><Link href="/chat" className="text-muted-foreground hover:text-foreground transition-colors">Messages</Link></li>
+              <li><Link href="/inbox" className="text-muted-foreground hover:text-foreground transition-colors">Messages</Link></li>
             </ul>
           </div>
 
