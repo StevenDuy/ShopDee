@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('conversation_id');
             $table->unsignedBigInteger('sender_id');
-            $table->enum('message_type', ['text', 'image', 'video', 'product_link'])->default('text');
-            $table->text('content');
+            $table->text('message_text')->nullable();
+            $table->string('media_url')->nullable();
             $table->boolean('is_read')->default(false);
             $table->timestamps();
 

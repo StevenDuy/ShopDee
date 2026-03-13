@@ -9,7 +9,7 @@ class ChatMessage extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['conversation_id', 'sender_id', 'message_type', 'content', 'is_read'];
+    protected $fillable = ['conversation_id', 'sender_id', 'message_text', 'media_url', 'is_read'];
 
     protected $casts = ['is_read' => 'boolean'];
 
