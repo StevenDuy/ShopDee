@@ -13,7 +13,7 @@ class SystemConfigController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -37,7 +37,7 @@ class SystemConfigController extends Controller
      */
     public function update(Request $request)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

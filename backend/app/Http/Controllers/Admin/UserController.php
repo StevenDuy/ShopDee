@@ -13,7 +13,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -46,7 +46,7 @@ class UserController extends Controller
      */
     public function show(Request $request, $id)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -60,14 +60,14 @@ class UserController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $user = User::findOrFail($id);
         
         // Prevent deleting yourself or other admins easily
-        if ($user->id === $request->user()->id || $user->role_id === 3) {
+        if ($request->user()->id === $request->user()->id || $user->role_id === 1) {
             return response()->json(['message' => 'Cannot delete this admin account.'], 400);
         }
 

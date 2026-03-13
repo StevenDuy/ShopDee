@@ -13,7 +13,7 @@ class ModerationController extends Controller
      */
     public function products(Request $request)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -38,7 +38,7 @@ class ModerationController extends Controller
      */
     public function deleteProduct(Request $request, $id)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -53,7 +53,7 @@ class ModerationController extends Controller
      */
     public function updateProductStatus(Request $request, $id)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

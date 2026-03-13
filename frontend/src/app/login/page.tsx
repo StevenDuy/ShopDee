@@ -26,10 +26,10 @@ export default function LoginPage() {
       const user = res.data.user;
       setAuth(user, res.data.token);
       
-      if (user.role_id === 2) {
-        router.push("/seller");
-      } else if (user.role_id === 3) {
+      if (user.role_id === 1) {
         router.push("/admin");
+      } else if (user.role_id === 2) {
+        router.push("/seller");
       } else {
         router.push("/");
       }

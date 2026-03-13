@@ -17,12 +17,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setMounted(true);
     if (!token) {
       router.push("/login");
-    } else if (user && user.role_id !== 3) {
+    } else if (user && user.role_id !== 1) {
       router.push("/");
     }
   }, [token, user, router]);
 
-  if (!mounted || !token || !user || user.role_id !== 3) {
+  if (!mounted || !token || !user || user.role_id !== 1) {
     return null; // Return null while checking auth to prevent flash
   }
 

@@ -8,18 +8,14 @@ declare global {
   }
 }
 
-// Attach Pusher to the window universally as required by Echo
 if (typeof window !== 'undefined') {
   window.Pusher = Pusher;
 
   window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
-    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST,
-    wsPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT ?? '8080'),
-    wssPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT ?? '8080'),
-    forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
+    broadcaster: 'pusher',
+    key: process.env.NEXT_PUBLIC_PUSHER_APP_KEY,
+    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+    forceTLS: true,
   });
 }
 

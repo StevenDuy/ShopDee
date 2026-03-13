@@ -20,11 +20,12 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     } else if (!token) {
       // Definitely not logged in — redirect
       router.replace("/login");
+    } else if (user && user.role_id === 1) {
+      // Admin trying to access customer view
+      router.replace("/admin");
     } else if (user && user.role_id === 2) {
       // Seller trying to access customer view
       router.replace("/seller");
-    } else if (user && user.role_id === 3) {
-      router.replace("/admin");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasHydrated, token, user]);

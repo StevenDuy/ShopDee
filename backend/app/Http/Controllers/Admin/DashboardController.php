@@ -15,7 +15,7 @@ class DashboardController extends Controller
      */
     public function stats(Request $request)
     {
-        if ($request->user()->role_id !== 3) {
+        if ($request->user()->role_id !== 1) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -26,7 +26,7 @@ class DashboardController extends Controller
         $platformFee = $totalRevenue * 0.05;
 
         // 3. User Counts
-        $totalCustomers = User::where('role_id', 1)->count();
+        $totalCustomers = User::where('role_id', 3)->count();
         $totalSellers = User::where('role_id', 2)->count();
 
         // 4. Products Count
