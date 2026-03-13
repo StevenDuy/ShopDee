@@ -25,7 +25,7 @@ export function SellerSidebar() {
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    window.location.href = "/";
   };
 
   return (

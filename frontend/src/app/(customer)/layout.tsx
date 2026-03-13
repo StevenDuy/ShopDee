@@ -17,9 +17,6 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     if (token && !user) {
       // Token exists in storage but user info not loaded yet — fetch it
       fetchUser();
-    } else if (!token) {
-      // Definitely not logged in — redirect
-      router.replace("/login");
     } else if (user && user.role_id === 1) {
       // Admin trying to access customer view
       router.replace("/admin");
@@ -40,7 +37,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   }
 
   // After hydration, redirect is handled by useEffect above; show spinner during fetch
-  if (!token) return null;
+  // Removed: if (!token) return null; // Allow guest access
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">

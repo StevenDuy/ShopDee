@@ -8,9 +8,10 @@ import axios from "axios";
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useCartStore } from "@/store/useCartStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface ProductAttribute { id: number; attribute_name: string; attribute_value: string }
-interface ProductMedia     { id: number; url: string; is_primary: boolean; media_type: string }
+interface ProductMedia { id: number; full_url: string; is_primary: boolean; media_type: string }
 interface Review {
   id: number; rating: number; comment: string | null;
   created_at: string;
@@ -30,7 +31,7 @@ const API = "http://localhost:8000/api";
 function StarRow({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
-      {[1,2,3,4,5].map((s) => (
+      {[1, 2, 3, 4, 5].map((s) => (
         <Star key={s} size={14}
           className={s <= Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted"} />
       ))}
@@ -40,24 +41,25 @@ function StarRow({ rating }: { rating: number }) {
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const router   = useRouter();
+  const router = useRouter();
 
   const { formatPrice } = useCurrencyStore();
   const addItem = useCartStore((s) => s.addItem);
+  const { token } = useAuthStore();
 
-  const [product,  setProduct]  = useState<Product | null>(null);
-  const [reviews,  setReviews]  = useState<Review[]>([]);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState(0);
   const [activeImg, setActiveImg] = useState(0);
-  const [selAttrs,  setSelAttrs]  = useState<Record<string, string>>({});
-  const [qty,       setQty]       = useState(1);
-  const [loading,   setLoading]   = useState(true);
-  const [addedMsg,  setAddedMsg]  = useState(false);
+  const [selAttrs, setSelAttrs] = useState<Record<string, string>>({});
+  const [qty, setQty] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [addedMsg, setAddedMsg] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     axios.get(`${API}/products/${slug}`).then((r) => { setProduct(r.data); setLoading(false); }).catch(() => router.push("/products"));
-    axios.get(`${API}/products/${slug}/reviews`).then((r) => { setReviews(r.data.data?.data ?? []); setAvgRating(r.data.avg_rating ?? 0); }).catch(() => {});
+    axios.get(`${API}/products/${slug}/reviews`).then((r) => { setReviews(r.data.data?.data ?? []); setAvgRating(r.data.avg_rating ?? 0); }).catch(() => { });
   }, [slug, router]);
 
   if (loading) return (
@@ -68,8 +70,8 @@ export default function ProductDetailPage() {
 
   if (!product) return null;
 
-  const images = product.media.length > 0 ? product.media : [{ id: 0, url: `https://picsum.photos/seed/${product.id}/600/600`, is_primary: true, media_type: "image" }];
-  const price  = product.sale_price ?? product.price;
+  const images = product.media.length > 0 ? product.media : [{ id: 0, full_url: `https://picsum.photos/seed/${product.id}/600/600`, is_primary: true, media_type: "image" }];
+  const price = product.sale_price ?? product.price;
 
   // Group attributes by name
   const attrGroups: Record<string, string[]> = {};
@@ -79,7 +81,11 @@ export default function ProductDetailPage() {
   });
 
   const handleAddToCart = () => {
-    addItem({ id: product.id, productId: product.id, title: product.title, image: images[activeImg].url, price: product.price, salePrice: product.sale_price, sellerId: product.seller.id, sellerName: product.seller.name, attributes: selAttrs, quantity: qty });
+    if (!token) {
+      router.push("/login?redirect=" + `/products/${slug}`);
+      return;
+    }
+    addItem({ id: product.id, productId: product.id, title: product.title, image: images[activeImg].full_url, price: product.price, salePrice: product.sale_price, sellerId: product.seller.id, sellerName: product.seller.name, attributes: selAttrs, quantity: qty });
     setAddedMsg(true);
     setTimeout(() => setAddedMsg(false), 2000);
   };
@@ -103,17 +109,17 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             <div className="aspect-square rounded-2xl overflow-hidden bg-muted">
               <AnimatePresence mode="wait">
-                <motion.img key={activeImg} src={images[activeImg].url} alt={product.title}
+                <motion.img key={activeImg} src={images[activeImg].full_url} alt={product.title}
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
                   className="w-full h-full object-cover" />
               </AnimatePresence>
             </div>
             {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2">
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                 {images.map((img, i) => (
                   <button key={img.id} onClick={() => setActiveImg(i)}
                     className={`w-20 h-20 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${i === activeImg ? "border-primary" : "border-border hover:border-muted-foreground"}`}>
-                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    <img src={img.full_url} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

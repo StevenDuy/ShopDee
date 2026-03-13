@@ -75,7 +75,10 @@ class ProductMediaController extends Controller
         $media = ProductMedia::where('product_id', $product->id)->findOrFail($mediaId);
 
         // Extract path from URL to delete file
-        $path = str_replace('/storage/', '', $media->url);
+        $url = $media->url;
+        $path = str_replace('/storage/', '', $url);
+        $path = ltrim($path, '/');
+        
         if (Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
         }

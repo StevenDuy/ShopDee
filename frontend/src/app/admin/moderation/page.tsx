@@ -137,12 +137,12 @@ export default function AdminModerationPage() {
              </div>
           ) : (
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-muted-foreground bg-muted/50 uppercase">
+              <thead className="text-[10px] text-muted-foreground bg-muted/50 uppercase tracking-widest font-bold">
                 <tr>
-                  <th className="px-6 py-4 font-medium">Product / Seller</th>
-                  <th className="px-6 py-4 font-medium">Category</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Moderation Actions</th>
+                  <th className="px-6 py-4">Product / Seller</th>
+                  <th className="px-6 py-4 hidden sm:table-cell">Category</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -163,10 +163,10 @@ export default function AdminModerationPage() {
                          </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                       {p.category?.name || "Uncategorized"}
+                    <td className="px-6 py-4 hidden sm:table-cell">
+                       <span className="bg-muted px-2 py-1 rounded text-[11px] font-medium">{p.category?.name || "Uncategorized"}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                        {getStatusBadge(p.status)}
                     </td>
                     <td className="px-6 py-4 text-right">

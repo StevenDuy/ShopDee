@@ -16,7 +16,7 @@ type Product = {
   stock_quantity: number;
   status: string;
   category?: { name: string };
-  media?: { url: string }[];
+  media?: { url: string; full_url: string }[];
 };
 
 export default function SellerProductsPage() {
@@ -77,28 +77,27 @@ export default function SellerProductsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full text-left text-sm border-separate border-spacing-0">
             <thead className="bg-muted/50 text-muted-foreground border-b border-border">
               <tr>
-                <th className="px-6 py-4 font-medium">Product</th>
-                <th className="px-6 py-4 font-medium">Category</th>
-                <th className="px-6 py-4 font-medium">Price</th>
-                <th className="px-6 py-4 font-medium">Inventory</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Product</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px] hidden sm:table-cell">Category</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Price</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px] hidden lg:table-cell">Inventory</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading && products.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                     <span className="animate-pulse">Loading products...</span>
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
                       <ImageIcon size={48} className="opacity-20 mb-3" />
                       <p>You haven't listed any products yet.</p>
@@ -107,49 +106,41 @@ export default function SellerProductsPage() {
                 </tr>
               ) : (
                 products.map((p) => (
-                  <tr key={p.id} className="hover:bg-muted/30 transition-colors group">
+                  <tr 
+                    key={p.id} 
+                    onClick={() => setEditingId(p.id)}
+                    className="hover:bg-muted/40 transition-colors group cursor-pointer"
+                  >
                     <td className="px-6 py-4 font-medium flex items-center gap-3">
                       <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center overflow-hidden text-muted-foreground shrink-0 border border-border">
                         {p.media && p.media.length > 0 ? (
                            // eslint-disable-next-line @next/next/no-img-element
-                          <img src={`http://localhost:8000${p.media[0].url}`} alt={p.title} className="object-cover w-full h-full" />
+                          <img src={p.media[0].full_url} alt={p.title} className="object-cover w-full h-full" />
                         ) : (
                           <ImageIcon size={20} />
                         )}
                       </div>
-                      <span className="truncate max-w-[200px]">{p.title}</span>
+                      <span className="truncate max-w-[150px] md:max-w-[250px] group-hover:text-primary transition-colors">{p.title}</span>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
-                      {p.category?.name || "N/A"}
+                    <td className="px-6 py-4 text-muted-foreground hidden sm:table-cell">
+                      <span className="bg-muted px-2 py-1 rounded text-xs">{p.category?.name || "N/A"}</span>
                     </td>
                     <td className="px-6 py-4 font-medium">
                       {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 hidden lg:table-cell whitespace-nowrap">
                       {p.stock_quantity > 0 ? (
-                        <span>{p.stock_quantity} in stock</span>
+                        <span className="text-foreground">{p.stock_quantity} in stock</span>
                       ) : (
                         <span className="text-destructive font-medium">Out of stock</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {p.status === 'active' ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-600">Active</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Active</span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground capitalize">{p.status}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-muted text-muted-foreground border border-border capitalize">{p.status}</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => setEditingId(p.id)}
-                          className="p-2 text-muted-foreground hover:text-primary transition-colors rounded-lg hover:bg-primary/10">
-                          <Edit size={16} />
-                        </button>
-                        <button onClick={() => handleDelete(p.id)}
-                          className="p-2 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 ))

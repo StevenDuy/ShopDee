@@ -23,7 +23,7 @@ export function AdminSidebar() {
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    window.location.href = "/";
   };
 
   return (

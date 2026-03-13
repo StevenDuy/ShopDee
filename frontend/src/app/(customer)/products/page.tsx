@@ -8,55 +8,60 @@ import { Search, SlidersHorizontal, Star, ChevronDown, ShoppingCart, X } from "l
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useCartStore } from "@/store/useCartStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface Category { id: number; name: string; slug: string; children?: Category[] }
-interface Product  {
+interface Product {
   id: number; title: string; slug: string; price: number; sale_price: number | null;
   category: Category | null;
-  media: { url: string; is_primary: boolean }[];
+  media: { full_url: string; is_primary: boolean }[];
   seller_id: number;
 }
 
 const API = "http://localhost:8000/api";
 const SORT_OPTIONS = [
-  { value: "newest",       label: "Newest" },
+  { value: "newest", label: "Newest" },
   { value: "best_sellers", label: "Best Sellers" },
-  { value: "price_asc",    label: "Price: Low → High" },
-  { value: "price_desc",   label: "Price: High → Low" },
+  { value: "price_asc", label: "Price: Low → High" },
+  { value: "price_desc", label: "Price: High → Low" },
 ];
 
 function ProductCard({ product }: { product: Product }) {
   const { formatPrice } = useCurrencyStore();
-  const addItem = useCartStore((s) => s.addItem);
-  const img = product.media.find((m) => m.is_primary)?.url ?? product.media[0]?.url ?? `https://picsum.photos/seed/${product.id}/300/300`;
+  const img = product.media.find((m) => m.is_primary)?.full_url ?? product.media[0]?.full_url ?? `https://picsum.photos/seed/${product.id}/300/300`;
 
   return (
-    <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}
-      className="bg-card border border-border rounded-2xl overflow-hidden group">
-      <Link href={`/products/${product.slug}`} className="block relative aspect-square overflow-hidden bg-muted">
-        <img src={img} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-        {product.sale_price && (
-          <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-            -{Math.round((1 - product.sale_price / product.price) * 100)}%
-          </span>
-        )}
-      </Link>
-      <div className="p-4">
-        {product.category && <p className="text-xs text-muted-foreground mb-1">{product.category.name}</p>}
-        <h3 className="font-semibold text-sm line-clamp-2 mb-3">{product.title}</h3>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="font-bold text-primary text-sm">{formatPrice(product.sale_price ?? product.price)}</span>
-          {product.sale_price && <span className="text-xs text-muted-foreground line-through">{formatPrice(product.price)}</span>}
+    <Link href={`/products/${product.slug}`}>
+      <motion.div
+        whileHover={{ y: -6, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="bg-card border border-border rounded-2xl overflow-hidden group h-full flex flex-col transition-shadow"
+      >
+        <div className="relative aspect-square overflow-hidden bg-muted">
+          <img src={img} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          {product.sale_price && (
+            <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+              -{Math.round((1 - product.sale_price / product.price) * 100)}%
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-1 mb-3">
-          {[1,2,3,4,5].map((s) => <Star key={s} size={12} className={s <= 4 ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted"} />)}
+        <div className="p-4 flex-1 flex flex-col">
+          {product.category && <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1 opacity-70">{product.category.name}</p>}
+          <h3 className="font-semibold text-sm line-clamp-2 mb-2 leading-snug group-hover:text-primary transition-colors">{product.title}</h3>
+
+          <div className="mt-auto flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-primary text-sm">{formatPrice(product.sale_price ?? product.price)}</span>
+              {product.sale_price && <span className="text-xs text-muted-foreground line-through opacity-50">{formatPrice(product.price)}</span>}
+            </div>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((s) => <Star key={s} size={10} className={s <= 4 ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted"} />)}
+              <span className="text-[10px] text-muted-foreground ml-1">(4.0)</span>
+            </div>
+          </div>
         </div>
-        <button onClick={() => addItem({ id: product.id, productId: product.id, title: product.title, image: img, price: product.price, salePrice: product.sale_price, sellerId: product.seller_id, sellerName: "", attributes: {} })}
-          className="w-full py-2 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2">
-          <ShoppingCart size={14} /> Add to Cart
-        </button>
-      </div>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 }
 
@@ -72,11 +77,11 @@ export default function ProductsPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Filter state synced with URL
-  const search     = searchParams.get("search") ?? "";
-  const category   = searchParams.get("category") ?? "";
-  const sort       = searchParams.get("sort") ?? "newest";
-  const minPrice   = searchParams.get("min_price") ?? "";
-  const maxPrice   = searchParams.get("max_price") ?? "";
+  const search = searchParams.get("search") ?? "";
+  const category = searchParams.get("category") ?? "";
+  const sort = searchParams.get("sort") ?? "newest";
+  const minPrice = searchParams.get("min_price") ?? "";
+  const maxPrice = searchParams.get("max_price") ?? "";
 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -102,7 +107,7 @@ export default function ProductsPage() {
   }, [search, category, sort, minPrice, maxPrice, currentPage]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
-  useEffect(() => { axios.get(`${API}/products/categories`).then(r => setCategories(r.data)).catch(() => {}); }, []);
+  useEffect(() => { axios.get(`${API}/products/categories`).then(r => setCategories(r.data)).catch(() => { }); }, []);
 
   return (
     <div className="min-h-screen">

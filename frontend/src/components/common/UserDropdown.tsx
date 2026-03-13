@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Settings, LogOut, ChevronUp, ChevronDown, 
-  Moon, Sun, Globe, DollarSign 
+  Moon, Sun, Globe, DollarSign, LogIn 
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
@@ -39,11 +39,31 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!user || !mounted) return null;
+  if (!mounted) return null;
+
+  if (!user) {
+    return (
+      <button
+        type="button"
+        onClick={() => router.push("/login")}
+        className="w-full flex items-center gap-3 p-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl transition-all border border-primary/20 group shadow-sm"
+      >
+        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+          <LogIn size={14} />
+        </div>
+        {!collapsed && (
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold leading-none mb-1">Đăng nhập</p>
+            <p className="text-[10px] opacity-70 uppercase font-black">Khách hàng</p>
+          </div>
+        )}
+      </button>
+    );
+  }
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    window.location.href = "/";
   };
 
   const toggleLang = () => i18n.changeLanguage(i18n.language === "vi" ? "en" : "vi");
@@ -112,23 +132,26 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
 
               <div className="h-px bg-border/50 my-1 mx-2" />
 
-              {/* Theme Dropdown Item */}
-              <div 
-                className="flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors group cursor-pointer"
+              {/* Theme Toggle Item */}
+              <button 
+                type="button"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
-                    theme === 'dark' ? 'bg-amber-500/10 text-amber-500' : 'bg-indigo-500/10 text-indigo-500'
+                    theme === 'dark' ? 'bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white' : 'bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white'
                   }`}>
                     {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
                   </div>
-                  <span className="font-medium">{theme === "dark" ? t("light_mode") : t("dark_mode")}</span>
+                  <span className="font-medium">Chế độ nền</span>
                 </div>
-                <div className={`w-7 h-4 rounded-full p-0.5 transition-colors ${theme === 'dark' ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
-                  <div className={`w-3 h-3 rounded-full bg-white transition-transform ${theme === 'dark' ? 'translate-x-3' : 'translate-x-0'}`} />
-                </div>
-              </div>
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded uppercase ${
+                  theme === 'dark' ? 'bg-amber-500/10 text-amber-600' : 'bg-indigo-500/10 text-indigo-600'
+                }`}>
+                  {theme === "dark" ? "Sáng" : "Tối"}
+                </span>
+              </button>
 
               {/* Language Item */}
               <button 

@@ -13,6 +13,25 @@ class ProductMedia extends Model
 
     protected $casts = ['is_primary' => 'boolean'];
 
+    protected $appends = ['full_url'];
+
+    public function getFullUrlAttribute()
+    {
+        $url = $this->attributes['url'] ?? null;
+        if (!$url) return null;
+        if (str_starts_with($url, 'http')) return $url;
+        
+        // Remove leading slash if exists
+        $cleanUrl = ltrim($url, '/');
+        
+        // If it already starts with storage/, just use asset()
+        if (str_starts_with($cleanUrl, 'storage/')) {
+            return asset($cleanUrl);
+        }
+        
+        return asset('storage/' . $cleanUrl);
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class);
