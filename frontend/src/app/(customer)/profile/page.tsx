@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { User, Package, MapPin, Lock, CheckCircle, Truck, Clock, X } from "lucide-react";
+import { User, Package, MapPin, Lock, CheckCircle, Truck, Clock, X, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
+import AddressModal from "@/components/profile/AddressModal";
+
 
 interface Profile { id: number; name: string; email: string; profile?: { phone?: string; bio?: string } }
 interface Address { id: number; type: string; address_line_1: string; city: string; country: string; is_default: boolean }
@@ -57,16 +61,25 @@ export default function ProfilePage() {
   const [curPw, setCurPw] = useState(""); const [newPw, setNewPw] = useState(""); const [confPw, setConfPw] = useState("");
   const [pwMsg, setPwMsg] = useState("");
 
+  const [isAddrModalOpen, setIsAddrModalOpen] = useState(false);
+
   const authHeaders = { Authorization: `Bearer ${token}` };
+
 
   useEffect(() => {
     if (!token) { router.replace("/login"); return; }
     axios.get(`${API}/profile`, { headers: authHeaders }).then((r) => {
       setProfile(r.data); setName(r.data.name); setPhone(r.data.profile?.phone ?? ""); setBio(r.data.profile?.bio ?? "");
     });
-    axios.get(`${API}/profile/addresses`, { headers: authHeaders }).then((r) => setAddresses(r.data));
+    fetchAddresses();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  const fetchAddresses = async () => {
+    const r = await axios.get(`${API}/profile/addresses`, { headers: authHeaders });
+    setAddresses(r.data);
+  };
+
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -145,7 +158,14 @@ export default function ProfilePage() {
       {/* Addresses */}
       {activeTab === "addresses" && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-semibold text-lg">My Addresses</h2>
+            <Button onClick={() => setIsAddrModalOpen(true)} className="rounded-xl flex items-center gap-2">
+              <Plus size={16} /> Add New Address
+            </Button>
+          </div>
           {addresses.map((addr) => (
+
             <div key={addr.id} className="bg-card border border-border rounded-2xl p-5 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -189,6 +209,14 @@ export default function ProfilePage() {
           </form>
         </motion.div>
       )}
+      {/* Address Modal */}
+      <AddressModal 
+        isOpen={isAddrModalOpen} 
+        onClose={() => setIsAddrModalOpen(false)} 
+        onSuccess={fetchAddresses} 
+        token={token}
+      />
     </div>
+
   );
 }

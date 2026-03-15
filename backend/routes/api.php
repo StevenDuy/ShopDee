@@ -114,6 +114,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'index']);
         Route::put('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'update']);
     });
+
+    // --- PROXY ROUTES (To handle Map API CORS/Headers) ---
+    Route::prefix('proxy')->group(function () {
+        Route::get('/search', [ProfileController::class, 'proxySearch']);
+        Route::get('/reverse', [ProfileController::class, 'proxyReverse']);
+    });
 });
+
 
 
