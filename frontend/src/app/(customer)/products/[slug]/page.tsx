@@ -38,6 +38,12 @@ interface Review {
   id: number; rating: number; comment: string | null;
   created_at: string;
   customer: { name: string };
+  media?: string[];
+  resolved_media?: string[];
+  order_item?: {
+    product: { title: string };
+    selected_options?: Record<string, string> | null;
+  };
 }
 
 interface Product {
@@ -500,7 +506,17 @@ export default function ProductDetailPage() {
                               </div>
                               <div>
                                 <p className="font-bold text-sm uppercase tracking-tight">{review.customer.name}</p>
-                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest italic opacity-40">{new Date(review.created_at).toLocaleDateString()}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest italic opacity-40">{new Date(review.created_at).toLocaleDateString()}</p>
+                                  <span className="text-[10px] text-primary/60 font-black uppercase tracking-tighter bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                                    🏷️ {review.order_item?.product?.title || 'Đã mua hàng'}
+                                    {review.order_item?.selected_options && Object.keys(review.order_item.selected_options).length > 0 && (
+                                        <span className="ml-1 opacity-70">
+                                            ({Object.entries(review.order_item.selected_options).map(([k,v]) => `${k}: ${v}`).join(', ')})
+                                        </span>
+                                    )}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                             <div className="bg-primary/5 px-2.5 py-1 rounded-lg border border-primary/5">
@@ -509,10 +525,28 @@ export default function ProductDetailPage() {
                           </div>
                           {review.comment && (
                             <div className="relative">
-                              <span className="absolute -top-6 -left-2 text-4xl text-primary/10 font-black">&ldquo;</span>
                               <p className="text-sm md:text-base text-muted-foreground leading-relaxed italic font-medium pr-4 break-words pl-2">
                                 {review.comment}
                               </p>
+                            </div>
+                          )}
+
+                          {review.media && (review.resolved_media || review.media || []).length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-4 ml-2">
+                              {(review.resolved_media || review.media || []).map((url: string, i: number) => (
+                                <div key={i} className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border border-border/50 group cursor-zoom-in">
+                                  {url.includes('.mp4') || url.includes('.mov') ? (
+                                    <video src={url} className="w-full h-full object-cover" controls={false} />
+                                  ) : (
+                                    <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                                      <Plus size={16} />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>

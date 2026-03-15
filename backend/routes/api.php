@@ -29,6 +29,7 @@ use App\Http\Controllers\Customer\OrderController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\ChatController;
 use App\Http\Controllers\Customer\NotificationController;
+use App\Http\Controllers\Customer\ReviewController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
@@ -42,6 +43,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     Route::put('/orders/{id}/receive', [OrderController::class, 'confirmReceived']);
+
+    // Reviews
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::get('/reviews/check-eligibility/{orderItemId}', [ReviewController::class, 'checkEligibility']);
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'show']);

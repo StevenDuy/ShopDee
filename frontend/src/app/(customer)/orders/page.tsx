@@ -8,6 +8,8 @@ import { Package, Truck, CheckCircle, Clock, XCircle, AlertCircle } from "lucide
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { toast } from "sonner";
+import ReviewModal from "@/components/customer/ReviewModal";
+import { Star } from "lucide-react";
 
 interface Order {
   id: number;
@@ -17,12 +19,19 @@ interface Order {
   created_at: string;
   items: {
     id: number;
+    product_id: number;
     quantity: number;
     unit_price: number;
     product: {
       title: string;
       media: { url: string }[];
     };
+    selected_options?: Record<string, string> | null;
+    review?: {
+        id: number;
+        rating: number;
+        comment: string;
+    } | null;
   }[];
 }
 
@@ -46,6 +55,10 @@ export default function MyOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  
+  // Review Modal State
+  const [reviewItem, setReviewItem] = useState<Order['items'][0] | null>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -191,7 +204,42 @@ export default function MyOrdersPage() {
                             <p className="text-xs text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded">x{item.quantity}</p>
                             <p className="text-sm font-bold text-foreground/80">{formatPrice(item.unit_price)}</p>
                           </div>
+                          {item.selected_options && Object.keys(item.selected_options).length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                                {Object.entries(item.selected_options).map(([k, v]) => (
+                                    <span key={k} className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded border border-border/50 uppercase font-bold">
+                                        {k}: {v}
+                                    </span>
+                                ))}
+                            </div>
+                          )}
                         </div>
+
+                        {order.status === 'completed' && (
+                          <div className="shrink-0 flex items-center gap-2">
+                             {item.review ? (
+                                <div className="flex flex-col items-center">
+                                    <div className="flex items-center gap-0.5 mb-1">
+                                        {[1,2,3,4,5].map(s => (
+                                            <Star key={s} size={10} className={s <= item.review!.rating ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted"} />
+                                        ))}
+                                    </div>
+                                    <span className="text-[10px] font-bold text-green-600 uppercase">Đã đánh giá</span>
+                                </div>
+                             ) : (
+                                <button 
+                                    onClick={() => {
+                                        setReviewItem(item);
+                                        setIsReviewModalOpen(true);
+                                    }}
+                                    className="p-2.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all group"
+                                    title="Đánh giá sản phẩm"
+                                >
+                                    <Star size={18} className="group-hover:fill-current" />
+                                </button>
+                             )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -285,6 +333,16 @@ export default function MyOrdersPage() {
           })
         )}
       </div>
+
+      <ReviewModal 
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+            setIsReviewModalOpen(false);
+            setReviewItem(null);
+        }}
+        orderItem={reviewItem}
+        onSuccess={fetchOrders}
+      />
     </div>
   );
 }

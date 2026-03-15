@@ -9,11 +9,12 @@ class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'product_id', 'quantity', 'unit_price', 'subtotal'];
+    protected $fillable = ['order_id', 'product_id', 'selected_options', 'quantity', 'unit_price', 'subtotal'];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'selected_options' => 'array',
     ];
 
     public function order()
@@ -24,5 +25,10 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function review()
+    {
+        return $this->hasOne(Review::class);
     }
 }

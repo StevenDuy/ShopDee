@@ -9,7 +9,28 @@ class Review extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'customer_id', 'order_item_id', 'rating', 'comment'];
+    protected $fillable = ['product_id', 'customer_id', 'order_item_id', 'rating', 'comment', 'media'];
+
+    protected $casts = [
+        'media' => 'array',
+    ];
+
+    protected $appends = ['resolved_media'];
+
+    public function getResolvedMediaAttribute()
+    {
+        $media = $this->media ?? [];
+        return array_map(function($path) {
+            if (str_starts_with($path, 'http')) return $path;
+            
+            // Resolve local storage paths
+            $cleanPath = ltrim($path, '/');
+            if (str_starts_with($cleanPath, 'storage/')) {
+                return asset($cleanPath);
+            }
+            return asset('storage/' . $cleanPath);
+        }, $media);
+    }
 
     public function product()
     {

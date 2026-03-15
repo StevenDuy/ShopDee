@@ -61,7 +61,12 @@ export default function CheckoutPage() {
             shipping_address_id: selectedAddr,
             payment_method: payMethod,
             notes: note,
-            items: sellerItems.map((i) => ({ product_id: i.productId, quantity: i.quantity, unit_price: i.salePrice ?? i.price })),
+            items: sellerItems.map((i) => ({ 
+              product_id: i.productId, 
+              quantity: i.quantity, 
+              unit_price: i.salePrice ?? i.price,
+              selected_options: i.attributes
+            })),
           }, { headers: { Authorization: `Bearer ${token}` } })
         )
       );

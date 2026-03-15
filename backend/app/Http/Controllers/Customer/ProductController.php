@@ -64,6 +64,7 @@ class ProductController extends Controller
             'options.values',
             'seller',
             'reviews.customer.profile',
+            'reviews.orderItem.product',
         ])->where('slug', $slug)->where('status', 'active')->firstOrFail();
 
         return response()->json($product);
@@ -72,7 +73,7 @@ class ProductController extends Controller
     public function reviews(int $id)
     {
         $product = Product::findOrFail($id);
-        $reviews = $product->reviews()->with('customer.profile')->latest()->paginate(10);
+        $reviews = $product->reviews()->with(['customer.profile', 'orderItem.product'])->latest()->paginate(10);
 
         $avgRating = $product->reviews()->avg('rating');
         return response()->json([
