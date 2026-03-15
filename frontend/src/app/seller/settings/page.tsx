@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Store, MapPin, Phone, Mail, User, Save, Upload, Trash2, Plus, Edit2 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import AddressModal from "@/components/profile/AddressModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -23,14 +24,7 @@ export default function SellerSettingsPage() {
 
   // Address Modal State
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
-  const [addressForm, setAddressForm] = useState({
-    address_line_1: "",
-    city: "",
-    country: "",
-    type: "store",
-    is_default: false
-  });
+  const [editingAddress, setEditingAddress] = useState<any>(null);
 
   const fetchData = async () => {
     if (!token) return;
@@ -76,47 +70,10 @@ export default function SellerSettingsPage() {
   };
 
   const openAddressModal = (addr: any = null) => {
-    if (addr) {
-      setEditingAddressId(addr.id);
-      setAddressForm({
-        address_line_1: addr.address_line_1,
-        city: addr.city,
-        country: addr.country,
-        type: addr.type,
-        is_default: !!addr.is_default
-      });
-    } else {
-      setEditingAddressId(null);
-      setAddressForm({
-        address_line_1: "",
-        city: "",
-        country: "",
-        type: "store",
-        is_default: false
-      });
-    }
+    setEditingAddress(addr);
     setIsAddressModalOpen(true);
   };
 
-  const handleAddressSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-    try {
-      if (editingAddressId) {
-        await axios.put(`${API_URL}/profile/addresses/${editingAddressId}`, addressForm, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      } else {
-        await axios.post(`${API_URL}/profile/addresses`, addressForm, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
-      setIsAddressModalOpen(false);
-      fetchData();
-    } catch (err) {
-      console.error("Failed to save address", err);
-    }
-  };
 
   const handleDeleteAddress = async (id: number) => {
     if (!token || !confirm("Delete this address?")) return;
@@ -267,94 +224,13 @@ export default function SellerSettingsPage() {
       </div>
 
       {/* Address Modal */}
-      {isAddressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-              <h3 className="text-lg font-bold">{editingAddressId ? 'Edit Address' : 'Add New Address'}</h3>
-              <button onClick={() => setIsAddressModalOpen(false)} className="text-muted-foreground hover:text-foreground">
-                <Plus className="rotate-45" size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddressSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Address Type</label>
-                <select 
-                  value={addressForm.type}
-                  onChange={(e) => setAddressForm({...addressForm, type: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="store">Store Location</option>
-                  <option value="shipping">Shipping Origin</option>
-                  <option value="billing">Billing Info</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Street Address</label>
-                <input 
-                  type="text" 
-                  value={addressForm.address_line_1}
-                  onChange={(e) => setAddressForm({...addressForm, address_line_1: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">City</label>
-                  <input 
-                    type="text" 
-                    value={addressForm.city}
-                    onChange={(e) => setAddressForm({...addressForm, city: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Country</label>
-                  <input 
-                    type="text" 
-                    value={addressForm.country}
-                    onChange={(e) => setAddressForm({...addressForm, country: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input 
-                  type="checkbox" 
-                  id="is_default"
-                  checked={addressForm.is_default}
-                  onChange={(e) => setAddressForm({...addressForm, is_default: e.target.checked})}
-                  className="rounded border-input text-primary focus:ring-primary shadow-sm"
-                />
-                <label htmlFor="is_default" className="text-sm font-medium cursor-pointer">Set as default address</label>
-              </div>
-
-              <div className="pt-4 flex justify-end gap-3">
-                <button 
-                  type="button"
-                  onClick={() => setIsAddressModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  className="px-6 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-xl hover:bg-primary/90 transition-colors"
-                >
-                  Save Address
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddressModal 
+        isOpen={isAddressModalOpen}
+        onClose={() => setIsAddressModalOpen(false)}
+        onSuccess={() => fetchData()}
+        token={token}
+        address={editingAddress}
+      />
     </div>
   );
 }

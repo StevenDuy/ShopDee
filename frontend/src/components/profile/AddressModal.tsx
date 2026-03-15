@@ -13,11 +13,23 @@ const MapPicker = dynamic(() => import("./MapPicker"), {
   loading: () => <div className="w-full h-[250px] md:h-[300px] bg-muted animate-pulse rounded-2xl flex items-center justify-center text-sm text-muted-foreground">Loading Map...</div>
 });
 
+interface Address {
+  id: number;
+  type: string;
+  address_line_1: string;
+  city: string;
+  country: string;
+  lat?: string;
+  lng?: string;
+  is_default: boolean;
+}
+
 interface AddressModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   token: string | null;
+  address?: Address | null;
 }
 
 interface NominatimResult {
@@ -44,7 +56,7 @@ interface NominatimResult {
 
 const API = "http://localhost:8000/api";
 
-export default function AddressModal({ isOpen, onClose, onSuccess, token }: AddressModalProps) {
+export default function AddressModal({ isOpen, onClose, onSuccess, token, address }: AddressModalProps) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,6 +78,37 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
   });
 
   useEffect(() => {
+    if (address && isOpen) {
+      const isKnownType = ["Home", "Office"].includes(address.type);
+      setFormData({
+        type: isKnownType ? address.type : "Other",
+        custom_type: isKnownType ? "" : address.type,
+        address_line_1: address.address_line_1 || "",
+        city: address.city || "",
+        country: address.country || "Vietnam",
+        lat: address.lat || "",
+        lng: address.lng || "",
+        is_default: !!address.is_default
+      });
+      setSearch(address.address_line_1);
+    } else if (isOpen) {
+      setFormData({
+        type: "Home",
+        custom_type: "",
+        address_line_1: "",
+        city: "",
+        country: "Vietnam",
+        lat: "",
+        lng: "",
+        is_default: false,
+      });
+      setSearch("");
+      setResults([]);
+      setShowResults(false);
+    }
+  }, [address, isOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowResults(false);
@@ -80,10 +123,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
       return "Map service is busy. Please wait 2 seconds.";
     }
     return "Connection error. Please try picking on map manually.";
-  };
-
-  const formatDetailAddress = (data: any) => {
-    return data.display_name || "";
   };
 
   const handleSearch = (query: string) => {
@@ -120,11 +159,10 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
   const handleSelect = (result: NominatimResult) => {
     const addr = result.address;
     const city = addr.city || addr.town || addr.village || addr.state || "";
-    const detail = formatDetailAddress(result);
     
     setFormData(prev => ({
       ...prev,
-      address_line_1: detail,
+      address_line_1: result.display_name,
       city: city,
       country: addr.country || "Vietnam",
       lat: result.lat,
@@ -147,10 +185,9 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
       if (data) {
         const addr = data.address;
         const city = addr.city || addr.town || addr.village || addr.state || "";
-        const detail = formatDetailAddress(data);
         setFormData(prev => ({
           ...prev,
-          address_line_1: detail,
+          address_line_1: data.display_name,
           city: city,
         }));
         setSearch(data.display_name);
@@ -199,9 +236,15 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
     };
 
     try {
-      await axios.post(`${API}/profile/addresses`, submissionData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (address?.id) {
+        await axios.put(`${API}/profile/addresses/${address.id}`, submissionData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await axios.post(`${API}/profile/addresses`, submissionData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
       onSuccess();
       onClose();
     } catch (error) {
@@ -233,7 +276,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
             <div className="p-5 md:p-6 border-b border-border flex items-center justify-between bg-card z-30">
               <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                 <MapPin className="text-primary" size={20} />
-                Add New Address
+                {address ? 'Edit Address' : 'Add New Address'}
               </h2>
               <button title="Close" onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
                 <X size={20} />
@@ -243,7 +286,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               <div className="p-5 md:p-6 space-y-6">
                 
-                {/* Search Section */}
                 <div className="relative z-50" ref={searchRef}>
                   <label className="block text-sm font-medium mb-2">Search Address</label>
                   <div className="relative">
@@ -251,7 +293,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
                       placeholder="Street, building, place name..."
                       value={search}
                       onChange={(e) => handleSearch(e.target.value)}
-                      className="pl-10 pr-10 h-12 rounded-xl"
+                      className="pl-10 pr-10 h-11 md:h-12 rounded-xl text-sm"
                     />
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                     {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-primary" size={18} />}
@@ -308,7 +350,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
                       <select
                         value={formData.type === "Home" || formData.type === "Office" || formData.type === "Other" ? formData.type : "Other"}
                         onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        className="w-full h-12 px-4 bg-background border border-input rounded-xl text-sm appearance-none cursor-pointer"
+                        className="w-full h-11 md:h-12 px-4 bg-background border border-input rounded-xl text-sm appearance-none cursor-pointer"
                       >
                         <option value="Home">🏠 Home</option>
                         <option value="Office">🏢 Office</option>
@@ -318,10 +360,10 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
                       {formData.type === "Other" && (
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                           <Input
-                            placeholder="Ex: Parents' House"
+                            placeholder="Ex: Store, Warehouse..."
                             value={formData.custom_type}
                             onChange={(e) => setFormData({ ...formData, custom_type: e.target.value })}
-                            className="h-12 rounded-xl font-medium"
+                            className="h-11 md:h-12 rounded-xl font-medium text-sm"
                             required
                           />
                         </motion.div>
@@ -330,11 +372,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Detail Address (House No, Street...)</label>
+                    <label className="block text-sm font-medium mb-2">Detail Address</label>
                     <textarea
                       value={formData.address_line_1}
                       onChange={(e) => setFormData({ ...formData, address_line_1: e.target.value })}
-                      placeholder="Include house number, street name, ward..."
+                      placeholder="Include house number, street name..."
                       className="w-full px-4 py-3 bg-background border border-input rounded-xl text-sm min-h-[100px] resize-none font-medium leading-relaxed"
                       required
                     />
@@ -353,12 +395,12 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
                     </label>
                   </div>
 
-                  <div className="flex gap-3 pt-4 pb-6 sticky bottom-0 bg-background md:bg-transparent">
+                  <div className="flex gap-3 pt-4 pb-10 sticky bottom-0 bg-background md:bg-transparent">
                     <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-xl h-12 font-black">
                       Cancel
                     </Button>
                     <Button type="submit" disabled={saving} className="flex-1 rounded-xl h-12 font-black shadow-lg">
-                      {saving ? "Saving..." : "Add Address"}
+                      {saving ? "Saving..." : (address ? "Update" : "Add Address")}
                     </Button>
                   </div>
                 </form>
