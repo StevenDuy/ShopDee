@@ -149,54 +149,116 @@ export default function NewProductPage() {
     finally { setAddingCategory(false); }
   };
 
+  // ── Validation ────────────────────────────────────────────────────────
+  const validateFiles = (filesToValidate: File[]): string | null => {
+    const allowedExtensions = ["jpeg", "png", "jpg", "gif", "mp4", "webm"];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    for (const file of filesToValidate) {
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (!ext || !allowedExtensions.includes(ext)) {
+        return `File "${file.name}" không đúng định dạng. Chỉ chấp nhận: ${allowedExtensions.join(", ")}`;
+      }
+      if (file.size > maxSize) {
+        return `File "${file.name}" quá lớn. Tối đa 10MB.`;
+      }
+    }
+    return null;
+  };
+
   // ── Submit ────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
+
+    // 1. Kiểm tra ảnh trước
+    const fileError = validateFiles(files);
+    if (fileError) {
+      setError(fileError);
+      return;
+    }
+
+    // Pre-process valid options
+    const validOptions = options
+      .filter(o => o.option_name.trim() && o.values.filter(v => v.option_value.trim()).length >= 2)
+      .map(o => ({
+        option_name: o.option_name.trim(),
+        values: o.values
+          .filter(v => v.option_value.trim())
+          .map(v => {
+            const hasSubs = v.sub_values.some(s => s.option_value.trim() !== '');
+            return {
+              option_value: v.option_value.trim(),
+              price_adjustment: hasSubs ? 0 : Math.max(0, Number(v.price_adjustment)),
+              stock_quantity: hasSubs ? computedParentStock(v) : Math.max(0, Number(v.stock_quantity)),
+              sub_values: v.sub_values
+                .filter(s => s.option_value.trim() !== '')
+                .map(s => ({
+                  option_value: s.option_value.trim(),
+                  price_adjustment: Math.max(0, Number(s.price_adjustment)),
+                  stock_quantity: Math.max(0, Number(s.stock_quantity)),
+                })),
+            };
+          }),
+      }));
+
+    let finalPrice = parseFloat(formData.price) || 0;
+    let finalStock = parseInt(formData.stock) || 0;
+
+    if (validOptions.length > 0) {
+      // Logic: Lấy giá nhỏ nhất trong tất cả các option/sub-option để làm giá hiển thị
+      // Và tính tổng tồn hàng
+      let minPrice = Infinity;
+      let totalStock = 0;
+
+      validOptions.forEach(opt => {
+        opt.values.forEach(val => {
+          if (val.sub_values.length > 0) {
+            val.sub_values.forEach(sub => {
+              if (sub.price_adjustment < minPrice) minPrice = sub.price_adjustment;
+              totalStock += sub.stock_quantity;
+            });
+          } else {
+            if (val.price_adjustment < minPrice) minPrice = val.price_adjustment;
+            totalStock += val.stock_quantity;
+          }
+        });
+      });
+
+      if (minPrice !== Infinity) finalPrice = minPrice;
+      finalStock = totalStock;
+    } else {
+      // Nếu không có option, bắt buộc phải có giá và stock chính
+      if (!formData.price || !formData.stock) {
+        setError("Vui lòng nhập giá và số lượng hoặc thêm các tùy chọn sản phẩm.");
+        return;
+      }
+    }
+
     setLoading(true); setError(null);
+    let createdProductId: number | null = null;
+
     try {
       const res = await axios.post(`${API}/seller/products`, {
         title: formData.title, category_id: formData.categoryId,
-        price: parseFloat(formData.price), stock_quantity: parseInt(formData.stock),
+        price: finalPrice, stock_quantity: finalStock,
         description: formData.description,
       }, { headers: { Authorization: `Bearer ${token}` } });
 
-      const productId = res.data.id;
+      createdProductId = res.data.id;
 
       // Upload files
       for (let i = 0; i < files.length; i++) {
         const fd = new FormData();
         fd.append("file", files[i]);
         if (i === 0) fd.append("is_primary", "1");
-        await axios.post(`${API}/seller/products/${productId}/media`, fd, {
+        await axios.post(`${API}/seller/products/${createdProductId}/media`, fd, {
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
         });
       }
 
-      const validOptions = options
-        .filter(o => o.option_name.trim() && o.values.filter(v => v.option_value.trim()).length >= 2)
-        .map(o => ({
-          option_name: o.option_name.trim(),
-          values: o.values
-            .filter(v => v.option_value.trim())
-            .map(v => {
-              const hasSubs = v.sub_values.some(s => s.option_value.trim() !== '');
-              return {
-                option_value: v.option_value.trim(),
-                price_adjustment: hasSubs ? 0 : Math.max(0, Number(v.price_adjustment)),
-                // stock_value = SUM của sub khi có sub, ngược lại lấy giá trị nhập
-                stock_quantity: hasSubs ? computedParentStock(v) : Math.max(0, Number(v.stock_quantity)),
-                sub_values: v.sub_values.map(s => ({
-                  option_value: s.option_value.trim(),
-                  price_adjustment: Math.max(0, Number(s.price_adjustment)),
-                  stock_quantity: Math.max(0, Number(s.stock_quantity)),
-                })),
-              };
-            }),
-        }));
-
       if (validOptions.length > 0) {
-        await axios.post(`${API}/seller/products/${productId}/options/sync`,
+        await axios.post(`${API}/seller/products/${createdProductId}/options/sync`,
           { options: validOptions },
           { headers: { Authorization: `Bearer ${token}` } });
       }
@@ -205,6 +267,14 @@ export default function NewProductPage() {
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
       setError(e.response?.data?.message || "Failed to create product");
+
+      // CLEANUP: Nếu đã tạo sản phẩm nhưng lỗi ở bước sau (media/options), xóa sản phẩm đó
+      if (createdProductId) {
+        await axios.delete(`${API}/seller/products/${createdProductId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(cleanupErr => console.error("Cleanup failed", cleanupErr));
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -451,8 +521,22 @@ export default function NewProductPage() {
                 Base Price (VNĐ) <span className="text-destructive">*</span>
               </label>
               {options.length > 0 ? (
-                <div className="w-full px-4 py-3 bg-muted border border-dashed border-border rounded-xl text-sm text-muted-foreground">
-                  Giá là giá của option được chọn
+                <div className="w-full px-4 py-3 bg-muted border border-dashed border-border rounded-xl text-sm font-medium">
+                  <span className="text-muted-foreground">Giá rẻ nhất: </span>
+                  <span className="text-primary">
+                    {(() => {
+                      let min = Infinity;
+                      options.forEach(o => o.values.forEach(v => {
+                        const hasSubs = v.sub_values.some(s => s.option_value.trim() !== '');
+                        if (hasSubs) {
+                           v.sub_values.forEach(s => { if (s.option_value.trim() && s.price_adjustment < min) min = s.price_adjustment; });
+                        } else {
+                           if (v.option_value.trim() && v.price_adjustment < min) min = v.price_adjustment;
+                        }
+                      }));
+                      return min === Infinity ? "0 VNĐ" : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(min);
+                    })()}
+                  </span>
                 </div>
               ) : (
                 <input type="number" name="price" required min="0" value={formData.price} onChange={handleChange}
