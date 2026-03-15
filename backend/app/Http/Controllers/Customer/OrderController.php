@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Log;
+
 class OrderController extends Controller
 {
     public function store(Request $request)
@@ -71,5 +73,53 @@ class OrderController extends Controller
             ->where('customer_id', $request->user()->id)
             ->findOrFail($id);
         return response()->json($order);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        try {
+            $order = Order::where('customer_id', $request->user()->id)
+                ->findOrFail($id);
+
+            if (!in_array($order->status, ['pending', 'processing'])) {
+                return response()->json(['message' => 'Không thể hủy đơn hàng ở trạng thái này'], 400);
+            }
+
+            $order->update(['status' => 'cancelled']);
+
+            // Handle finance: delete pending credit
+            \App\Models\SellerFinance::where('order_id', $order->id)
+                ->where('status', 'pending')
+                ->delete();
+
+            return response()->json(['message' => 'Đã hủy đơn hàng thành công', 'order' => $order]);
+        } catch (\Exception $e) {
+            Log::error("Lỗi khi hủy đơn hàng: " . $e->getMessage());
+            return response()->json(['message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function confirmReceived(Request $request, $id)
+    {
+        try {
+            $order = Order::where('customer_id', $request->user()->id)
+                ->findOrFail($id);
+
+            if ($order->status !== 'delivered') {
+                return response()->json(['message' => 'Bạn chỉ có thể xác nhận đã nhận khi đơn hàng đã giao'], 400);
+            }
+
+            $order->update(['status' => 'completed']);
+
+            // Complete finance record
+            \App\Models\SellerFinance::where('order_id', $order->id)
+                ->where('type', 'credit')
+                ->update(['status' => 'completed']);
+
+            return response()->json(['message' => 'Xác nhận đã nhận hàng thành công', 'order' => $order]);
+        } catch (\Exception $e) {
+            Log::error("Lỗi khi xác nhận nhận hàng: " . $e->getMessage());
+            return response()->json(['message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
     }
 }

@@ -70,7 +70,7 @@ class OrderController extends Controller
         ]);
 
         // Handle finance updates based on order status
-        if (in_array($request->status, ['delivered', 'completed'])) {
+        if ($request->status === 'completed') {
             \App\Models\SellerFinance::where('order_id', $order->id)
                 ->where('type', 'credit')
                 ->update(['status' => 'completed']);

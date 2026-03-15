@@ -14,7 +14,7 @@ return new class extends Migration
             $table->unsignedBigInteger('seller_id');
             $table->unsignedBigInteger('shipping_address_id')->nullable();
             $table->decimal('total_amount', 15, 2);
-            $table->enum('status', ['pending', 'paid', 'shipping', 'completed', 'cancelled', 'refunded'])->default('pending');
+            $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled', 'returned'])->default('pending');
             $table->enum('payment_method', ['cod', 'bank_transfer', 'momo', 'vnpay'])->default('cod');
             $table->string('notes')->nullable();
             $table->timestamps();

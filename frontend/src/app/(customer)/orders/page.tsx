@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { Package, Truck, CheckCircle, Clock } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
+import { toast } from "sonner";
 
 interface Order {
   id: number;
@@ -26,12 +27,15 @@ interface Order {
 }
 
 const API = "http://localhost:8000/api";
-const STATUS_COLORS: Record<string, string> = {
-  pending:   "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  paid:      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  shipping:  "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-  completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+
+const STATUS_MAP: Record<string, { label: string, color: string, icon: any }> = {
+  pending:    { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400", icon: Clock },
+  processing: { label: "Đang chuẩn bị", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: Package },
+  shipped:    { label: "Đang giao", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", icon: Truck },
+  delivered:  { label: "Đã giao", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", icon: CheckCircle },
+  completed:  { label: "Hoàn tất", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: CheckCircle },
+  cancelled:  { label: "Đã hủy", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: XCircle },
+  returned:   { label: "Trả hàng", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: AlertCircle },
 };
 
 export default function MyOrdersPage() {
@@ -40,21 +44,64 @@ export default function MyOrdersPage() {
   const { formatPrice } = useCurrencyStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+
+  const fetchOrders = async () => {
+    try {
+      const r = await axios.get(`${API}/orders/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrders(r.data.data ?? []);
+    } catch (err) {
+      console.error("Failed to fetch orders", err);
+      toast.error("Không thể tải danh sách đơn hàng");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) {
       router.replace("/login");
       return;
     }
-    axios.get(`${API}/orders/my`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then((r) => {
-      setOrders(r.data.data ?? []);
-    })
-    .catch(err => console.error("Failed to fetch orders", err))
-    .finally(() => setLoading(false));
+    fetchOrders();
   }, [token, router]);
+
+  const handleCancelOrder = async (orderId: number) => {
+    setProcessingId(orderId);
+    try {
+      await axios.put(`${API}/orders/${orderId}/cancel`, {}, {
+        headers: { Authorization: (token as string).startsWith('Bearer ') ? token : `Bearer ${token}` }
+      });
+      toast.success("Đã hủy đơn hàng thành công");
+      setConfirmId(null);
+      fetchOrders();
+    } catch (err: any) {
+      console.error("Cancel order error:", err);
+      toast.error(err.response?.data?.message || "Không thể hủy đơn hàng");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleConfirmReceived = async (orderId: number) => {
+    setProcessingId(orderId);
+    try {
+      await axios.put(`${API}/orders/${orderId}/receive`, {}, {
+        headers: { Authorization: (token as string).startsWith('Bearer ') ? token : `Bearer ${token}` }
+      });
+      toast.success("Xác nhận đã nhận hàng thành công");
+      setConfirmId(null);
+      fetchOrders();
+    } catch (err: any) {
+      console.error("Confirm received error:", err);
+      toast.error(err.response?.data?.message || "Thao tác thất bại");
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -73,9 +120,9 @@ export default function MyOrdersPage() {
         <h1 className="text-2xl font-bold">Đơn hàng của tôi</h1>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {orders.length === 0 ? (
-          <div className="text-center py-24 text-muted-foreground bg-card border border-border rounded-2xl">
+          <div className="text-center py-24 text-muted-foreground bg-card border border-border rounded-2xl shadow-sm">
             <Package size={64} className="mx-auto mb-4 opacity-20" />
             <p className="text-lg">Bạn chưa có đơn hàng nào</p>
             <button 
@@ -86,66 +133,156 @@ export default function MyOrdersPage() {
             </button>
           </div>
         ) : (
-          orders.map((order) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              key={order.id} 
-              className="bg-card border border-border rounded-2xl p-5 hover:border-primary/30 transition-colors"
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-border/50">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-muted rounded-lg">
-                    <Package size={20} className="text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-lg">Đơn hàng #{order.id}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Ngày đặt: {new Date(order.created_at).toLocaleDateString('vi-VN')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between md:justify-end gap-6">
-                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider ${STATUS_COLORS[order.status] ?? "bg-muted text-muted-foreground"}`}>
-                    {order.status === "shipping" ? (
-                      <span className="flex items-center gap-1.5"><Truck size={14} /> Đang giao</span>
-                    ) : order.status === "completed" ? (
-                      <span className="flex items-center gap-1.5"><CheckCircle size={14} /> Hoàn tất</span>
-                    ) : (
-                      <span className="flex items-center gap-1.5"><Clock size={14} /> {order.status}</span>
-                    )}
-                  </span>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground uppercase font-bold opacity-50">Tổng thanh toán</p>
-                    <p className="font-black text-xl text-primary">{formatPrice(order.total_amount)}</p>
-                  </div>
-                </div>
-              </div>
+          orders.map((order) => {
+            const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", icon: Clock };
+            const StatusIcon = statusInfo.icon;
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {order.items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 bg-muted/30 rounded-xl p-3 border border-transparent hover:border-border transition-colors">
-                    <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-border shadow-sm">
-                      <img 
-                        src={item.product.media[0]?.url || `https://picsum.photos/seed/${item.id}/60/60`} 
-                        alt={item.product.title} 
-                        className="w-full h-full object-cover" 
-                      />
+            return (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                key={order.id} 
+                className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              >
+                {/* Header */}
+                <div className="p-5 border-b border-border/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-muted rounded-xl">
+                      <Package size={22} className="text-primary" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold line-clamp-1 group-hover:text-primary transition-colors">
-                        {item.product.title}
+                    <div>
+                      <p className="font-bold text-lg">Đơn hàng #{order.id}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Ngày đặt: {new Date(order.created_at).toLocaleDateString('vi-VN')}
                       </p>
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-xs text-muted-foreground font-medium">x{item.quantity}</p>
-                        <p className="text-sm font-bold text-foreground/80">{formatPrice(item.unit_price)}</p>
-                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          ))
+                  
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider ${statusInfo.color}`}>
+                      <StatusIcon size={14} />
+                      {statusInfo.label}
+                    </span>
+                    <div className="hidden md:block w-px h-8 bg-border" />
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground uppercase font-black opacity-50 tracking-tighter">Tổng thanh toán</p>
+                      <p className="font-black text-xl text-primary leading-tight">{formatPrice(order.total_amount)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div className="p-5 bg-muted/5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {order.items.map((item) => (
+                      <div key={item.id} className="flex items-center gap-3 bg-card border border-border/50 rounded-xl p-3 hover:border-primary/20 transition-colors">
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border shadow-sm">
+                          <img 
+                            src={item.product.media[0]?.url ? `http://localhost:8000${item.product.media[0].url}` : `https://picsum.photos/seed/${item.id}/80/80`} 
+                            alt={item.product.title} 
+                            className="w-full h-full object-cover" 
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold line-clamp-1">
+                            {item.product.title}
+                          </p>
+                          <div className="flex items-center justify-between mt-1.5">
+                            <p className="text-xs text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded">x{item.quantity}</p>
+                            <p className="text-sm font-bold text-foreground/80">{formatPrice(item.unit_price)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="p-4 px-5 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-muted-foreground italic">
+                    {order.status === 'pending' && "Đơn hàng đang chờ người bán xác nhận."}
+                    {order.status === 'processing' && "Người bán đang chuẩn bị hàng."}
+                    {order.status === 'shipped' && "Đơn hàng đang trên đường đến bạn."}
+                    {order.status === 'delivered' && "Đã giao hàng thành công. Vui lòng xác nhận!"}
+                    {order.status === 'completed' && "Cảm ơn bạn đã mua sắm!"}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    {(order.status === 'pending' || order.status === 'processing') && (
+                      <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                        {confirmId === order.id ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleCancelOrder(order.id)}
+                              disabled={processingId === order.id}
+                              className="px-4 py-2 text-sm font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all disabled:opacity-50"
+                            >
+                              {processingId === order.id ? "..." : "Xác nhận hủy"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmId(null)}
+                              className="px-4 py-2 text-sm font-bold bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 transition-all"
+                            >
+                              Quay lại
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmId(order.id)}
+                            className="flex-1 sm:flex-none px-5 py-2 text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl transition-all"
+                          >
+                            Hủy đơn hàng
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {order.status === 'delivered' && (
+                      <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                        {confirmId === order.id ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmReceived(order.id)}
+                              disabled={processingId === order.id}
+                              className="px-4 py-2 text-sm font-bold bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all disabled:opacity-50"
+                            >
+                              {processingId === order.id ? "..." : "Xác nhận đã nhận"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmId(null)}
+                              className="px-4 py-2 text-sm font-bold bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 transition-all"
+                            >
+                              Quay lại
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmId(order.id)}
+                            className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-bold bg-primary text-white hover:opacity-90 rounded-xl shadow-sm shadow-primary/20 transition-all"
+                          >
+                            Đã nhận được hàng
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    <button 
+                      onClick={() => router.push(`/orders/${order.id}`)}
+                      className="flex-1 sm:flex-none px-5 py-2 text-sm font-bold bg-white dark:bg-zinc-800 border border-border hover:bg-muted rounded-xl transition-all"
+                    >
+                      Chi tiết
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })
         )}
       </div>
     </div>
