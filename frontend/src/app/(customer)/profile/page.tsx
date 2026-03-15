@@ -165,18 +165,35 @@ export default function ProfilePage() {
             </Button>
           </div>
           {addresses.map((addr) => (
-
-            <div key={addr.id} className="bg-card border border-border rounded-2xl p-5 flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <MapPin size={16} className="text-primary" />
-                  <span className="font-medium capitalize">{addr.type}</span>
-                  {addr.is_default && <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full">Default</span>}
+            <div key={addr.id} className="bg-card border border-border rounded-2xl p-5 flex items-start justify-between hover:border-primary/50 transition-all group">
+              <div className="flex gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                  <MapPin size={22} />
                 </div>
-                <p className="text-sm">{addr.address_line_1}</p>
-                <p className="text-sm text-muted-foreground">{addr.city}, {addr.country}</p>
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="font-bold text-sm capitalize">{addr.type}</span>
+                    {addr.is_default && (
+                      <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase tracking-wider border border-primary/20">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold text-foreground/90 leading-relaxed mb-1">{addr.address_line_1}</p>
+                  <p className="text-[12px] text-muted-foreground font-medium flex items-center gap-1.5">
+                    <span>{addr.city}</span>
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                    <span>{addr.country}</span>
+                  </p>
+                </div>
               </div>
-              <button onClick={() => handleDeleteAddress(addr.id)} className="text-destructive hover:bg-destructive/10 p-2 rounded-lg transition-colors"><X size={16} /></button>
+              <button 
+                onClick={() => handleDeleteAddress(addr.id)} 
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-2 rounded-xl transition-all"
+                title="Delete address"
+              >
+                <X size={18} />
+              </button>
             </div>
           ))}
           {addresses.length === 0 && (

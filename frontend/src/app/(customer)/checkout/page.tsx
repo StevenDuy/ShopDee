@@ -103,12 +103,14 @@ export default function CheckoutPage() {
             ) : (
               <div className="space-y-3">
                 {addresses.map((addr) => (
-                  <label key={addr.id} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${selectedAddr === addr.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"}`}>
-                    <input type="radio" name="address" checked={selectedAddr === addr.id} onChange={() => setSelectedAddr(addr.id)} className="mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium">{addr.address_line_1}</p>
-                      <p className="text-sm text-muted-foreground">{addr.city}, {addr.country}</p>
-                      {addr.is_default && <span className="text-xs text-primary">Default</span>}
+                  <label key={addr.id} className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${selectedAddr === addr.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-muted-foreground"}`}>
+                    <input type="radio" name="address" checked={selectedAddr === addr.id} onChange={() => setSelectedAddr(addr.id)} className="mt-1 w-4 h-4 text-primary focus:ring-primary border-border" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-foreground leading-snug mb-1">{addr.address_line_1}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[12px] text-muted-foreground font-medium shrink-0">{addr.city}, {addr.country}</p>
+                        {addr.is_default && <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black uppercase tracking-wider border border-primary/20">Default</span>}
+                      </div>
                     </div>
                   </label>
                 ))}

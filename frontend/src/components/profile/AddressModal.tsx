@@ -83,23 +83,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
   };
 
   const formatDetailAddress = (data: any) => {
-    const a = data.address;
-    if (!a) return data.display_name;
-    
-    // We want it to be as verbose as display_name but maybe excluding country and high-level admin areas
-    const parts = [];
-    if (a.name && a.name !== a.road) parts.push(a.name);
-    if (a.house_number) parts.push(a.house_number);
-    if (a.road) parts.push(a.road);
-    if (a.neighbourhood) parts.push(a.neighbourhood);
-    if (a.hamlet) parts.push(a.hamlet);
-    if (a.village) parts.push(a.village);
-    if (a.suburb) parts.push(a.suburb);
-    if (a.quarter) parts.push(a.quarter);
-    
-    const uniqueParts = Array.from(new Set(parts.filter(Boolean)));
-    // If we have specific street level info, use it. Otherwise fallback to display_name
-    return uniqueParts.length >= 2 ? uniqueParts.join(", ") : data.display_name;
+    return data.display_name || "";
   };
 
   const handleSearch = (query: string) => {
@@ -278,21 +262,25 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token }: Addr
                     {showResults && results.length > 0 && (
                       <motion.div
                         initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                        className="absolute z-[100] w-full mt-1 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden"
+                        className="absolute z-[100] w-full mt-1 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
                       >
-                        <div className="max-h-60 overflow-y-auto custom-scrollbar bg-card">
+                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
                           {results.map((res) => (
                             <button
                               key={res.place_id}
                               type="button"
                               onClick={() => handleSelect(res)}
-                              className="w-full px-4 py-3 text-left hover:bg-muted/80 transition-colors flex items-start gap-3 border-b border-border last:border-0"
+                              className="w-full px-5 py-4 text-left hover:bg-muted/80 transition-all flex items-start gap-4 border-b border-border last:border-0 group"
                             >
-                              <MapPin className="mt-1 flex-shrink-0 text-muted-foreground" size={16} />
-                              <div>
-                                <p className="text-sm font-semibold line-clamp-1">{res.display_name}</p>
-                                <p className="text-[11px] text-muted-foreground mt-0.5">
-                                  {res.address.city || res.address.town || res.address.state}, {res.address.country}
+                              <div className="mt-1 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
+                                <MapPin size={14} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-foreground line-clamp-1">{res.display_name}</p>
+                                <p className="text-[11px] text-muted-foreground mt-1 font-medium flex items-center gap-1">
+                                  <span>{res.address.city || res.address.town || res.address.state || "Location"}</span>
+                                  <span>•</span>
+                                  <span>{res.address.country}</span>
                                 </p>
                               </div>
                             </button>
