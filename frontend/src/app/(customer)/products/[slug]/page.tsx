@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, Store, ChevronRight } from "lucide-react";
+import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, Store, ChevronRight, MessageCircle } from "lucide-react";
 import axios from "axios";
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -300,9 +300,29 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Seller */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Store size={16} />
-              <span>Bán bởi <span className="text-foreground font-medium">{product.seller.name}</span></span>
+            <div className="bg-card border border-border rounded-2xl p-5 flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-lg border border-primary/20 group-hover:bg-primary group-hover:text-white transition-all cursor-pointer"
+                  onClick={() => router.push(`/shop/${product.seller.id}`)}>
+                  {product.seller.name.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest leading-none mb-1">Cung cấp bởi</p>
+                  <Link href={`/shop/${product.seller.id}`} className="text-base font-bold text-foreground hover:text-primary transition-colors block">
+                    {product.seller.name}
+                  </Link>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  if (!token) { router.push(`/login?redirect=/products/${slug}`); return; }
+                  router.push(`/inbox?userId=${product.seller.id}`);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-muted hover:bg-primary hover:text-primary-foreground rounded-xl text-sm font-bold transition-all"
+              >
+                <MessageCircle size={18} /> Chat
+              </button>
             </div>
 
             {/* Stock badge */}

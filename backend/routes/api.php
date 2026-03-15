@@ -21,6 +21,10 @@ Route::prefix('products')->group(function () {
     Route::get('/{id}/reviews', [CustomerProductController::class, 'reviews']);
 });
 
+use App\Http\Controllers\Customer\SellerController;
+Route::get('/shop/{id}', [SellerController::class, 'show']);
+Route::get('/shop/{id}/products', [SellerController::class, 'products']);
+
 use App\Http\Controllers\Customer\OrderController;
 use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Customer\ChatController;
