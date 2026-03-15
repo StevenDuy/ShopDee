@@ -78,6 +78,7 @@ Dành cho người mới:
 7. Một file có đuôi `.json` sẽ được tải về máy bạn.
 8. **Quan trọng:** Tìm file vừa tải về, đổi tên nó thành đúng `firebase-credentials.json`.
 9. Cắt (Cut) file này và dán (Paste) vào thư mục: `ShopDee/backend/storage/`.
+10. Chạy lệnh sau: `php artisan storage:link`
 
 #### Bước 1.5: Cấu hình PUSHER (Để nhắn tin và thông báo realtime)
 1. Truy cập [Pusher.com](https://pusher.com/) và đăng nhập.

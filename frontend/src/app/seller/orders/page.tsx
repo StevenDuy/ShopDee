@@ -26,7 +26,7 @@ type Order = {
   status: string;
   created_at: string;
   customer: {
-    profile?: { first_name: string; last_name: string };
+    name: string;
     email: string;
   };
   items: OrderItem[];
@@ -147,9 +147,7 @@ export default function SellerOrdersPage() {
                 </tr>
               ) : (
                 orders.map((order) => {
-                  const customerName = order.customer.profile 
-                    ? `${order.customer.profile.first_name} ${order.customer.profile.last_name}` 
-                    : order.customer.email;
+                  const customerName = order.customer.name || order.customer.email;
                   
                   return (
                     <tr key={order.id} className="hover:bg-muted/30 transition-colors group">

@@ -67,7 +67,7 @@ export default function CheckoutPage() {
       );
       clearCart();
       setSuccess(true);
-      setTimeout(() => router.push("/profile/orders"), 3000);
+      setTimeout(() => router.push("/orders"), 3000);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
       alert(e.response?.data?.message ?? "Failed to place order. Please try again.");

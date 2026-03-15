@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { X, Package, Truck, Calendar, MapPin, User, CheckCircle, XCircle } from "lucide-react";
+import { X, Package, Truck, Calendar, MapPin, User, CheckCircle, XCircle, MessageSquare } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 
 const API = "http://localhost:8000/api";
 
@@ -19,13 +20,15 @@ type OrderItem = {
 
 type Order = {
   id: number;
+  customer_id: number;
   total_amount: number;
   status: string;
   payment_method: string;
   created_at: string;
   notes?: string;
   customer: {
-    profile?: { first_name: string; last_name: string; phone: string };
+    name: string;
+    profile?: { phone: string };
     email: string;
   };
   shipping_address: {
@@ -46,6 +49,7 @@ interface OrderDetailsModalProps {
 }
 
 export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDetailsModalProps) {
+  const router = useRouter();
   const { token } = useAuthStore();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,8 +57,8 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
   useEffect(() => {
     if (!token) return;
     axios.get(`${API}/seller/orders/${orderId}`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setOrder(res.data))
-      .catch(err => console.error("Failed to fetch order details", err))
+      .then((res: { data: Order }) => setOrder(res.data))
+      .catch((err: unknown) => console.error("Failed to fetch order details", err))
       .finally(() => setLoading(false));
   }, [orderId, token]);
 
@@ -70,9 +74,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
     );
   }
 
-  const customerName = order.customer.profile 
-    ? `${order.customer.profile.first_name} ${order.customer.profile.last_name}` 
-    : order.customer.email;
+  const customerName = order.customer.name || order.customer.email;
 
   const phone = order.customer.profile?.phone || "N/A";
 
@@ -122,6 +124,15 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                 <p className="text-muted-foreground">{order.customer.email}</p>
                 <p className="text-muted-foreground">{phone}</p>
               </div>
+              <button 
+                onClick={() => {
+                  router.push(`/seller/inbox?userId=${order.customer_id}`);
+                }}
+                className="w-full flex items-center justify-center gap-2 mt-2 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold hover:bg-primary hover:text-white transition-all"
+              >
+                <MessageSquare size={14} />
+                Chat with Customer
+              </button>
             </div>
 
             {/* Shipping Info */}
@@ -150,7 +161,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {order.items.map(item => (
+                  {order.items.map((item: OrderItem) => (
                     <tr key={item.id}>
                       <td className="px-4 py-3 font-medium flex items-center gap-3">
                         <div className="w-10 h-10 bg-muted rounded-lg overflow-hidden border border-border shrink-0">

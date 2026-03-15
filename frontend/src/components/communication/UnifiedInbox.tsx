@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { 
@@ -36,6 +37,9 @@ export function UnifiedInbox() {
   const [activeTab, setActiveTab] = useState<"chat" | "notifications">("chat");
   const isAdmin = user?.role_id === 1;
   
+  const searchParams = useSearchParams();
+  const targetUserId = searchParams.get("userId");
+  
   const [loading, setLoading] = useState(false);
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConv, setActiveConv] = useState<any | null>(null);
@@ -59,8 +63,12 @@ export function UnifiedInbox() {
 
   useEffect(() => {
     if (!token) return;
-    refreshData();
-  }, [token, activeTab]);
+    refreshData().then(() => {
+      if (targetUserId && activeTab === "chat") {
+        handleStartChat(parseInt(targetUserId));
+      }
+    });
+  }, [token, activeTab, targetUserId]);
 
   useEffect(() => {
     if (activeConv && token) fetchMessages(activeConv.id, 1);
@@ -69,7 +77,7 @@ export function UnifiedInbox() {
   useEffect(() => {
     if (!activeConv || !token || !echo) return;
 
-    const channel = echo.private(`chat.${activeConv.id}`);
+    const channel = echo!.private(`chat.${activeConv.id}`);
     
     channel.listen('.App\\Events\\NewChatMessage', (e: any) => {
         setMessages(prev => {
@@ -80,7 +88,7 @@ export function UnifiedInbox() {
     });
 
     return () => {
-        echo.leave(`chat.${activeConv.id}`);
+        echo!.leave(`chat.${activeConv.id}`);
     };
   }, [activeConv, token]);
 

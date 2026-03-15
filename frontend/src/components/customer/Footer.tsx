@@ -35,7 +35,7 @@ export function CustomerFooter() {
             <h4 className="font-semibold text-sm mb-3 uppercase tracking-wider text-muted-foreground">Account</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">My Profile</Link></li>
-              <li><Link href="/profile/orders" className="text-muted-foreground hover:text-foreground transition-colors">Order History</Link></li>
+              <li><Link href="/orders" className="text-muted-foreground hover:text-foreground transition-colors">Order History</Link></li>
               <li><Link href="/notifications" className="text-muted-foreground hover:text-foreground transition-colors">Notifications</Link></li>
               <li><Link href="/inbox" className="text-muted-foreground hover:text-foreground transition-colors">Messages</Link></li>
             </ul>
