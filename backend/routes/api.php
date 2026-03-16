@@ -120,6 +120,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/moderation/products', [\App\Http\Controllers\Admin\ModerationController::class, 'products']);
         Route::put('/moderation/products/{id}/status', [\App\Http\Controllers\Admin\ModerationController::class, 'updateProductStatus']);
         Route::delete('/moderation/products/{id}', [\App\Http\Controllers\Admin\ModerationController::class, 'deleteProduct']);
+        
+        Route::get('/moderation/reports', [\App\Http\Controllers\Admin\ModerationController::class, 'reports']);
+        Route::put('/moderation/reports/{id}', [\App\Http\Controllers\Admin\ModerationController::class, 'updateReportStatus']);
 
         // System Config
         Route::get('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'index']);

@@ -11,6 +11,7 @@ class ModerationReport extends Model
 
     protected $fillable = [
         'reporter_id', 'reported_user_id', 'reported_product_id',
+        'reported_review_id', 'reported_message_id',
         'reason', 'status', 'admin_notes',
     ];
 
@@ -27,5 +28,15 @@ class ModerationReport extends Model
     public function reportedProduct()
     {
         return $this->belongsTo(Product::class, 'reported_product_id');
+    }
+
+    public function reportedReview()
+    {
+        return $this->belongsTo(Review::class, 'reported_review_id');
+    }
+
+    public function reportedMessage()
+    {
+        return $this->belongsTo(ChatMessage::class, 'reported_message_id');
     }
 }

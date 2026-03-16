@@ -199,6 +199,8 @@
     "moderation": {
       "title": "Kiểm duyệt Nội dung",
       "desc": "Xem xét sản phẩm, quản lý nội dung và thực thi quy định nền tảng.",
+      "tab_products": "Sản phẩm",
+      "tab_reports": "Báo cáo vi phạm",
       "product_seller": "Sản phẩm / Người bán",
       "uncategorized": "Chưa phân loại",
       "status_published": "Đã đăng",
@@ -208,7 +210,23 @@
       "approve_publish": "Phê duyệt / Đăng",
       "archive_hide": "Lưu trữ / Ẩn",
       "force_delete": "Bắt buộc xóa",
-      "delete_confirm": "Bắt buộc xóa sản phẩm \"{{name}}\"? Hành động này không thể hoàn tác."
+      "delete_confirm": "Bắt buộc xóa sản phẩm \"{{name}}\"? Hành động này không thể hoàn tác.",
+      "report_reporter": "Người báo cáo",
+      "report_target": "Đối tượng bị báo cáo",
+      "report_reason": "Lý do",
+      "report_status": "Trạng thái",
+      "status_pending": "Chờ xử lý",
+      "status_resolved": "Đã xử lý",
+      "status_dismissed": "Bỏ qua",
+      "type_product": "Sản phẩm",
+      "type_user": "Người dùng",
+      "type_review": "Đánh giá",
+      "type_message": "Tin nhắn",
+      "action_resolve": "Giải quyết",
+      "action_dismiss": "Từ chối",
+      "no_reports": "Không có báo cáo vi phạm nào.",
+      "admin_notes": "Ghi chú của Admin",
+      "update_report_success": "Cập nhật báo cáo thành công."
     },
     "system_config": {
       "title": "Cấu hình Hệ thống",
