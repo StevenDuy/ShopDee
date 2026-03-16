@@ -82,7 +82,8 @@ export default function SellerOrdersPage() {
       pending: "bg-amber-500/10 text-amber-600",
       processing: "bg-blue-500/10 text-blue-600",
       shipped: "bg-indigo-500/10 text-indigo-600",
-      delivered: "bg-green-500/10 text-green-600",
+      delivered: "bg-emerald-500/10 text-emerald-600",
+      completed: "bg-green-500/10 text-green-600",
       cancelled: "bg-destructive/10 text-destructive",
       returned: "bg-gray-500/10 text-gray-600",
     };
@@ -133,8 +134,7 @@ export default function SellerOrdersPage() {
                 <th className="px-6 py-4 font-medium">{t("seller.orders.date")}</th>
                 <th className="px-6 py-4 font-medium">{t("seller.orders.customer")}</th>
                 <th className="px-6 py-4 font-medium">{t("seller.orders.total")}</th>
-                <th className="px-6 py-4 font-medium">{t("seller.orders.status")}</th>
-                <th className="px-6 py-4 font-medium text-right">{t("seller.orders.actions")}</th>
+                <th className="px-6 py-4 font-medium text-right">{t("seller.orders.status")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -158,9 +158,13 @@ export default function SellerOrdersPage() {
                   const customerName = order.customer.name || order.customer.email;
                   
                   return (
-                    <tr key={order.id} className="hover:bg-muted/30 transition-colors group">
+                    <tr 
+                      key={order.id} 
+                      onClick={() => setViewingOrder(order.id)}
+                      className="hover:bg-muted/50 transition-all group cursor-pointer border-l-4 border-l-transparent hover:border-l-primary"
+                    >
                       <td className="px-6 py-4 font-medium">
-                        #{order.id.toString().padStart(6, '0')}
+                        <span className="group-hover:text-primary transition-colors">#{order.id.toString().padStart(6, '0')}</span>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
                         {formatDistanceToNow(new Date(order.created_at), { 
@@ -175,33 +179,8 @@ export default function SellerOrdersPage() {
                       <td className="px-6 py-4 font-medium text-primary">
                         {new Intl.NumberFormat(t("locale"), { style: "currency", currency: t("currency_code") }).format(order.total_amount)}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 text-right">
                         {getStatusBadge(order.status)}
-                      </td>
-                      <td className="px-6 py-4 text-right space-x-2">
-                        {order.status === 'pending' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'processing')} title={t("seller.orders.approve_order") || "Approve"}
-                            className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors inline-block">
-                            <CheckCircle size={18} />
-                          </button>
-                        )}
-                        {order.status === 'processing' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'shipped')} title={t("seller.orders.mark_as_shipped") || "Shipped"}
-                            className="p-1.5 text-indigo-500 hover:bg-indigo-500/10 rounded-lg transition-colors inline-block">
-                            <Truck size={18} />
-                          </button>
-                        )}
-                        {order.status === 'pending' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'cancelled')} title={t("seller.orders.cancel_order") || "Cancel"}
-                            className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors inline-block">
-                            <XCircle size={18} />
-                          </button>
-                        )}
-
-                        <button onClick={() => setViewingOrder(order.id)} title={t("seller.orders.view_details") || "View"}
-                          className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block">
-                          <Eye size={18} />
-                        </button>
                       </td>
                     </tr>
                   )

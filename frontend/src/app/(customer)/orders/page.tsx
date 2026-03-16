@@ -38,18 +38,19 @@ interface Order {
 
 const API = "http://localhost:8000/api";
 
-const STATUS_MAP: Record<string, { label: string, color: string, icon: any }> = {
-  pending:    { label: "Chờ duyệt", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400", icon: Clock },
-  processing: { label: "Đang chuẩn bị", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: Package },
-  shipped:    { label: "Đang giao", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", icon: Truck },
-  delivered:  { label: "Đã giao", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", icon: CheckCircle },
-  completed:  { label: "Hoàn tất", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: CheckCircle },
-  cancelled:  { label: "Đã hủy", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: XCircle },
-  returned:   { label: "Trả hàng", color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: AlertCircle },
-};
 
 export default function MyOrdersPage() {
   const { t } = useTranslation();
+
+  const STATUS_MAP: Record<string, { label: string, color: string, icon: any }> = {
+    pending:    { label: t("customer_orders.status_pending"), color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400", icon: Clock },
+    processing: { label: t("customer_orders.status_processing"), color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: Package },
+    shipped:    { label: t("customer_orders.status_shipped"), color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", icon: Truck },
+    delivered:  { label: t("customer_orders.status_delivered"), color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", icon: CheckCircle },
+    completed:  { label: t("customer_orders.status_completed"), color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: CheckCircle },
+    cancelled:  { label: t("customer_orders.status_cancelled"), color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: XCircle },
+    returned:   { label: t("customer_orders.status_returned"), color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: AlertCircle },
+  };
   const router = useRouter();
   const { token } = useAuthStore();
   const { formatPrice } = useCurrencyStore();
@@ -69,8 +70,7 @@ export default function MyOrdersPage() {
       });
       setOrders(r.data.data ?? []);
     } catch (err) {
-      console.error("Failed to fetch orders", err);
-      toast.error("Không thể tải danh sách đơn hàng");
+      toast.error(t("customer_orders.error_load_orders") || "Failed to load orders");
     } finally {
       setLoading(false);
     }
@@ -90,12 +90,12 @@ export default function MyOrdersPage() {
       await axios.put(`${API}/orders/${orderId}/cancel`, {}, {
         headers: { Authorization: (token as string).startsWith('Bearer ') ? token : `Bearer ${token}` }
       });
-      toast.success("Đã hủy đơn hàng thành công");
+      toast.success(t("customer_orders.success_cancel") || "Order cancelled successfully");
       setConfirmId(null);
       fetchOrders();
     } catch (err: any) {
       console.error("Cancel order error:", err);
-      toast.error(err.response?.data?.message || "Không thể hủy đơn hàng");
+      toast.error(err.response?.data?.message || t("customer_orders.error_cancel") || "Failed to cancel order");
     } finally {
       setProcessingId(null);
     }
@@ -112,7 +112,7 @@ export default function MyOrdersPage() {
       fetchOrders();
     } catch (err: any) {
       console.error("Confirm received error:", err);
-      toast.error(err.response?.data?.message || "Thao tác thất bại");
+      toast.error(err.response?.data?.message || t("common.error_occurred") || "Error occurred");
     } finally {
       setProcessingId(null);
     }

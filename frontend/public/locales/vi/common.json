@@ -89,6 +89,7 @@
       "status_processing": "Đang xử lý",
       "status_shipped": "Đang giao hàng",
       "status_delivered": "Đã giao hàng",
+      "status_completed": "Hoàn tất",
       "status_cancelled": "Đã hủy",
       "status_returned": "Đã trả hàng",
       "status_return_requested": "Yêu cầu trả hàng",
@@ -440,7 +441,17 @@
       "delivered": "Đã giao hàng thành công. Vui lòng xác nhận!",
       "completed": "Cảm ơn bạn đã mua sắm!"
     },
-    "success_confirm_received": "Xác nhận đã nhận hàng thành công!"
+    "success_confirm_received": "Xác nhận đã nhận hàng thành công!",
+    "status_pending": "Chờ duyệt",
+    "status_processing": "Chuẩn bị hàng",
+    "status_shipped": "Đang giao",
+    "status_delivered": "Đã giao",
+    "status_completed": "Hoàn tất",
+    "status_cancelled": "Đã hủy",
+    "status_returned": "Trả hàng",
+    "error_load_orders": "Không thể tải danh sách đơn hàng",
+    "success_cancel": "Đã hủy đơn hàng thành công",
+    "error_cancel": "Không thể hủy đơn hàng"
   },
   "cart_page": {
     "empty_cart": "Giỏ hàng đang trống",

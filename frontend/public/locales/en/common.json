@@ -89,6 +89,7 @@
       "status_processing": "Processing",
       "status_shipped": "Shipped",
       "status_delivered": "Delivered",
+      "status_completed": "Completed",
       "status_cancelled": "Cancelled",
       "status_returned": "Returned",
       "status_return_requested": "Return Requested",
@@ -403,7 +404,7 @@
     "people": "People"
   },
   "customer_orders": {
-    "no_orders_yet": "You don't have any orders yet",
+    "no_orders_yet": "You have no orders yet",
     "shop_now": "Shop Now",
     "total_payment": "Total Payment",
     "reviewed": "Reviewed",
@@ -413,15 +414,25 @@
     "cancel_order": "Cancel Order",
     "confirm_cancel": "Confirm Cancel",
     "confirm_received": "Confirm Received",
-    "received_order": "Received Order",
+    "received_order": "Order Received",
+    "status_pending": "Pending",
+    "status_processing": "Processing",
+    "status_shipped": "Shipped",
+    "status_delivered": "Delivered",
+    "status_completed": "Completed",
+    "status_cancelled": "Cancelled",
+    "status_returned": "Returned",
     "status_msg": {
-      "pending": "Waiting for seller's confirmation.",
-      "processing": "Seller is preparing your order.",
-      "shipped": "Your order is on the way.",
+      "pending": "Your order is waiting for seller confirmation.",
+      "processing": "The seller is preparing your items.",
+      "shipped": "Your order is on the way to you.",
       "delivered": "Successfully delivered. Please confirm!",
-      "completed": "Thank you for shopping!"
+      "completed": "Thank you for shopping with us!"
     },
-    "success_confirm_received": "Order confirmed successfully!"
+    "success_confirm_received": "Order confirmation successful!",
+    "error_load_orders": "Failed to load orders",
+    "success_cancel": "Order cancelled successfully",
+    "error_cancel": "Failed to cancel order"
   },
   "cart_page": {
     "empty_cart": "Your cart is empty",
