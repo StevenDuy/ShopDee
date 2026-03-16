@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 
 interface ProductAttribute { id: number; attribute_name: string; attribute_value: string }
 interface ProductMedia { id: number; full_url: string; is_primary: boolean; media_type: string }
@@ -70,6 +71,7 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 export default function ProductDetailPage() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { formatPrice } = useCurrencyStore();
@@ -221,10 +223,10 @@ export default function ProductDetailPage() {
       {/* Breadcrumb - Hidden on mobile */}
       <div className="hidden md:flex px-10 py-4 bg-muted/30 border-b border-border items-center gap-2 text-sm text-muted-foreground">
         <button onClick={() => router.back()} className="flex items-center gap-1 hover:text-foreground transition-colors">
-          <ArrowLeft size={14} /> Back
+          <ArrowLeft size={14} /> {t("inbox.back")}
         </button>
         <span>/</span>
-        <Link href="/products" className="hover:text-foreground transition-colors">Products</Link>
+        <Link href="/products" className="hover:text-foreground transition-colors">{t("products")}</Link>
         {product.category && <><span>/</span><span>{product.category.parent?.name ?? product.category.name}</span></>}
         <span>/</span>
         <span className="text-foreground font-medium truncate max-w-[200px]">{product.title}</span>
@@ -274,7 +276,7 @@ export default function ProductDetailPage() {
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest
                   ${effectiveStock > 0 ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}`}>
                   <CheckCircle size={12} />
-                  {effectiveStock > 0 ? `Sẵn hàng (${effectiveStock})` : "Tam hết"}
+                  {effectiveStock > 0 ? `${t("seller.products_manage.in_stock")} (${effectiveStock})` : t("seller.products_manage.out_of_stock")}
                 </div>
               </div>
             </div>
@@ -301,7 +303,7 @@ export default function ProductDetailPage() {
                   {product.seller.name.charAt(0)}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest leading-none mb-1 opacity-60">Cửa hàng</p>
+                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest leading-none mb-1 opacity-60">{t("seller.finance.store")}</p>
                   <Link href={`/shop/${product.seller.id}`} className="text-sm md:text-base font-bold text-foreground hover:text-primary transition-colors block truncate pr-2">
                     {product.seller.name}
                   </Link>
@@ -315,7 +317,7 @@ export default function ProductDetailPage() {
                 }}
                 className="flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-muted hover:bg-primary hover:text-primary-foreground rounded-xl text-xs md:text-sm font-bold transition-all shrink-0 active:scale-95 shadow-sm"
               >
-                <MessageCircle size={16} /> <span className="hidden md:inline uppercase tracking-widest">Chat ngay</span><span className="md:hidden">CHAT</span>
+                <MessageCircle size={16} /> <span className="hidden md:inline uppercase tracking-widest">{t("seller.inbox.chat_now")}</span><span className="md:hidden">CHAT</span>
               </button>
             </div>
 
@@ -429,12 +431,12 @@ export default function ProductDetailPage() {
                 <button onClick={handleAddToCart} disabled={effectiveStock === 0 || !allComplete}
                   className="flex-1 py-3.5 border-2 border-primary text-primary hover:bg-primary hover:text-white rounded-2xl font-bold text-xs md:text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:grayscale active:scale-95 shadow-md shadow-primary/5">
                   <ShoppingCart size={18} />
-                  {addedMsg ? "ĐÃ THÊM! ✓" : "GIỎ HÀNG"}
+                  {addedMsg ? t("common.added_success") : t("cart")}
                 </button>
                 <Link href="/checkout" onClick={handleAddToCart}
                   className={`flex-1 py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-xs md:text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-primary/30
                     ${(!allComplete || effectiveStock === 0) ? "opacity-30 grayscale pointer-events-none" : ""}`}>
-                  <Zap size={18} /> MUA NGAY
+                  <Zap size={18} /> {t("common.buy_now")}
                 </Link>
               </div>
             </div>

@@ -53,8 +53,8 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
         </div>
         {!collapsed && (
           <div className="flex-1 text-left">
-            <p className="text-sm font-bold leading-none mb-1">Đăng nhập</p>
-            <p className="text-[10px] opacity-70 uppercase font-black">Khách hàng</p>
+            <p className="text-sm font-bold leading-none mb-1">{t("login")}</p>
+            <p className="text-[10px] opacity-70 uppercase font-black">{t("roles.guest")}</p>
           </div>
         )}
       </button>
@@ -87,7 +87,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
           <div className="flex-1 text-left overflow-hidden">
             <p className="text-sm font-bold truncate text-foreground leading-none mb-1">{user.name}</p>
             <p className="text-[10px] text-muted-foreground truncate uppercase font-bold opacity-60">
-              {user.role?.name || 'User'}
+              {t(`roles.${user.role?.slug || 'customer'}`)}
             </p>
           </div>
         )}
@@ -115,7 +115,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
           >
             {/* Header Mini Info */}
             <div className="px-3 py-2 mb-2 bg-muted/20 rounded-xl border border-border/50">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1 opacity-60">Logged in as</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1 opacity-60">{t("logged_in_as")}</p>
               <p className="text-xs font-semibold truncate text-foreground">{user.email}</p>
             </div>
 
@@ -127,7 +127,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
                 <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                   <User size={14} />
                 </div>
-                <span className="font-medium">{t("my_profile") || "Trang cá nhân"}</span>
+                <span className="font-medium">{t("profile")}</span>
               </button>
 
 
@@ -146,12 +146,12 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
                   }`}>
                     {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
                   </div>
-                  <span className="font-medium">Chế độ nền</span>
+                  <span className="font-medium">{t("theme")}</span>
                 </div>
                 <span className={`text-[10px] font-black px-1.5 py-0.5 rounded uppercase ${
                   theme === 'dark' ? 'bg-amber-500/10 text-amber-600' : 'bg-indigo-500/10 text-indigo-600'
                 }`}>
-                  {theme === "dark" ? "Sáng" : "Tối"}
+                  {theme === "dark" ? t("light_mode") : t("dark_mode")}
                 </span>
               </button>
 
@@ -164,7 +164,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
                   <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                     <Globe size={14} />
                   </div>
-                  <span className="font-medium">Ngôn ngữ</span>
+                  <span className="font-medium">{t("language")}</span>
                 </div>
                 <span className="text-[10px] font-black bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                   {i18n.language === "vi" ? "VIE" : "ENG"}
@@ -180,7 +180,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
                   <div className="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
                     <DollarSign size={14} />
                   </div>
-                  <span className="font-medium">Tiền tệ</span>
+                  <span className="font-medium">{t("currency")}</span>
                 </div>
                 <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded">
                   {currency}
@@ -197,7 +197,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
                 <div className="w-6 h-6 rounded-md bg-destructive/10 flex items-center justify-center group-hover:bg-destructive group-hover:text-white transition-colors">
                   <LogOut size={14} />
                 </div>
-                <span className="font-bold">{t("logout") || "Đăng xuất"}</span>
+                <span className="font-bold">{t("logout")}</span>
               </button>
             </div>
           </motion.div>

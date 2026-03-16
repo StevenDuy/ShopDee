@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { format } from "date-fns";
+import { vi, enUS } from "date-fns/locale";
 import { DollarSign, ArrowUpRight, ArrowDownRight, Clock, Building, Plus, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -26,6 +28,7 @@ interface Transaction {
 }
 
 export default function SellerFinancePage() {
+  const { t } = useTranslation();
   const { token, user } = useAuthStore();
   const [overview, setOverview] = useState<FinanceOverview | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -66,12 +69,12 @@ export default function SellerFinancePage() {
     setError("");
     const amountNum = parseFloat(withdrawAmount);
     if (!amountNum || amountNum < 10) {
-      setError("Minimum withdrawal amount is $10.00");
+      setError(t("seller.finance.withdraw_modal.min_error"));
       return;
     }
 
     if (amountNum > (overview?.available_balance || 0)) {
-       setError("Amount exceeds available balance.");
+       setError(t("seller.finance.withdraw_modal.exceed_error"));
        return;
     }
 
@@ -91,14 +94,17 @@ export default function SellerFinancePage() {
       setBankAccount("");
       fetchFinanceData(); // refresh data
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to submit withdrawal request.");
+      setError(err.response?.data?.message || t("seller.finance.withdraw_modal.update_error") || "Failed to submit withdrawal request.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+    return new Intl.NumberFormat(t("locale"), { 
+      style: "currency", 
+      currency: t("currency_code") 
+    }).format(val);
   };
 
   if (loading) {
@@ -113,8 +119,8 @@ export default function SellerFinancePage() {
     <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Finance Management</h1>
-          <p className="text-muted-foreground mt-1">Manage your revenue, withdrawals, and transactions.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("seller.finance.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("seller.finance.desc")}</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -122,7 +128,7 @@ export default function SellerFinancePage() {
           className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Building size={18} />
-          Request Withdrawal
+          {t("seller.finance.request_withdrawal")}
         </button>
       </div>
 
@@ -135,7 +141,7 @@ export default function SellerFinancePage() {
                 <DollarSign size={24} />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Available Balance</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("seller.finance.available_balance")}</p>
                 <h3 className="text-2xl font-bold mt-1 text-green-500">{formatCurrency(overview.available_balance)}</h3>
               </div>
             </div>
@@ -147,7 +153,7 @@ export default function SellerFinancePage() {
                 <Clock size={24} />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending Clearance</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("seller.finance.pending_clearance")}</p>
                 <h3 className="text-2xl font-bold mt-1">{formatCurrency(overview.pending_clearance)}</h3>
               </div>
             </div>
@@ -159,7 +165,7 @@ export default function SellerFinancePage() {
                 <ArrowUpRight size={24} />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("seller.finance.total_revenue")}</p>
                 <h3 className="text-2xl font-bold mt-1">{formatCurrency(overview.total_revenue)}</h3>
               </div>
             </div>
@@ -171,14 +177,14 @@ export default function SellerFinancePage() {
                 <ArrowDownRight size={24} />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Withdrawn</p>
+                <p className="text-sm font-medium text-muted-foreground">{t("seller.finance.total_withdrawn")}</p>
                 <h3 className="text-2xl font-bold mt-1">{formatCurrency(overview.total_withdrawn)}</h3>
               </div>
             </div>
             {overview.pending_withdrawal > 0 && (
               <p className="text-xs text-amber-500 mt-3 font-medium flex items-center gap-1">
                 <Clock size={12} />
-                +{formatCurrency(overview.pending_withdrawal)} pending
+                +{formatCurrency(overview.pending_withdrawal)} {t("seller.finance.status_pending")}
               </p>
             )}
           </div>
@@ -188,43 +194,48 @@ export default function SellerFinancePage() {
       {/* Transaction History */}
       <div className="bg-card border border-border rounded-xl flex flex-col shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-border">
-          <h2 className="text-lg font-bold">Transaction History</h2>
+          <h2 className="text-lg font-bold">{t("seller.finance.transaction_history")}</h2>
         </div>
         
         {transactions.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            <DollarSign size={48} className="mx-auto mb-4 opacity-20" />
-            <p>No transactions found.</p>
+          <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+               <DollarSign size={32} className="opacity-20" />
+            </div>
+            <p className="font-medium text-lg text-foreground/80">{t("seller.finance.no_transactions")}</p>
+            <p className="text-sm max-w-xs mt-1">{t("seller.finance.desc")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-muted-foreground bg-muted/50 uppercase">
                 <tr>
-                  <th className="px-6 py-4 font-medium">Date</th>
-                  <th className="px-6 py-4 font-medium">Description</th>
-                  <th className="px-6 py-4 font-medium">Type</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Amount</th>
+                  <th className="px-6 py-4 font-medium">{t("seller.orders.date")}</th>
+                  <th className="px-6 py-4 font-medium">{t("seller.finance.description")}</th>
+                  <th className="px-6 py-4 font-medium">{t("seller.finance.type")}</th>
+                  <th className="px-6 py-4 font-medium">{t("seller.finance.status")}</th>
+                  <th className="px-6 py-4 font-medium text-right">{t("seller.finance.amount")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {transactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
-                      {format(new Date(tx.created_at), "MMM d, yyyy HH:mm")}
+                      {format(new Date(tx.created_at), t("locale") === "vi-VN" ? "dd/MM/yyyy HH:mm" : "MMM d, yyyy HH:mm", {
+                        locale: t("locale") === "vi-VN" ? vi : enUS
+                      })}
                     </td>
                     <td className="px-6 py-4">
-                      {tx.description || (tx.type === 'credit' ? 'Order Revenue' : 'Withdrawal')}
+                      {tx.description || (tx.type === 'credit' ? t("seller.finance.order_revenue") : t("seller.finance.withdrawal"))}
                     </td>
                     <td className="px-6 py-4">
                       {tx.type === 'credit' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-500">
-                          <ArrowDownRight size={12} /> Credit
+                          <ArrowDownRight size={12} /> {t("seller.finance.credit")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-500">
-                          <ArrowUpRight size={12} /> Debit
+                          <ArrowUpRight size={12} /> {t("seller.finance.debit")}
                         </span>
                       )}
                     </td>
@@ -234,7 +245,7 @@ export default function SellerFinancePage() {
                           ? 'bg-blue-500/10 text-blue-500' 
                           : 'bg-amber-500/10 text-amber-500'
                        }`}>
-                          {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                          {t(`seller.orders.status_${tx.status}`)}
                        </span>
                     </td>
                     <td className={`px-6 py-4 text-right font-bold ${tx.type === 'credit' ? 'text-green-500' : 'text-foreground'}`}>
@@ -253,7 +264,7 @@ export default function SellerFinancePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
           <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-border flex items-center justify-between">
-              <h3 className="text-lg font-bold">Request Withdrawal</h3>
+              <h3 className="text-lg font-bold">{t("seller.finance.withdraw_modal.title")}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <Plus className="rotate-45" size={20} />
               </button>
@@ -268,14 +279,14 @@ export default function SellerFinancePage() {
               )}
               
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">Available Balance</label>
+                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">{t("seller.finance.available_balance")}</label>
                 <div className="p-3 bg-muted rounded-xl text-lg font-bold text-green-500">
                   {formatCurrency(overview?.available_balance || 0)}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5">Withdrawal Amount ($)</label>
+                <label className="block text-sm font-medium mb-1.5">{t("seller.finance.withdraw_modal.amount_label")}</label>
                 <input 
                   type="number" 
                   step="0.01"
@@ -290,25 +301,25 @@ export default function SellerFinancePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5">Bank Name</label>
+                <label className="block text-sm font-medium mb-1.5">{t("seller.finance.withdraw_modal.bank_name")}</label>
                 <input 
                   type="text" 
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
                   className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="e.g. Chase Bank, Vietcombank"
+                  placeholder={t("seller.finance.withdraw_modal.bank_placeholder")}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5">Account Number / IBAN</label>
+                <label className="block text-sm font-medium mb-1.5">{t("seller.finance.withdraw_modal.account_details")}</label>
                 <input 
                   type="text" 
                   value={bankAccount}
                   onChange={(e) => setBankAccount(e.target.value)}
                   className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Enter full account details"
+                  placeholder={t("seller.finance.withdraw_modal.account_placeholder")}
                   required
                 />
               </div>
@@ -319,14 +330,14 @@ export default function SellerFinancePage() {
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-xl transition-colors"
                 >
-                  Cancel
+                  {t("seller.finance.withdraw_modal.cancel")}
                 </button>
                 <button 
                   type="submit"
                   disabled={submitting}
                   className="px-6 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? "Submitting..." : "Submit Request"}
+                  {submitting ? t("seller.finance.withdraw_modal.submitting") : t("seller.finance.withdraw_modal.submit")}
                 </button>
               </div>
             </form>

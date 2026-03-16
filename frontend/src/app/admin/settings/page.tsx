@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Settings, Save, Percent, Truck, Power } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function AdminSettingsPage() {
+  const { t } = useTranslation();
   const { token } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,9 +68,9 @@ export default function AdminSettingsPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setMessage({ type: "success", text: "System settings saved successfully." });
+      setMessage({ type: "success", text: t("admin.system_config.update_success") });
     } catch (err) {
-      setMessage({ type: "error", text: "Failed to save settings." });
+      setMessage({ type: "error", text: t("admin.system_config.update_error") });
     } finally {
       setSaving(false);
     }
@@ -85,8 +87,8 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">System Configuration</h1>
-        <p className="text-muted-foreground mt-1">Manage global platform rules, fees, and operational states.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("admin.system_config.title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("admin.system_config.desc")}</p>
       </div>
 
       {message.text && (
@@ -101,13 +103,13 @@ export default function AdminSettingsPage() {
         <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
           <div className="px-6 py-5 border-b border-border bg-muted/20 flex items-center gap-2">
             <Settings className="text-primary" size={20} />
-            <h2 className="text-lg font-bold">Platform Parameters</h2>
+            <h2 className="text-lg font-bold">{t("admin.system_config.platform_params")}</h2>
           </div>
           
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1.5 text-muted-foreground flex items-center gap-2">
-                <Percent size={16} /> Platform Fee (%)
+                <Percent size={16} /> {t("admin.system_config.platform_fee")}
               </label>
               <input 
                 type="number" 
@@ -117,12 +119,12 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setSettings({...settings, platform_fee: e.target.value})}
                 className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-medium"
               />
-              <p className="text-xs text-muted-foreground mt-2">Percentage subtracted from seller payouts.</p>
+              <p className="text-xs text-muted-foreground mt-2">{t("admin.system_config.platform_fee_desc")}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1.5 text-muted-foreground flex items-center gap-2">
-                <Truck size={16} /> Shipping Base Rate
+                <Truck size={16} /> {t("admin.system_config.shipping_rate")}
               </label>
               <input 
                 type="number" 
@@ -132,12 +134,12 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setSettings({...settings, shipping_base_rate: e.target.value})}
                 className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-medium"
               />
-              <p className="text-xs text-muted-foreground mt-2">Default base cost for shipments.</p>
+              <p className="text-xs text-muted-foreground mt-2">{t("admin.system_config.shipping_rate_desc")}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1.5 text-muted-foreground flex items-center gap-2">
-                <Percent size={16} /> Standard Tax Rate (%)
+                <Percent size={16} /> {t("admin.system_config.tax_rate")}
               </label>
               <input 
                 type="number" 
@@ -147,7 +149,7 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setSettings({...settings, tax_rate: e.target.value})}
                 className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-medium"
               />
-              <p className="text-xs text-muted-foreground mt-2">Global tax rate applied to subtotal.</p>
+              <p className="text-xs text-muted-foreground mt-2">{t("admin.system_config.tax_rate_desc")}</p>
             </div>
           </div>
         </div>
@@ -158,9 +160,9 @@ export default function AdminSettingsPage() {
               <div>
                  <h2 className="text-lg font-bold flex items-center gap-2">
                     <Power size={20} className={settings.maintenance_mode === "1" ? "text-amber-500" : "text-green-500"} />
-                    Maintenance Mode
+                    {t("admin.system_config.maintenance_mode")}
                  </h2>
-                 <p className="text-sm text-muted-foreground mt-1">If active, customers and sellers cannot access the platform front-end.</p>
+                 <p className="text-sm text-muted-foreground mt-1">{t("admin.system_config.maintenance_desc")}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrinks-0">
                  <input 
@@ -181,7 +183,7 @@ export default function AdminSettingsPage() {
              className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
            >
               <Save size={18} />
-              {saving ? "Saving Configurations..." : "Save All Changes"}
+              {saving ? t("admin.system_config.saving") : t("admin.system_config.save_all")}
            </button>
         </div>
 

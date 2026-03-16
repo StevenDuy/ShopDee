@@ -6,7 +6,9 @@ import { Search, Eye, Filter, CheckCircle, Package, Truck, RotateCcw, XCircle } 
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import { vi, enUS } from "date-fns/locale";
 import { OrderDetailsModal } from "@/components/seller/OrderDetailsModal";
+import { useTranslation } from "react-i18next";
 
 const API = "http://localhost:8000/api";
 
@@ -33,6 +35,7 @@ type Order = {
 };
 
 export default function SellerOrdersPage() {
+  const { t } = useTranslation();
   const { token } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,11 +70,10 @@ export default function SellerOrdersPage() {
       await axios.put(`${API}/seller/orders/${id}/status`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Refresh list
-      fetchOrders(filter);
+      fetchOrders(filter, currentPage);
     } catch (err) {
       console.error("Failed to update status", err);
-      alert("Status update failed.");
+      alert(t("seller.settings.update_error") || "Status update failed.");
     }
   };
 
@@ -84,15 +86,15 @@ export default function SellerOrdersPage() {
       cancelled: "bg-destructive/10 text-destructive",
       returned: "bg-gray-500/10 text-gray-600",
     };
-    return <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize ${styles[status]}`}>{status}</span>;
+    return <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize ${styles[status]}`}>{t(`seller.orders.status_${status}`)}</span>;
   };
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
-          <p className="text-muted-foreground mt-1">Manage and fulfill your customer orders.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("seller.orders.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("seller.orders.desc")}</p>
         </div>
       </div>
 
@@ -102,7 +104,7 @@ export default function SellerOrdersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <input 
               type="text" 
-              placeholder="Search by Order ID or Customer..." 
+              placeholder={t("seller.orders.search_placeholder")} 
               className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
             />
           </div>
@@ -113,12 +115,12 @@ export default function SellerOrdersPage() {
               onChange={(e) => { setFilter(e.target.value); setCurrentPage(1); }}
               className="bg-input border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full md:w-auto"
             >
-              <option value="all">All Orders</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="return_requested">Return Requested</option>
+              <option value="all">{t("seller.orders.all_orders")}</option>
+              <option value="pending">{t("seller.orders.status_pending")}</option>
+              <option value="processing">{t("seller.orders.status_processing")}</option>
+              <option value="shipped">{t("seller.orders.status_shipped")}</option>
+              <option value="delivered">{t("seller.orders.status_delivered")}</option>
+              <option value="return_requested">{t("seller.orders.status_return_requested")}</option>
             </select>
           </div>
         </div>
@@ -127,19 +129,19 @@ export default function SellerOrdersPage() {
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-muted/50 text-muted-foreground border-b border-border">
               <tr>
-                <th className="px-6 py-4 font-medium">Order ID</th>
-                <th className="px-6 py-4 font-medium">Date</th>
-                <th className="px-6 py-4 font-medium">Customer</th>
-                <th className="px-6 py-4 font-medium">Total</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4 font-medium">{t("seller.orders.order_id")}</th>
+                <th className="px-6 py-4 font-medium">{t("seller.orders.date")}</th>
+                <th className="px-6 py-4 font-medium">{t("seller.orders.customer")}</th>
+                <th className="px-6 py-4 font-medium">{t("seller.orders.total")}</th>
+                <th className="px-6 py-4 font-medium">{t("seller.orders.status")}</th>
+                <th className="px-6 py-4 font-medium text-right">{t("seller.orders.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground animate-pulse">
-                    Loading orders...
+                    {t("seller.orders.loading_orders")}
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
@@ -147,7 +149,7 @@ export default function SellerOrdersPage() {
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
                       <Package size={48} className="opacity-20 mb-3" />
-                      <p>No orders found.</p>
+                      <p>{t("seller.orders.no_orders_found")}</p>
                     </div>
                   </td>
                 </tr>
@@ -161,40 +163,42 @@ export default function SellerOrdersPage() {
                         #{order.id.toString().padStart(6, '0')}
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
-                        {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(order.created_at), { 
+                          addSuffix: true, 
+                          locale: t("locale") === "vi-VN" ? vi : enUS 
+                        })}
                       </td>
                       <td className="px-6 py-4">
                         <span className="font-medium text-foreground">{customerName}</span>
-                        <span className="block text-xs text-muted-foreground">{order.items.length} items</span>
+                        <span className="block text-xs text-muted-foreground">{order.items.length} {t("seller.orders.items")}</span>
                       </td>
                       <td className="px-6 py-4 font-medium text-primary">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.total_amount)}
+                        {new Intl.NumberFormat(t("locale"), { style: "currency", currency: t("currency_code") }).format(order.total_amount)}
                       </td>
                       <td className="px-6 py-4">
                         {getStatusBadge(order.status)}
                       </td>
                       <td className="px-6 py-4 text-right space-x-2">
                         {order.status === 'pending' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'processing')} title="Approve Order"
+                          <button onClick={() => updateOrderStatus(order.id, 'processing')} title={t("seller.orders.approve_order") || "Approve"}
                             className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors inline-block">
                             <CheckCircle size={18} />
                           </button>
                         )}
                         {order.status === 'processing' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'shipped')} title="Mark as Shipped"
+                          <button onClick={() => updateOrderStatus(order.id, 'shipped')} title={t("seller.orders.mark_as_shipped") || "Shipped"}
                             className="p-1.5 text-indigo-500 hover:bg-indigo-500/10 rounded-lg transition-colors inline-block">
                             <Truck size={18} />
                           </button>
                         )}
                         {order.status === 'pending' && (
-                          <button onClick={() => updateOrderStatus(order.id, 'cancelled')} title="Cancel Order"
+                          <button onClick={() => updateOrderStatus(order.id, 'cancelled')} title={t("seller.orders.cancel_order") || "Cancel"}
                             className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors inline-block">
                             <XCircle size={18} />
                           </button>
                         )}
-                        {/* More status transitions can be added here */}
 
-                        <button onClick={() => setViewingOrder(order.id)} title="View Details"
+                        <button onClick={() => setViewingOrder(order.id)} title={t("seller.orders.view_details") || "View"}
                           className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors inline-block">
                           <Eye size={18} />
                         </button>

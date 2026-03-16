@@ -6,6 +6,7 @@ import { ArrowLeft, Save, Image as ImageIcon, Trash2, Plus, X, ChevronDown } fro
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 
 const API = "http://localhost:8000/api";
 
@@ -35,6 +36,7 @@ const emptyValue = (): OptionValue => ({ option_value: "", price_adjustment: 0, 
 const emptyOption = (): ProductOption => ({ option_name: "", values: [emptyValue(), emptyValue()] });
 
 export default function NewProductPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { token } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -299,8 +301,8 @@ export default function NewProductPage() {
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add New Product</h1>
-          <p className="text-muted-foreground mt-1">Create a new product listing in your store.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("seller.products_manage.add_product")}</h1>
+          <p className="text-muted-foreground mt-1">{t("seller.products_manage.desc")}</p>
         </div>
       </div>
 
@@ -546,7 +548,7 @@ export default function NewProductPage() {
                            if (v.option_value.trim() && v.price_adjustment < min) min = v.price_adjustment;
                         }
                       }));
-                      return min === Infinity ? "0 VNĐ" : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(min);
+                      return min === Infinity ? `0 ${t("currency_code")}` : new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(min);
                     })()}
                   </span>
                 </div>
@@ -590,7 +592,7 @@ export default function NewProductPage() {
             className="w-full bg-primary text-primary-foreground flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
             {loading
               ? <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-              : <><Save size={18} /> Publish Product</>}
+              : <><Save size={18} /> {t("seller.products_manage.add_product")}</>}
           </button>
         </div>
       </form>

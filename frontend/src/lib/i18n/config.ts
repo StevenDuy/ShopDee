@@ -6,10 +6,10 @@ import viTranslation from '../../../public/locales/vi/common.json';
 
 const resources = {
   en: {
-    common: enTranslation.common,
+    common: enTranslation,
   },
   vi: {
-    common: viTranslation.common,
+    common: viTranslation,
   }
 };
 

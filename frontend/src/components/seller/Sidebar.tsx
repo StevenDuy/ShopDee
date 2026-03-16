@@ -7,22 +7,23 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useState } from "react";
 import { UserDropdown } from "@/components/common/UserDropdown";
 
-const menuItems = [
-  { href: "/seller", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/seller/products", icon: Package, label: "Products" },
-  { href: "/seller/orders", icon: ShoppingCart, label: "Orders" },
-  { href: "/seller/inbox", icon: MessageCircle, label: "Inbox" },
-  { href: "/seller/finance", icon: DollarSign, label: "Finance" },
-  { href: "/seller/settings", icon: Settings, label: "Shop Settings" },
-];
-
-import { NavSettings } from "@/components/common/NavSettings";
+import { useTranslation } from "react-i18next";
 
 export function SellerSidebar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
+
+  const menuItems = [
+    { href: "/seller", icon: LayoutDashboard, label: t("seller.dashboard") },
+    { href: "/seller/products", icon: Package, label: t("seller.products") },
+    { href: "/seller/orders", icon: ShoppingCart, label: t("seller.orders_nav") },
+    { href: "/seller/inbox", icon: MessageCircle, label: t("seller.inbox_nav") },
+    { href: "/seller/finance", icon: DollarSign, label: t("seller.finance_nav") },
+    { href: "/seller/settings", icon: Settings, label: t("seller.settings_nav") },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -43,7 +44,7 @@ export function SellerSidebar() {
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
             <Store size={18} />
           </div>
-          <span className="text-xl font-bold tracking-tight">Seller Center</span>
+          <span className="text-xl font-bold tracking-tight">{t("seller.center")}</span>
         </div>
 
         <div className="p-4 border-b border-border bg-muted/20">

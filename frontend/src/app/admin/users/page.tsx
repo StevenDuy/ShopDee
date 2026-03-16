@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { format } from "date-fns";
+import { vi, enUS } from "date-fns/locale";
 import { Users, Search, Filter, ShieldAlert, MoreVertical, Trash2, Eye } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation();
   const { token, user } = useAuthStore();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,10 +59,10 @@ export default function AdminUsersPage() {
   const handleDeleteUser = async (id: number, name: string) => {
     if (!token) return;
     if (id === user?.id) {
-       alert("You cannot delete your own account.");
+       alert(t("admin.users_manage.self_delete_error"));
        return;
     }
-    if (!confirm(`Are you sure you want to delete the user "${name}"? This action cannot be undone.`)) {
+    if (!confirm(t("admin.users_manage.confirm_delete", { name }))) {
       return;
     }
 
@@ -78,13 +81,13 @@ export default function AdminUsersPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground mt-1">View, search, and manage all platform members.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("admin.users")}</h1>
+          <p className="text-muted-foreground mt-1">{t("admin.users_manage.desc")}</p>
         </div>
         
         <div className="flex bg-primary/10 text-primary px-4 py-2 rounded-xl text-sm font-bold items-center gap-2">
            <Users size={16} />
-           Total Users: {pagination.total}
+           {t("admin.users_manage.total_users")}: {pagination.total}
         </div>
       </div>
 
@@ -95,7 +98,7 @@ export default function AdminUsersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <input 
               type="text" 
-              placeholder="Search users by name or email..."
+              placeholder={t("admin.users_manage.search_placeholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-sm"
@@ -110,10 +113,10 @@ export default function AdminUsersPage() {
                   onChange={(e) => setRoleFilter(e.target.value)}
                   className="bg-transparent focus:outline-none min-w-[120px]"
                 >
-                  <option value="all">All Roles</option>
-                  <option value="1">Customers (1)</option>
-                  <option value="2">Sellers (2)</option>
-                  <option value="3">Admins (3)</option>
+                  <option value="all">{t("admin.users_manage.all_roles")}</option>
+                  <option value="1">{t("admin.users_manage.customers")}</option>
+                  <option value="2">{t("admin.users_manage.sellers")}</option>
+                  <option value="3">{t("admin.users_manage.admins")}</option>
                 </select>
              </div>
           </div>
@@ -128,16 +131,16 @@ export default function AdminUsersPage() {
           ) : users.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
                <Users size={48} className="mx-auto mb-4 opacity-20" />
-               <p>No users found matching your criteria.</p>
+               <p>{t("admin.users_manage.no_users_found")}</p>
             </div>
           ) : (
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-muted-foreground bg-muted/50 uppercase">
                 <tr>
-                  <th className="px-6 py-4 font-medium">User / Email</th>
-                  <th className="px-6 py-4 font-medium">Role</th>
-                  <th className="px-6 py-4 font-medium">Joined Date</th>
-                  <th className="px-6 py-4 font-medium text-right">Actions</th>
+                  <th className="px-6 py-4 font-medium">{t("admin.users_manage.user_email")}</th>
+                  <th className="px-6 py-4 font-medium">{t("admin.role")}</th>
+                  <th className="px-6 py-4 font-medium">{t("admin.joined_date")}</th>
+                  <th className="px-6 py-4 font-medium text-right">{t("admin.actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -161,17 +164,19 @@ export default function AdminUsersPage() {
                            u.role_id === 2 ? 'bg-purple-500/10 text-purple-500' :
                            'bg-red-500/10 text-red-500'
                          }`}>
-                           {u.role?.name || "Unknown"}
+                           {t(`roles.${u.role?.slug || 'customer'}`)}
                          </span>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
-                       {format(new Date(u.created_at), "MMM d, yyyy")}
+                       {format(new Date(u.created_at), t("locale") === "vi-VN" ? "dd/MM/yyyy" : "MMM d, yyyy", { 
+                         locale: t("locale") === "vi-VN" ? vi : enUS 
+                       })}
                     </td>
                     <td className="px-6 py-4 text-right">
                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             className="p-2 bg-background shadow-sm border border-border rounded-lg text-muted-foreground hover:text-primary transition-colors"
-                            title="View Details"
+                            title={t("admin.users_manage.view_details")}
                           >
                             <Eye size={16} />
                           </button>
@@ -180,7 +185,7 @@ export default function AdminUsersPage() {
                             <button 
                               onClick={() => handleDeleteUser(u.id, u.name)}
                               className="p-2 bg-background shadow-sm border border-red-500/20 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition-colors"
-                              title="Delete User"
+                              title={t("admin.users_manage.delete_user")}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -198,7 +203,7 @@ export default function AdminUsersPage() {
         {!loading && pagination.last_page > 1 && (
           <div className="px-6 py-4 border-t border-border bg-muted/10 flex items-center justify-between">
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              Page <b>{pagination.current_page}</b> of <b>{pagination.last_page}</b>
+              {t("admin.users_manage.page_of", { current: pagination.current_page, total: pagination.last_page })}
             </span>
             <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
               {[...Array(pagination.last_page)].map((_, i) => (

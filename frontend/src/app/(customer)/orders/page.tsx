@@ -10,6 +10,7 @@ import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { toast } from "sonner";
 import ReviewModal from "@/components/customer/ReviewModal";
 import { Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Order {
   id: number;
@@ -48,6 +49,7 @@ const STATUS_MAP: Record<string, { label: string, color: string, icon: any }> = 
 };
 
 export default function MyOrdersPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { token } = useAuthStore();
   const { formatPrice } = useCurrencyStore();
@@ -105,7 +107,7 @@ export default function MyOrdersPage() {
       await axios.put(`${API}/orders/${orderId}/receive`, {}, {
         headers: { Authorization: (token as string).startsWith('Bearer ') ? token : `Bearer ${token}` }
       });
-      toast.success("Xác nhận đã nhận hàng thành công");
+      toast.success(t("customer_orders.success_confirm_received"));
       setConfirmId(null);
       fetchOrders();
     } catch (err: any) {
@@ -130,19 +132,19 @@ export default function MyOrdersPage() {
         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
           <Package size={24} />
         </div>
-        <h1 className="text-2xl font-bold">Đơn hàng của tôi</h1>
+        <h1 className="text-2xl font-bold">{t("my_orders")}</h1>
       </div>
 
       <div className="space-y-6">
         {orders.length === 0 ? (
           <div className="text-center py-24 text-muted-foreground bg-card border border-border rounded-2xl shadow-sm">
             <Package size={64} className="mx-auto mb-4 opacity-20" />
-            <p className="text-lg">Bạn chưa có đơn hàng nào</p>
+            <p className="text-lg">{t("customer_orders.no_orders_yet")}</p>
             <button 
                 onClick={() => router.push("/products")}
                 className="mt-4 px-6 py-2 bg-primary text-white rounded-xl hover:opacity-90 transition-opacity"
             >
-                Mua sắm ngay
+                {t("customer_orders.shop_now")}
             </button>
           </div>
         ) : (
@@ -164,9 +166,9 @@ export default function MyOrdersPage() {
                       <Package size={22} className="text-primary" />
                     </div>
                     <div>
-                      <p className="font-bold text-lg">Đơn hàng #{order.id}</p>
+                      <p className="font-bold text-lg">{t("seller.orders.order_id")} #{order.id}</p>
                       <p className="text-sm text-muted-foreground">
-                        Ngày đặt: {new Date(order.created_at).toLocaleDateString('vi-VN')}
+                        {t("seller.orders.date")}: {new Date(order.created_at).toLocaleDateString(t("locale"))}
                       </p>
                     </div>
                   </div>
@@ -178,7 +180,7 @@ export default function MyOrdersPage() {
                     </span>
                     <div className="hidden md:block w-px h-8 bg-border" />
                     <div className="text-right">
-                      <p className="text-[10px] text-muted-foreground uppercase font-black opacity-50 tracking-tighter">Tổng thanh toán</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-black opacity-50 tracking-tighter">{t("customer_orders.total_payment")}</p>
                       <p className="font-black text-xl text-primary leading-tight">{formatPrice(order.total_amount)}</p>
                     </div>
                   </div>
@@ -224,7 +226,7 @@ export default function MyOrdersPage() {
                                             <Star key={s} size={10} className={s <= item.review!.rating ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted"} />
                                         ))}
                                     </div>
-                                    <span className="text-[10px] font-bold text-green-600 uppercase">Đã đánh giá</span>
+                                    <span className="text-[10px] font-bold text-green-600 uppercase">{t("customer_orders.reviewed")}</span>
                                 </div>
                              ) : (
                                 <button 
@@ -233,7 +235,7 @@ export default function MyOrdersPage() {
                                         setIsReviewModalOpen(true);
                                     }}
                                     className="p-2.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all group"
-                                    title="Đánh giá sản phẩm"
+                                    title={t("customer_orders.review_product")}
                                 >
                                     <Star size={18} className="group-hover:fill-current" />
                                 </button>
@@ -248,11 +250,11 @@ export default function MyOrdersPage() {
                 {/* Actions */}
                 <div className="p-4 px-5 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-sm text-muted-foreground italic">
-                    {order.status === 'pending' && "Đơn hàng đang chờ người bán xác nhận."}
-                    {order.status === 'processing' && "Người bán đang chuẩn bị hàng."}
-                    {order.status === 'shipped' && "Đơn hàng đang trên đường đến bạn."}
-                    {order.status === 'delivered' && "Đã giao hàng thành công. Vui lòng xác nhận!"}
-                    {order.status === 'completed' && "Cảm ơn bạn đã mua sắm!"}
+                    {order.status === 'pending' && t("customer_orders.status_msg.pending")}
+                    {order.status === 'processing' && t("customer_orders.status_msg.processing")}
+                    {order.status === 'shipped' && t("customer_orders.status_msg.shipped")}
+                    {order.status === 'delivered' && t("customer_orders.status_msg.delivered")}
+                    {order.status === 'completed' && t("customer_orders.status_msg.completed")}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -266,14 +268,14 @@ export default function MyOrdersPage() {
                               disabled={processingId === order.id}
                               className="px-4 py-2 text-sm font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all disabled:opacity-50"
                             >
-                              {processingId === order.id ? "..." : "Xác nhận hủy"}
+                              {processingId === order.id ? "..." : t("customer_orders.confirm_cancel")}
                             </button>
                             <button
                               type="button"
                               onClick={() => setConfirmId(null)}
                               className="px-4 py-2 text-sm font-bold bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 transition-all"
                             >
-                              Quay lại
+                              {t("customer_orders.back")}
                             </button>
                           </>
                         ) : (
@@ -282,7 +284,7 @@ export default function MyOrdersPage() {
                             onClick={() => setConfirmId(order.id)}
                             className="flex-1 sm:flex-none px-5 py-2 text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl transition-all"
                           >
-                            Hủy đơn hàng
+                            {t("customer_orders.cancel_order")}
                           </button>
                         )}
                       </div>
@@ -298,14 +300,14 @@ export default function MyOrdersPage() {
                               disabled={processingId === order.id}
                               className="px-4 py-2 text-sm font-bold bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all disabled:opacity-50"
                             >
-                              {processingId === order.id ? "..." : "Xác nhận đã nhận"}
+                              {processingId === order.id ? "..." : t("customer_orders.confirm_received")}
                             </button>
                             <button
                               type="button"
                               onClick={() => setConfirmId(null)}
                               className="px-4 py-2 text-sm font-bold bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 transition-all"
                             >
-                              Quay lại
+                              {t("customer_orders.back")}
                             </button>
                           </>
                         ) : (
@@ -314,7 +316,7 @@ export default function MyOrdersPage() {
                             onClick={() => setConfirmId(order.id)}
                             className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-bold bg-primary text-white hover:opacity-90 rounded-xl shadow-sm shadow-primary/20 transition-all"
                           >
-                            Đã nhận được hàng
+                            {t("customer_orders.received_order")}
                           </button>
                         )}
                       </div>
@@ -324,7 +326,7 @@ export default function MyOrdersPage() {
                       onClick={() => router.push(`/orders/${order.id}`)}
                       className="flex-1 sm:flex-none px-5 py-2 text-sm font-bold bg-white dark:bg-zinc-800 border border-border hover:bg-muted rounded-xl transition-all"
                     >
-                      Chi tiết
+                      {t("customer_orders.details")}
                     </button>
                   </div>
                 </div>

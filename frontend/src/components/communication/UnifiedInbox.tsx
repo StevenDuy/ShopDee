@@ -15,6 +15,7 @@ import echo from "@/lib/echo";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import imageCompression from "browser-image-compression";
+import { useTranslation } from "react-i18next";
 
 const API = "http://localhost:8000/api";
 
@@ -33,6 +34,7 @@ const getNotifColor = (type: string) => {
 };
 
 export function UnifiedInbox() {
+  const { t } = useTranslation();
   const { token, user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"chat" | "notifications">("chat");
   const isAdmin = user?.role_id === 1;
@@ -113,7 +115,6 @@ export function UnifiedInbox() {
     if (page === 1) setLoading(true);
     else setLoadingMore(true);
     
-    // Lưu lại scroll height trước khi prepend
     const container = scrollContainerRef.current;
     const oldScrollHeight = container?.scrollHeight || 0;
 
@@ -129,7 +130,6 @@ export function UnifiedInbox() {
         setMessages(prev => [...newMessages, ...prev]);
         setPagination(res.data.pagination);
         
-        // Điều chỉnh scroll để không bị nhảy
         setTimeout(() => {
           if (container) {
             container.scrollTop = container.scrollHeight - oldScrollHeight;
@@ -146,11 +146,9 @@ export function UnifiedInbox() {
   const handleCompressAndUpload = async (file: File) => {
     try {
       setUploading(true);
-      // 1. Nén ảnh
       const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: true };
       const compressedFile = await imageCompression(file, options);
       
-      // 2. Upload Firebase
       const fileName = `${Date.now()}_${file.name}`;
       const storageRef = ref(storage, `chat_media/${fileName}`);
       const uploadTask = uploadBytesResumable(storageRef, compressedFile);
@@ -218,7 +216,7 @@ export function UnifiedInbox() {
   };
 
   const handleDeleteNotification = async (id: number) => {
-    if (!isAdmin || !confirm("Delete this notification?")) return;
+    if (!isAdmin || !confirm(t("inbox.delete_confirm"))) return;
     try {
       await axios.delete(`${API}/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setNotifications(prev => prev.filter(n => n.id !== id));
@@ -265,7 +263,7 @@ export function UnifiedInbox() {
           className={`p-4 rounded-[22px] transition-all duration-300 relative group ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-xl shadow-primary/30" : "text-muted-foreground hover:bg-muted"}`}
         >
           <MessageCircle size={24} />
-          <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">Messages</div>
+          <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">{t("inbox.messages")}</div>
         </button>
         <button 
           onClick={() => { setActiveTab("notifications"); setActiveConv(null); setSelectedNotif(null); }}
@@ -273,7 +271,7 @@ export function UnifiedInbox() {
         >
           <Bell size={24} />
           {notifications.some(n => !n.is_read) && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
-          <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">Notifications</div>
+          <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">{t("inbox.notifications")}</div>
         </button>
       </div>
 
@@ -281,7 +279,7 @@ export function UnifiedInbox() {
       <div className={`w-full md:w-[380px] border-r border-border/50 flex flex-col bg-card shrink-0 transition-all ${ (activeConv || selectedNotif) ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 md:p-6 border-b border-border/50">
            <div className="flex items-center justify-between mb-4 md:mb-6">
-             <h2 className="text-xl md:text-2xl font-black tracking-tighter uppercase">{activeTab === "chat" ? "Inbox" : "Updates"}</h2>
+             <h2 className="text-xl md:text-2xl font-black tracking-tighter uppercase">{activeTab === "chat" ? t("inbox.title_chat") : t("inbox.title_updates")}</h2>
              {activeTab === "notifications" && isAdmin && (
                <button onClick={() => setShowCreateModal(true)} className="w-8 h-8 md:w-10 md:h-10 bg-primary text-primary-foreground rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 transition-all">
                  <Plus size={18} />
@@ -293,7 +291,7 @@ export function UnifiedInbox() {
              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
              <input 
                type="text" 
-               placeholder={activeTab === "chat" ? "Search chat..." : "Filter alerts..."}
+               placeholder={activeTab === "chat" ? t("inbox.search_chat") : t("inbox.filter_alerts")}
                value={searchQuery}
                className="w-full pl-11 pr-4 py-2.5 md:py-3 bg-muted/40 rounded-xl md:rounded-2xl text-sm font-medium outline-none border border-transparent focus:border-primary/30 transition-all"
                onChange={(e) => activeTab === "chat" ? handleSearchUsers(e.target.value) : setSearchQuery(e.target.value)}
@@ -308,7 +306,7 @@ export function UnifiedInbox() {
              <div className="divide-y divide-border/10">
                {isSearching && searchResults.length > 0 && (
                  <div className="bg-primary/5 p-4">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">People</p>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">{t("inbox.people")}</p>
                     {searchResults.map(u => (
                       <button key={u.id} onClick={() => handleStartChat(u.id)} className="w-full p-3 flex items-center gap-3 hover:bg-primary/10 rounded-xl transition-all">
                         <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{u.name.charAt(0)}</div>
@@ -324,10 +322,10 @@ export function UnifiedInbox() {
                    </div>
                    <div className="flex-1 min-w-0">
                      <div className="flex items-center justify-between mb-1">
-                       <p className="font-bold text-sm truncate">{conv.other_user?.name || "User"}</p>
+                       <p className="font-bold text-sm truncate">{conv.other_user?.name || t("admin.user")}</p>
                        <span className="text-[9px] text-muted-foreground">{conv.last_message ? new Date(conv.last_message.created_at).toLocaleDateString() : ""}</span>
                      </div>
-                     <p className="text-[11px] md:text-xs text-muted-foreground truncate">{conv.last_message?.message_text || "Attachment"}</p>
+                     <p className="text-[11px] md:text-xs text-muted-foreground truncate">{conv.last_message?.message_text || t("inbox.say_something")}</p>
                    </div>
                  </button>
                ))}
@@ -352,14 +350,14 @@ export function UnifiedInbox() {
         <div className="md:hidden flex border-t border-border/50 bg-card p-2 gap-2">
            <button onClick={() => { setActiveTab("chat"); setSelectedNotif(null); setActiveConv(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
              <MessageCircle size={20} />
-             <span className="text-[10px] font-bold uppercase">Chat</span>
+             <span className="text-[10px] font-bold uppercase">{t("inbox.messages")}</span>
            </button>
            <button onClick={() => { setActiveTab("notifications"); setActiveConv(null); setSelectedNotif(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "notifications" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
              <div className="relative">
                 <Bell size={20} />
                 {notifications.some(n => !n.is_read) && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
              </div>
-             <span className="text-[10px] font-bold uppercase">News</span>
+             <span className="text-[10px] font-bold uppercase">{t("inbox.notifications")}</span>
            </button>
         </div>
       </div>
@@ -386,7 +384,7 @@ export function UnifiedInbox() {
                         disabled={loadingMore}
                         className="self-center text-[10px] font-black uppercase tracking-widest text-primary/60 hover:text-primary transition-all py-4 hover:scale-110 active:scale-95"
                       >
-                        {loadingMore ? "Loading..." : "Load older messages"}
+                        {loadingMore ? t("inbox.loading") : t("inbox.load_older")}
                       </button>
                    )}
                    
@@ -420,7 +418,7 @@ export function UnifiedInbox() {
                       type="text" 
                       value={newMessage} 
                       onChange={(e) => setNewMessage(e.target.value)} 
-                      placeholder={uploading ? "Compressing & Uploading..." : "Say something..."}
+                      placeholder={uploading ? t("inbox.loading") : t("inbox.say_something")}
                       disabled={uploading}
                       className="flex-1 bg-muted/50 rounded-xl md:rounded-2xl px-4 md:px-6 py-2.5 md:py-3 outline-none text-sm"
                     />
@@ -436,7 +434,7 @@ export function UnifiedInbox() {
                 <div className="max-w-2xl mx-auto w-full pt-10 md:pt-0">
                   <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl md:rounded-3xl flex items-center justify-center mb-6 md:mb-10 shadow-lg ${getNotifColor(selectedNotif.type || "system")}`}>{getNotifIcon(selectedNotif.type || "system")}</div>
                   <h1 className="text-2xl md:text-4xl font-black tracking-tight mb-4 md:mb-6">{selectedNotif.data?.title || selectedNotif.title}</h1>
-                  <p className="text-muted-foreground text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 md:mb-10 pb-4 md:pb-6 border-b">Sent on {new Date(selectedNotif.created_at).toLocaleString()}</p>
+                  <p className="text-muted-foreground text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 md:mb-10 pb-4 md:pb-6 border-b">{t("inbox.sent_on")} {new Date(selectedNotif.created_at).toLocaleString()}</p>
                   
                   <div className="text-sm md:text-lg leading-relaxed text-foreground/80 font-medium whitespace-pre-wrap mb-10">
                     {selectedNotif.data?.message || selectedNotif.message}
@@ -455,14 +453,14 @@ export function UnifiedInbox() {
 
                   {(selectedNotif.data?.link || selectedNotif.link) && (
                     <a href={selectedNotif.data?.link || selectedNotif.link} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-4 bg-foreground text-background rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-xs md:text-sm hover:scale-[1.02] transition-all shadow-xl">
-                      Take Action <LinkIcon size={16} />
+                      {t("inbox.take_action")} <LinkIcon size={16} />
                     </a>
                   )}
 
                   {isAdmin && (
                     <div className="mt-10 md:mt-20 pt-6 md:pt-10 border-t border-border/50 flex justify-center">
                        <button onClick={() => handleDeleteNotification(selectedNotif.id)} className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold text-[10px] md:text-xs uppercase transition-all">
-                         <Trash2 size={14} /> Delete
+                         <Trash2 size={14} /> {t("inbox.delete")}
                        </button>
                     </div>
                   )}
@@ -471,8 +469,8 @@ export function UnifiedInbox() {
           ) : (
              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground/20 p-10 select-none">
                 <Store size={100} className="md:w-[150px] md:h-[150px]" />
-                <h2 className="text-xl md:text-3xl font-black mt-4 uppercase tracking-tighter">Unified Inbox</h2>
-                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] mt-2">Selection required</p>
+                <h2 className="text-xl md:text-3xl font-black mt-4 uppercase tracking-tighter">{t("inbox.unified_title")}</h2>
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] mt-2">{t("inbox.selection_required")}</p>
              </div>
           )}
         </AnimatePresence>
@@ -483,26 +481,26 @@ export function UnifiedInbox() {
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-6 bg-background/80 backdrop-blur-md">
              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-card w-full max-w-xl border border-border shadow-2xl rounded-3xl md:rounded-[40px] overflow-hidden max-h-[90vh] overflow-y-auto">
                 <div className="p-6 md:p-8 border-b border-border bg-primary/5 flex items-center justify-between">
-                   <h2 className="text-xl md:text-2xl font-black tracking-tight uppercase px-4">New Broadcast</h2>
+                   <h2 className="text-xl md:text-2xl font-black tracking-tight uppercase px-4">{t("inbox.new_broadcast")}</h2>
                    <button onClick={() => setShowCreateModal(false)} className="p-2 md:p-3 bg-muted rounded-full"><X size={18} /></button>
                 </div>
                 <form onSubmit={handleCreateNotification} className="p-6 md:p-8 space-y-4 md:space-y-6">
                    <div className="space-y-1.5">
-                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">Headline</label>
-                     <input required value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Maintenance Alert..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm" />
+                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.headline")}</label>
+                     <input required value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm" />
                    </div>
                    <div className="space-y-1.5">
-                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">Action Link</label>
+                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.action_link")}</label>
                      <input value={form.link} onChange={e => setForm({...form, link: e.target.value})} placeholder="https://..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none text-sm" />
                    </div>
                    <div className="space-y-1.5">
-                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">Message Body</label>
-                     <textarea required rows={4} value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="Content here..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none resize-none text-sm" />
+                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.message_body")}</label>
+                     <textarea required rows={4} value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none resize-none text-sm" />
                    </div>
                    <div className="space-y-2">
                      <label className="flex items-center gap-3 p-4 border border-dashed border-border rounded-xl hover:bg-primary/5 cursor-pointer">
                         <Paperclip size={18} />
-                        <span className="text-[10px] font-bold uppercase">Attach (PDF/Images)</span>
+                        <span className="text-[10px] font-bold uppercase">{t("inbox.attach")}</span>
                         <input type="file" multiple className="hidden" onChange={e => e.target.files && setForm({...form, files: [...form.files, ...Array.from(e.target.files!)]})} />
                      </label>
                      <div className="flex flex-wrap gap-1.5 mt-2">
@@ -515,9 +513,9 @@ export function UnifiedInbox() {
                      </div>
                    </div>
                    <div className="pt-4 flex gap-3 md:gap-4">
-                      <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3.5 md:py-4 font-bold border rounded-xl md:rounded-2xl hover:bg-muted text-xs uppercase transition-all">Cancel</button>
+                      <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3.5 md:py-4 font-bold border rounded-xl md:rounded-2xl hover:bg-muted text-xs uppercase transition-all">{t("inbox.cancel")}</button>
                       <button disabled={loading || !form.title || !form.message} className="flex-[2] bg-primary text-primary-foreground py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold shadow-lg text-xs uppercase tracking-widest transition-all">
-                        {loading ? "Sending..." : "Broadcast"}
+                        {loading ? t("inbox.sending") : t("inbox.broadcast")}
                       </button>
                    </div>
                 </form>

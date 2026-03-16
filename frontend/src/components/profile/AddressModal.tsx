@@ -7,6 +7,7 @@ import axios from "axios";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 
 const MapPicker = dynamic(() => import("./MapPicker"), { 
   ssr: false,
@@ -57,6 +58,7 @@ interface NominatimResult {
 const API = "http://localhost:8000/api";
 
 export default function AddressModal({ isOpen, onClose, onSuccess, token, address }: AddressModalProps) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -120,9 +122,9 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
 
   const getErrorMessage = (error: any) => {
     if (axios.isAxiosError(error) && error.response?.status === 429) {
-      return "Map service is busy. Please wait 2 seconds.";
+      return t("profile_page.map_busy");
     }
-    return "Connection error. Please try picking on map manually.";
+    return t("profile_page.map_error");
   };
 
   const handleSearch = (query: string) => {
@@ -200,7 +202,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
 
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      alert(t("profile_page.geo_not_supported"));
       return;
     }
 
@@ -212,7 +214,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
       },
       (error) => {
         console.error("Error getting location", error);
-        alert("Unable to retrieve your location");
+        alert(t("profile_page.geo_error"));
         setLoading(false);
       }
     );
@@ -225,7 +227,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
     const finalType = formData.type === "Other" ? formData.custom_type : formData.type;
     
     if (formData.type === "Other" && !formData.custom_type.trim()) {
-      alert("Please enter a custom name for this address type.");
+      alert(t("profile_page.custom_type_required"));
       setSaving(false);
       return;
     }
@@ -276,9 +278,9 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
             <div className="p-5 md:p-6 border-b border-border flex items-center justify-between bg-card z-30">
               <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                 <MapPin className="text-primary" size={20} />
-                {address ? 'Edit Address' : 'Add New Address'}
+                {address ? t("profile_page.edit_address") : t("profile_page.add_address")}
               </h2>
-              <button title="Close" onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
+              <button title={t("profile_page.cancel")} onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
                 <X size={20} />
               </button>
             </div>
@@ -290,7 +292,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
                   <label className="block text-sm font-medium mb-2">Search Address</label>
                   <div className="relative">
                     <Input
-                      placeholder="Street, building, place name..."
+                      placeholder={t("profile_page.search_placeholder")}
                       value={search}
                       onChange={(e) => handleSearch(e.target.value)}
                       className="pl-10 pr-10 h-11 md:h-12 rounded-xl text-sm"
@@ -335,7 +337,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2 relative z-0">
-                    <label className="block text-sm font-medium">Pick on Map</label>
+                    <label className="block text-sm font-medium">{t("profile_page.map_pick")}</label>
                     <MapPicker 
                       lat={parseFloat(formData.lat) || 10.762622} 
                       lng={parseFloat(formData.lng) || 106.660172} 
@@ -345,7 +347,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Address Nickname</label>
+                    <label className="block text-sm font-medium mb-2">{t("profile_page.address_type")}</label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <select
                         value={formData.type === "Home" || formData.type === "Office" || formData.type === "Other" ? formData.type : "Other"}
@@ -360,7 +362,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
                       {formData.type === "Other" && (
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                           <Input
-                            placeholder="Ex: Store, Warehouse..."
+                            placeholder={t("profile_page.custom_type_placeholder")}
                             value={formData.custom_type}
                             onChange={(e) => setFormData({ ...formData, custom_type: e.target.value })}
                             className="h-11 md:h-12 rounded-xl font-medium text-sm"
@@ -372,11 +374,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Detail Address</label>
+                    <label className="block text-sm font-medium mb-2">{t("profile_page.detail_address")}</label>
                     <textarea
                       value={formData.address_line_1}
                       onChange={(e) => setFormData({ ...formData, address_line_1: e.target.value })}
-                      placeholder="Include house number, street name..."
+                      placeholder={t("profile_page.detail_placeholder")}
                       className="w-full px-4 py-3 bg-background border border-input rounded-xl text-sm min-h-[100px] resize-none font-medium leading-relaxed"
                       required
                     />
@@ -391,16 +393,16 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
                       className="w-5 h-5 rounded-lg border-border text-primary cursor-pointer pointer-events-none"
                     />
                     <label className="text-sm font-semibold cursor-pointer select-none">
-                      Set as default address
+                      {t("profile_page.set_as_default")}
                     </label>
                   </div>
 
                   <div className="flex gap-3 pt-4 pb-10 sticky bottom-0 bg-background md:bg-transparent">
                     <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-xl h-12 font-black">
-                      Cancel
+                      {t("profile_page.cancel")}
                     </Button>
                     <Button type="submit" disabled={saving} className="flex-1 rounded-xl h-12 font-black shadow-lg">
-                      {saving ? "Saving..." : (address ? "Update" : "Add Address")}
+                      {saving ? t("profile_page.saving") : (address ? t("profile_page.update") : t("profile_page.add_address"))}
                     </Button>
                   </div>
                 </form>

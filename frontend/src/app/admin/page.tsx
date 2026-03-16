@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { format } from "date-fns";
+import { vi, enUS } from "date-fns/locale";
 import { Users, Building, ShoppingCart, DollarSign, Activity, PackageSearch } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function AdminDashboardPage() {
+  const { t } = useTranslation();
   const { token } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +35,10 @@ export default function AdminDashboardPage() {
   }, [token]);
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+    return new Intl.NumberFormat(t("locale"), { 
+      style: 'currency', 
+      currency: t("currency_code") 
+    }).format(val);
   };
 
   if (loading) {
@@ -54,8 +60,8 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
-        <p className="text-muted-foreground mt-1">Real-time statistics for the entire ShopDee platform.</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t("admin.system_overview")}</h1>
+        <p className="text-muted-foreground mt-1">{t("admin.system_desc")}</p>
       </div>
 
       {/* Primary Metrics Grid */}
@@ -65,7 +71,7 @@ export default function AdminDashboardPage() {
               <DollarSign size={28} />
            </div>
            <div>
-             <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">Gross Platform Revenue</p>
+             <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">{t("admin.gross_revenue")}</p>
              <h3 className="text-2xl font-black mt-0.5">{formatCurrency(stats.overview.total_revenue || 0)}</h3>
            </div>
         </div>
@@ -75,7 +81,7 @@ export default function AdminDashboardPage() {
               <Activity size={28} />
            </div>
            <div>
-             <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">Platform Earnings (5% Fee)</p>
+             <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">{t("admin.platform_earnings")}</p>
              <h3 className="text-2xl font-black mt-0.5 text-primary">{formatCurrency(stats.overview.platform_earnings || 0)}</h3>
            </div>
         </div>
@@ -85,10 +91,10 @@ export default function AdminDashboardPage() {
               <PackageSearch size={28} />
            </div>
            <div>
-             <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">Total Products</p>
+             <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">{t("admin.total_products")}</p>
              <h3 className="text-2xl font-black mt-0.5">{stats.overview.total_products || 0}</h3>
              {stats.overview.pending_approvals > 0 && (
-                 <p className="text-xs font-semibold text-amber-500 mt-1">{stats.overview.pending_approvals} pending approval</p>
+                 <p className="text-xs font-semibold text-amber-500 mt-1">{stats.overview.pending_approvals} {t("admin.pending_approval")}</p>
              )}
            </div>
         </div>
@@ -98,7 +104,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 rounded-xl p-6 shadow-sm flex justify-between items-center">
           <div>
-            <p className="text-sm font-semibold text-blue-600/80 uppercase tracking-wider">Registered Customers</p>
+            <p className="text-sm font-semibold text-blue-600/80 uppercase tracking-wider">{t("admin.registered_customers")}</p>
             <h3 className="text-3xl font-black mt-1 text-blue-600 dark:text-blue-400">{stats.overview.total_customers || 0}</h3>
           </div>
           <Users size={48} className="text-blue-500/20" />
@@ -106,7 +112,7 @@ export default function AdminDashboardPage() {
 
         <div className="bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 rounded-xl p-6 shadow-sm flex justify-between items-center">
           <div>
-            <p className="text-sm font-semibold text-purple-600/80 uppercase tracking-wider">Active Sellers</p>
+            <p className="text-sm font-semibold text-purple-600/80 uppercase tracking-wider">{t("admin.active_sellers")}</p>
             <h3 className="text-3xl font-black mt-1 text-purple-600 dark:text-purple-400">{stats.overview.total_sellers || 0}</h3>
           </div>
           <Building size={48} className="text-purple-500/20" />
@@ -119,15 +125,15 @@ export default function AdminDashboardPage() {
          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
             <div className="px-6 py-5 border-b border-border bg-muted/20 flex items-center gap-2">
               <Users className="text-primary" size={20} />
-              <h2 className="text-lg font-bold">Newest Registered Users</h2>
+              <h2 className="text-lg font-bold">{t("admin.newest_users")}</h2>
             </div>
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-muted-foreground bg-muted/50 uppercase">
                   <tr>
-                    <th className="px-6 py-4 font-medium">User</th>
-                    <th className="px-6 py-4 font-medium">Role</th>
-                    <th className="px-6 py-4 font-medium">Joined</th>
+                    <th className="px-6 py-4 font-medium">{t("admin.user")}</th>
+                    <th className="px-6 py-4 font-medium">{t("admin.role")}</th>
+                    <th className="px-6 py-4 font-medium">{t("admin.joined")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -143,16 +149,18 @@ export default function AdminDashboardPage() {
                            u.role_id === 2 ? 'bg-purple-500/10 text-purple-500' :
                            'bg-red-500/10 text-red-500'
                          }`}>
-                           {u.role?.name || "Unknown"}
+                           {t(`roles.${u.role?.slug || 'customer'}`)}
                          </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
-                        {format(new Date(u.created_at), "MMM d, yyyy")}
+                        {format(new Date(u.created_at), t("locale") === "vi-VN" ? "dd/MM/yyyy" : "MMM d, yyyy", { 
+                          locale: t("locale") === "vi-VN" ? vi : enUS 
+                        })}
                       </td>
                     </tr>
                   ))}
                   {stats.recent_users?.length === 0 && (
-                     <tr><td colSpan={3} className="px-6 py-8 text-center text-muted-foreground">No recent users.</td></tr>
+                     <tr><td colSpan={3} className="px-6 py-8 text-center text-muted-foreground">{t("admin.no_recent_users")}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -163,15 +171,15 @@ export default function AdminDashboardPage() {
          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
             <div className="px-6 py-5 border-b border-border bg-muted/20 flex items-center gap-2">
               <ShoppingCart className="text-primary" size={20} />
-              <h2 className="text-lg font-bold">Latest Orders</h2>
+              <h2 className="text-lg font-bold">{t("admin.latest_orders")}</h2>
             </div>
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-muted-foreground bg-muted/50 uppercase">
                   <tr>
-                    <th className="px-6 py-4 font-medium">Order / Date</th>
-                    <th className="px-6 py-4 font-medium">Participants</th>
-                    <th className="px-6 py-4 font-medium text-right">Total</th>
+                    <th className="px-6 py-4 font-medium">{t("admin.order_date")}</th>
+                    <th className="px-6 py-4 font-medium">{t("admin.participants")}</th>
+                    <th className="px-6 py-4 font-medium text-right">{t("admin.total")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -179,7 +187,11 @@ export default function AdminDashboardPage() {
                     <tr key={o.id} className="hover:bg-muted/30">
                       <td className="px-6 py-4">
                         <p className="font-bold">#{(o.id).toString().padStart(6,'0')}</p>
-                        <p className="text-xs text-muted-foreground">{format(new Date(o.created_at), "MMM d, yyyy")}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(o.created_at), t("locale") === "vi-VN" ? "dd/MM/yyyy" : "MMM d, yyyy", { 
+                            locale: t("locale") === "vi-VN" ? vi : enUS 
+                          })}
+                        </p>
                       </td>
                       <td className="px-6 py-4 text-xs">
                         <p><span className="text-muted-foreground">C:</span> {o.customer?.name}</p>
@@ -191,7 +203,7 @@ export default function AdminDashboardPage() {
                     </tr>
                   ))}
                   {stats.recent_orders?.length === 0 && (
-                     <tr><td colSpan={3} className="px-6 py-8 text-center text-muted-foreground">No recent orders.</td></tr>
+                     <tr><td colSpan={3} className="px-6 py-8 text-center text-muted-foreground">{t("admin.no_recent_orders")}</td></tr>
                   )}
                 </tbody>
               </table>

@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
+import { useTranslation } from "react-i18next";
 
 export default function CartPage() {
+  const { t } = useTranslation();
   const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCartStore();
   const { formatPrice } = useCurrencyStore();
 
@@ -18,11 +20,11 @@ export default function CartPage() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 text-muted-foreground">
       <ShoppingBag size={64} className="opacity-20" />
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-foreground mb-2">Your cart is empty</h2>
-        <p>Add some products to get started</p>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{t("cart_page.empty_cart")}</h2>
+        <p>{t("cart_page.empty_desc")}</p>
       </div>
       <Link href="/products" className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:opacity-90 transition-opacity">
-        Browse Products
+        {t("cart_page.browse_products")}
       </Link>
     </div>
   );
@@ -30,8 +32,8 @@ export default function CartPage() {
   return (
     <div className="min-h-screen px-6 md:px-10 py-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold flex items-center gap-2"><ShoppingCart size={24} /> Shopping Cart ({items.length} items)</h1>
-        <button onClick={clearCart} className="text-sm text-destructive hover:bg-destructive/10 px-3 py-1.5 rounded-lg transition-colors">Clear All</button>
+        <h1 className="text-2xl font-bold flex items-center gap-2"><ShoppingCart size={24} /> {t("cart_page.title")} ({items.length} {t("cart_page.items")})</h1>
+        <button onClick={clearCart} className="text-sm text-destructive hover:bg-destructive/10 px-3 py-1.5 rounded-lg transition-colors">{t("cart_page.clear_all")}</button>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -80,24 +82,24 @@ export default function CartPage() {
         {/* Summary */}
         <div className="lg:col-span-1">
           <div className="bg-card border border-border rounded-2xl p-6 sticky top-24 space-y-4">
-            <h2 className="text-lg font-bold">Order Summary</h2>
+            <h2 className="text-lg font-bold">{t("cart_page.summary")}</h2>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} items)</span><span>{formatPrice(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("cart_page.subtotal")} ({items.reduce((s, i) => s + i.quantity, 0)} {t("cart_page.items")})</span><span>{formatPrice(subtotal)}</span></div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Shipping</span>
-                <span className={shipping === 0 ? "text-green-600 font-medium" : ""}>{shipping === 0 ? "FREE" : formatPrice(shipping)}</span>
+                <span className="text-muted-foreground">{t("cart_page.shipping")}</span>
+                <span className={shipping === 0 ? "text-green-600 font-medium" : ""}>{shipping === 0 ? t("cart_page.free") : formatPrice(shipping)}</span>
               </div>
-              {shipping > 0 && <p className="text-xs text-muted-foreground">Free shipping on orders over {formatPrice(500000)}</p>}
+              {shipping > 0 && <p className="text-xs text-muted-foreground">{t("cart_page.free_shipping_over")} {formatPrice(500000)}</p>}
             </div>
             <div className="border-t border-border pt-4 flex justify-between font-bold text-lg">
-              <span>Total</span><span className="text-primary">{formatPrice(total)}</span>
+              <span>{t("cart_page.total")}</span><span className="text-primary">{formatPrice(total)}</span>
             </div>
             <Link href="/checkout"
               className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-              Proceed to Checkout <ArrowRight size={18} />
+              {t("cart_page.checkout")} <ArrowRight size={18} />
             </Link>
             <Link href="/products" className="w-full py-2 text-sm text-center text-muted-foreground hover:text-foreground transition-colors block">
-              Continue Shopping
+              {t("cart_page.continue_shopping")}
             </Link>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { X, Save, Upload, Trash2, Plus, ChevronDown, AlertTriangle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 
 const API = "http://localhost:8000/api";
 
@@ -32,6 +33,7 @@ const emptySubValue = (): SubValue => ({ option_value: "", price_adjustment: 0, 
 const emptyValue = (): OptionValue => ({ option_value: "", price_adjustment: 0, stock_quantity: 0, sub_values: [] });
 
 export function EditProductModal({ productId, onClose, onSuccess }: Props) {
+  const { t } = useTranslation();
   const { token } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,7 +281,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
       <div className="bg-card w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-xl overflow-hidden border border-border">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-          <h2 className="text-xl font-bold">Edit Product</h2>
+          <h2 className="text-xl font-bold">{t("seller.products_manage.edit_product")}</h2>
           <button onClick={onClose} className="p-2 hover:bg-muted text-muted-foreground rounded-full transition-colors"><X size={20} /></button>
         </div>
 
@@ -290,24 +292,24 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Title</label>
+                <label className="block text-sm font-medium mb-1">{t("seller.finance.description")}</label>
                 <input type="text" name="title" value={formData.title} onChange={handleChange} required
                   className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Description</label>
+                <label className="block text-sm font-medium mb-1">{t("seller.finance.description")}</label>
                 <textarea name="description" value={formData.description} onChange={handleChange} required rows={3}
                   className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium">Category</label>
-                  <button type="button" onClick={() => setShowAddCategory(true)} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus size={10} /> New</button>
+                  <label className="block text-sm font-medium">{t("seller.products_manage.category")}</label>
+                  <button type="button" onClick={() => setShowAddCategory(true)} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus size={10} /> {t("seller.products_manage.new")}</button>
                 </div>
                 <div className="relative">
                   <select name="category_id" value={formData.category_id} onChange={handleChange} required
                     className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50 pr-8">
-                    <option value="">Select category</option>
+                    <option value="">{t("seller.products_manage.select_category")}</option>
                     {categories.map(cat => (
                       <optgroup key={cat.id} label={cat.name}>
                         <option value={cat.id}>{cat.name}</option>
@@ -319,19 +321,19 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
+                <label className="block text-sm font-medium mb-1">{t("seller.orders.status")}</label>
                 <select name="status" value={formData.status} onChange={handleChange}
                   className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                  <option value="active">Active</option>
+                  <option value="active">{t("seller.orders.status_processing")}</option>
                   <option value="inactive">Draft</option>
                   <option value="archived">Archived</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Base Price (VNĐ)</label>
+                <label className="block text-sm font-medium mb-1">{t("seller.products_manage.base_price")}</label>
                 {options.length > 0 ? (
                   <div className="w-full px-3 py-2 bg-muted border border-dashed border-border rounded-xl text-sm font-medium">
-                    <span className="text-muted-foreground">Giá rẻ nhất: </span>
+                    <span className="text-muted-foreground">{t("seller.products_manage.cheapest_price")}: </span>
                     <span className="text-primary">
                       {(() => {
                         let min = Infinity;
@@ -343,7 +345,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                             if (v.option_value.trim() && v.price_adjustment < min) min = v.price_adjustment;
                           }
                         }));
-                        return min === Infinity ? "0 VNĐ" : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(min);
+                        return min === Infinity ? `0 ${t("currency_code")}` : new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(min);
                       })()}
                     </span>
                   </div>
@@ -353,7 +355,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Stock</label>
+                <label className="block text-sm font-medium mb-1">{t("seller.products_manage.stock")}</label>
                 {options.length > 0 ? (
                   <div className="w-full px-3 py-2 bg-muted border border-dashed border-border rounded-xl text-sm">
                     <span className="text-muted-foreground">Tổng từ options: </span>
@@ -540,11 +542,11 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
           )}
           <div className="flex items-center gap-3">
             <button type="button" onClick={onClose} disabled={saving || deleting}
-              className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50">Cancel</button>
+              className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50">{t("inbox.cancel")}</button>
             <button type="submit" form="edit-product-form" disabled={saving || deleting}
               className="bg-primary text-primary-foreground flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity">
               {saving ? <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> : <Save size={16} />}
-              Save
+              {t("seller.products_manage.save")}
             </button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { X, Package, Truck, Calendar, MapPin, User, CheckCircle, XCircle, Messag
 import { useAuthStore } from "@/store/useAuthStore";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 const API = "http://localhost:8000/api";
 
@@ -49,6 +50,7 @@ interface OrderDetailsModalProps {
 }
 
 export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDetailsModalProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { token } = useAuthStore();
   const [order, setOrder] = useState<Order | null>(null);
@@ -90,6 +92,13 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
     }
   };
 
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat(t("locale"), { 
+      style: "currency", 
+      currency: t("currency_code") 
+    }).format(val);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
       <div className="bg-card w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl shadow-xl overflow-hidden border border-border">
@@ -98,9 +107,9 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
         <div className="flex items-center justify-between p-4 border-b border-border bg-muted/20">
           <div>
             <h2 className="text-xl font-bold flex items-center gap-2">
-              Order #{order.id.toString().padStart(6, '0')}
+              {t("seller.orders.order_id")} #{order.id.toString().padStart(6, '0')}
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wider ${getStatusColor(order.status)}`}>
-                {order.status}
+                {t(`seller.orders.status_${order.status}`)}
               </span>
             </h2>
             <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
@@ -118,7 +127,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
             
             {/* Customer Info */}
             <div className="p-6 space-y-4">
-              <h3 className="font-bold flex items-center gap-2 text-foreground/80"><User size={18}/> Customer</h3>
+              <h3 className="font-bold flex items-center gap-2 text-foreground/80"><User size={18}/> {t("seller.orders.customer")}</h3>
               <div className="text-sm space-y-1">
                 <p className="font-medium">{customerName}</p>
                 <p className="text-muted-foreground">{order.customer.email}</p>
@@ -131,13 +140,13 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                 className="w-full flex items-center justify-center gap-2 mt-2 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold hover:bg-primary hover:text-white transition-all"
               >
                 <MessageSquare size={14} />
-                Chat with Customer
+                {t("inbox.say_something")}
               </button>
             </div>
 
             {/* Shipping Info */}
             <div className="p-6 space-y-4 md:col-span-2">
-               <h3 className="font-bold flex items-center gap-2 text-foreground/80"><MapPin size={18}/> Shipping Address</h3>
+               <h3 className="font-bold flex items-center gap-2 text-foreground/80"><MapPin size={18}/> {t("seller.settings.addresses")}</h3>
                <div className="text-sm space-y-1 text-muted-foreground">
                   <p className="font-medium text-foreground">{order.shipping_address.address_line1}</p>
                   {order.shipping_address.address_line2 && <p>{order.shipping_address.address_line2}</p>}
@@ -149,15 +158,15 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
 
           {/* Items */}
           <div className="p-6">
-            <h3 className="font-bold flex items-center gap-2 mb-4 text-foreground/80"><Package size={18}/> Ordered Items</h3>
+            <h3 className="font-bold flex items-center gap-2 mb-4 text-foreground/80"><Package size={18}/> {t("seller.orders.items")}</h3>
             <div className="border border-border rounded-xl overflow-hidden">
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-muted/50 text-muted-foreground border-b border-border">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Product</th>
-                    <th className="px-4 py-3 font-medium">Price</th>
-                    <th className="px-4 py-3 font-medium">Qty</th>
-                    <th className="px-4 py-3 font-medium text-right">Subtotal</th>
+                    <th className="px-4 py-3 font-medium">{t("seller.finance.description")}</th>
+                    <th className="px-4 py-3 font-medium">{t("seller.finance.amount")}</th>
+                    <th className="px-4 py-3 font-medium">{t("seller.orders.items")}</th>
+                    <th className="px-4 py-3 font-medium text-right">{t("seller.orders.total")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -175,11 +184,11 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                         <span className="truncate max-w-[200px]">{item.product.title}</span>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unit_price)}
+                        {formatCurrency(item.unit_price)}
                       </td>
                       <td className="px-4 py-3 font-medium">x{item.quantity}</td>
                       <td className="px-4 py-3 text-right font-medium text-primary">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.unit_price * item.quantity)}
+                        {formatCurrency(item.unit_price * item.quantity)}
                       </td>
                     </tr>
                   ))}
@@ -190,23 +199,23 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
             <div className="mt-4 flex justify-end">
               <div className="w-full max-w-xs space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.total_amount)}</span>
+                  <span className="text-muted-foreground">{t("seller.finance.amount")}</span>
+                  <span className="font-medium">{formatCurrency(order.total_amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">Free</span>
+                  <span className="text-muted-foreground">{t("seller.orders.shipping_cost")}</span>
+                  <span className="font-medium">{t("seller.orders.free")}</span>
                 </div>
                 <div className="pt-2 border-t border-border flex justify-between">
-                  <span className="font-bold">Total</span>
-                  <span className="font-bold text-lg text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.total_amount)}</span>
+                  <span className="font-bold">{t("seller.orders.total")}</span>
+                  <span className="font-bold text-lg text-primary">{formatCurrency(order.total_amount)}</span>
                 </div>
               </div>
             </div>
 
             {order.notes && (
               <div className="mt-6 p-4 bg-amber-500/10 text-amber-900 border border-amber-500/20 rounded-xl text-sm">
-                <strong>Customer Notes:</strong> {order.notes}
+                <strong>{t("seller.orders.customer_notes")}</strong> {order.notes}
               </div>
             )}
           </div>
@@ -218,11 +227,11 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
             <>
               <button onClick={() => { handleUpdateStatus('cancelled'); onClose(); }}
                 className="px-4 py-2 border border-destructive/30 text-destructive bg-destructive/5 rounded-xl text-sm font-medium hover:bg-destructive hover:text-white transition-colors flex items-center gap-2">
-                <XCircle size={16}/> Cancel Order
+                <XCircle size={16}/> {t("seller.orders.cancel_order")}
               </button>
               <button onClick={() => { handleUpdateStatus('processing'); onClose(); }}
                 className="bg-primary text-primary-foreground px-6 py-2 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
-                <CheckCircle size={16}/> Approve Order
+                <CheckCircle size={16}/> {t("seller.orders.approve_order")}
               </button>
             </>
           )}
@@ -230,20 +239,20 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
           {order.status === 'processing' && (
             <button onClick={() => { handleUpdateStatus('shipped'); onClose(); }}
               className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2">
-              <Truck size={16}/> Mark as Shipped
+              <Truck size={16}/> {t("seller.orders.mark_as_shipped")}
             </button>
           )}
 
           {order.status === 'shipped' && (
             <button onClick={() => { handleUpdateStatus('delivered'); onClose(); }}
               className="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
-              <CheckCircle size={16}/> Mark as Delivered
+              <CheckCircle size={16}/> {t("seller.orders.status_delivered")}
             </button>
           )}
 
           <button type="button" onClick={onClose}
             className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-accent transition-colors">
-            Close
+            {t("inbox.cancel")}
           </button>
         </div>
       </div>

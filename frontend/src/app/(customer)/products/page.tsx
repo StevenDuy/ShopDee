@@ -9,6 +9,7 @@ import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 
 interface Category { id: number; name: string; slug: string; children?: Category[] }
 interface Product {
@@ -19,12 +20,6 @@ interface Product {
 }
 
 const API = "http://localhost:8000/api";
-const SORT_OPTIONS = [
-  { value: "newest", label: "Newest" },
-  { value: "best_sellers", label: "Best Sellers" },
-  { value: "price_asc", label: "Price: Low → High" },
-  { value: "price_desc", label: "Price: High → Low" },
-];
 
 function ProductCard({ product }: { product: Product }) {
   const { formatPrice } = useCurrencyStore();
@@ -33,7 +28,7 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <Link href={`/products/${product.slug}`}>
       <motion.div
-        whileHover={{ y: -6, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
+        whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="bg-card border border-border rounded-2xl overflow-hidden group h-full flex flex-col transition-shadow"
       >
@@ -71,6 +66,7 @@ function ProductCard({ product }: { product: Product }) {
 }
 
 export default function ProductsPage() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -129,7 +125,7 @@ export default function ProductsPage() {
             <input
               type="text"
               defaultValue={search}
-              placeholder="Search products..."
+              placeholder={t("products_page.search_placeholder")}
               onChange={(e) => updateParam("search", e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
             />
@@ -142,7 +138,10 @@ export default function ProductsPage() {
               onChange={(e) => updateParam("sort", e.target.value)}
               className="pl-3 pr-8 py-2.5 bg-input border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              <option value="newest">{t("products_page.sort_newest")}</option>
+              <option value="best_sellers">{t("products_page.sort_best_sellers")}</option>
+              <option value="price_asc">{t("products_page.sort_price_asc")}</option>
+              <option value="price_desc">{t("products_page.sort_price_desc")}</option>
             </select>
             <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           </div>
@@ -150,7 +149,7 @@ export default function ProductsPage() {
           {/* Filter toggle */}
           <button onClick={() => setShowFilters(s => !s)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${showFilters ? "bg-primary text-primary-foreground border-primary" : "bg-input border-border"}`}>
-            <SlidersHorizontal size={16} /> Filters
+            <SlidersHorizontal size={16} /> {t("products_page.filters")}
           </button>
         </div>
 
@@ -161,7 +160,7 @@ export default function ProductsPage() {
             {/* Category */}
             <select value={category} onChange={(e) => updateParam("category", e.target.value)}
               className="px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-              <option value="">All Categories</option>
+              <option value="">{t("products_page.all_categories")}</option>
               {categories.map((c) => (
                 <optgroup key={c.id} label={c.name}>
                   <option value={c.slug}>{c.name} (All)</option>
@@ -171,17 +170,17 @@ export default function ProductsPage() {
             </select>
 
             {/* Price range */}
-            <input type="number" placeholder="Min price" defaultValue={minPrice}
+            <input type="number" placeholder={t("products_page.min_price")} defaultValue={minPrice}
               onChange={(e) => updateParam("min_price", e.target.value)}
               className="w-32 px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-            <input type="number" placeholder="Max price" defaultValue={maxPrice}
+            <input type="number" placeholder={t("products_page.max_price")} defaultValue={maxPrice}
               onChange={(e) => updateParam("max_price", e.target.value)}
               className="w-32 px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
 
             {(search || category || minPrice || maxPrice) && (
               <button onClick={() => router.push("/products")}
                 className="flex items-center gap-1 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-xl transition-colors">
-                <X size={14} /> Clear All
+                <X size={14} /> {t("products_page.clear_all")}
               </button>
             )}
           </motion.div>
@@ -197,8 +196,8 @@ export default function ProductsPage() {
         ) : products.length === 0 ? (
           <div className="text-center py-24 text-muted-foreground">
             <Search size={48} className="mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium">No products found</p>
-            <p className="text-sm mt-1">Try adjusting your filters or search terms</p>
+            <p className="text-lg font-medium">{t("products_page.no_products")}</p>
+            <p className="text-sm mt-1">{t("products_page.no_products_desc")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

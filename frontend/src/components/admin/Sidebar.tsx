@@ -6,21 +6,23 @@ import { LogOut, LayoutDashboard, Users, ShieldAlert, Settings, Store, Menu, Mes
 import { useAuthStore } from "@/store/useAuthStore";
 import { useState } from "react";
 
-const menuItems = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/admin/users", icon: Users, label: "User Management" },
-  { href: "/admin/moderation", icon: ShieldAlert, label: "Moderation" },
-  { href: "/admin/inbox", icon: MessageCircle, label: "Inbox" },
-  { href: "/admin/settings", icon: Settings, label: "System Config" },
-];
-
 import { UserDropdown } from "@/components/common/UserDropdown";
+import { useTranslation } from "react-i18next";
 
 export function AdminSidebar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
+
+  const menuItems = [
+    { href: "/admin", icon: LayoutDashboard, label: t("admin.dashboard") },
+    { href: "/admin/users", icon: Users, label: t("admin.users_nav") },
+    { href: "/admin/moderation", icon: ShieldAlert, label: t("admin.moderation_nav") },
+    { href: "/admin/inbox", icon: MessageCircle, label: t("admin.inbox_nav") },
+    { href: "/admin/settings", icon: Settings, label: t("admin.settings_nav") },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -41,7 +43,7 @@ export function AdminSidebar() {
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
             <ShieldAlert size={18} />
           </div>
-          <span className="text-xl font-bold tracking-tight">Admin Portal</span>
+          <span className="text-xl font-bold tracking-tight">{t("admin.portal")}</span>
         </div>
 
         <div className="p-4 border-b border-border bg-muted/20">

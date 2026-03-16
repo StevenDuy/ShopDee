@@ -24,11 +24,6 @@ interface Product {
 }
 
 const API = "http://localhost:8000/api";
-const BANNERS = [
-  { title: "Mua sắm thông minh", subtitle: "Hàng ngàn sản phẩm chờ bạn khám phá", color: "from-violet-600 to-indigo-600", emoji: "🛍️" },
-  { title: "Ưu đãi hôm nay", subtitle: "Giảm đến 50% cho đơn hàng đầu tiên", color: "from-rose-600 to-pink-600", emoji: "🎉" },
-  { title: "Giao hàng nhanh", subtitle: "Nhận hàng trong 24h toàn quốc", color: "from-emerald-600 to-teal-600", emoji: "🚀" },
-];
 
 function ProductCard({ product }: { product: Product }) {
   const { formatPrice } = useCurrencyStore();
@@ -37,7 +32,7 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <Link href={`/products/${product.slug}`}>
       <motion.div
-        whileHover={{ y: -6, shadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
+        whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="bg-card border border-border rounded-2xl overflow-hidden group h-full flex flex-col transition-shadow"
       >
@@ -87,7 +82,7 @@ function Section({ title, icon: Icon, products, href }: { title: string; icon: R
           <h2 className="text-xl font-bold">{title}</h2>
         </div>
         <Link href={href} className="text-sm text-primary font-medium flex items-center gap-1 hover:opacity-80 transition-opacity">
-          View all <ArrowRight size={16} />
+          {useTranslation().t("view_all")} <ArrowRight size={16} />
         </Link>
       </div>
       {products.length === 0 ? (
@@ -106,12 +101,13 @@ function Section({ title, icon: Icon, products, href }: { title: string; icon: R
 }
 
 export default function CustomerHomePage() {
+  const { t } = useTranslation();
   const [bannerIdx, setBannerIdx] = useState(0);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
 
   useEffect(() => {
-    const timer = setInterval(() => setBannerIdx((i) => (i + 1) % BANNERS.length), 4000);
+    const timer = setInterval(() => setBannerIdx((i) => (i + 1) % 3), 4000);
     return () => clearInterval(timer);
   }, []);
 
@@ -120,13 +116,14 @@ export default function CustomerHomePage() {
     axios.get(`${API}/products?sort=best_sellers&limit=8&status=active`).then((r) => setBestSellers(r.data.data ?? r.data ?? [])).catch(() => { });
   }, []);
 
-  const banner = BANNERS[bannerIdx];
+  const bannerColors = ["from-violet-600 to-indigo-600", "from-rose-600 to-pink-600", "from-emerald-600 to-teal-600"];
+  const bannerEmojis = ["🛍️", "🎉", "🚀"];
 
   return (
     <div className="min-h-screen">
       {/* Hero Banner */}
       <Link href="/products" className="block p-6 md:p-10">
-        <div className={`relative h-64 md:h-80 bg-gradient-to-r ${banner.color} rounded-3xl flex items-center overflow-hidden cursor-pointer group shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]`}>
+        <div className={`relative h-64 md:h-80 bg-gradient-to-r ${bannerColors[bannerIdx]} rounded-3xl flex items-center overflow-hidden cursor-pointer group shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]`}>
           <motion.div
             key={bannerIdx}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -134,14 +131,18 @@ export default function CustomerHomePage() {
             transition={{ duration: 0.4 }}
             className="px-10 z-10"
           >
-            <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-500">{banner.emoji}</div>
-            <h1 className="text-4xl md:text-5xl font-black text-white mb-2 leading-tight">{banner.title}</h1>
-            <p className="text-white/90 text-xl font-medium">{banner.subtitle}</p>
+            <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-500">{bannerEmojis[bannerIdx]}</div>
+            <h1 className="text-4xl md:text-5xl font-black text-white mb-2 leading-tight">
+              {t(`customer_home.banners.${bannerIdx}.title`)}
+            </h1>
+            <p className="text-white/90 text-xl font-medium">
+              {t(`customer_home.banners.${bannerIdx}.subtitle`)}
+            </p>
           </motion.div>
 
           {/* Dots */}
           <div className="absolute bottom-6 left-10 flex gap-2 z-20">
-            {BANNERS.map((_, i) => (
+            {[0, 1, 2].map((i) => (
               <button 
                 key={i} 
                 onClick={(e) => { e.preventDefault(); setBannerIdx(i); }} 
@@ -159,8 +160,8 @@ export default function CustomerHomePage() {
 
       {/* Product Sections */}
       <div className="px-6 md:px-10 py-10 max-w-7xl mx-auto">
-        <Section title="Best Sellers" icon={TrendingUp} products={bestSellers} href="/products?sort=best_sellers" />
-        <Section title="New Arrivals" icon={Sparkles} products={newArrivals} href="/products?sort=newest" />
+        <Section title={t("customer_home.best_sellers")} icon={TrendingUp} products={bestSellers} href="/products?sort=best_sellers" />
+        <Section title={t("customer_home.new_arrivals")} icon={Sparkles} products={newArrivals} href="/products?sort=newest" />
       </div>
     </div>
   );

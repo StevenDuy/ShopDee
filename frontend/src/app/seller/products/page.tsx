@@ -6,6 +6,7 @@ import { Plus, Search, Edit, Trash2, Image as ImageIcon } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { EditProductModal } from "@/components/seller/EditProductModal";
+import { useTranslation } from "react-i18next";
 
 const API = "http://localhost:8000/api";
 
@@ -20,6 +21,7 @@ type Product = {
 };
 
 export default function SellerProductsPage() {
+  const { t } = useTranslation();
   const { token } = useAuthStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ export default function SellerProductsPage() {
 
   const handleDelete = async (id: number) => {
     if (!token) return;
-    if (!confirm("Are you sure you want to delete this product?")) return;
+    if (!confirm(t("common.confirm_delete", { defaultValue: "Are you sure you want to delete this product?" }))) return;
     
     try {
       await axios.delete(`${API}/seller/products/${id}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -69,12 +71,12 @@ export default function SellerProductsPage() {
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <p className="text-muted-foreground mt-1">Manage your inventory and catalog.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("seller.products")}</h1>
+          <p className="text-muted-foreground mt-1">{t("seller.products_manage.desc")}</p>
         </div>
         <Link href="/seller/products/new" className="bg-primary text-primary-foreground flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium hover:opacity-90 transition-opacity whitespace-nowrap">
           <Plus size={18} />
-          Add Product
+          {t("seller.products_manage.add_product")}
         </Link>
       </div>
 
@@ -84,7 +86,7 @@ export default function SellerProductsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <input 
               type="text" 
-              placeholder="Search products..." 
+              placeholder={t("products_page.search_placeholder")} 
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
@@ -96,18 +98,18 @@ export default function SellerProductsPage() {
           <table className="w-full text-left text-sm border-separate border-spacing-0">
             <thead className="bg-muted/50 text-muted-foreground border-b border-border">
               <tr>
-                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Product</th>
-                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px] hidden sm:table-cell">Category</th>
-                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Price</th>
-                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px] hidden lg:table-cell">Inventory</th>
-                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Status</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">{t("seller.products_manage.product")}</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px] hidden sm:table-cell">{t("seller.products_manage.category")}</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">{t("seller.products_manage.price")}</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px] hidden lg:table-cell">{t("seller.products_manage.inventory")}</th>
+                <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">{t("seller.products_manage.status")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading && products.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                    <span className="animate-pulse">Loading products...</span>
+                    <span className="animate-pulse">{t("seller.products_manage.loading_products")}</span>
                   </td>
                 </tr>
               ) : products.length === 0 ? (
@@ -115,7 +117,7 @@ export default function SellerProductsPage() {
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center">
                       <ImageIcon size={48} className="opacity-20 mb-3" />
-                      <p>You haven't listed any products yet.</p>
+                      <p>{t("seller.products_manage.no_products_yet")}</p>
                     </div>
                   </td>
                 </tr>
@@ -141,18 +143,18 @@ export default function SellerProductsPage() {
                       <span className="bg-muted px-2 py-1 rounded text-xs">{p.category?.name || "N/A"}</span>
                     </td>
                     <td className="px-6 py-4 font-medium">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price)}
+                      {new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(p.price)}
                     </td>
                     <td className="px-6 py-4 hidden lg:table-cell whitespace-nowrap">
                       {p.stock_quantity > 0 ? (
-                        <span className="text-foreground">{p.stock_quantity} in stock</span>
+                        <span className="text-foreground">{p.stock_quantity} {t("seller.products_manage.in_stock")}</span>
                       ) : (
-                        <span className="text-destructive font-medium">Out of stock</span>
+                        <span className="text-destructive font-medium">{t("seller.products_manage.out_of_stock")}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {p.status === 'active' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Active</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{t("seller.products_manage.active")}</span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-muted text-muted-foreground border border-border capitalize">{p.status}</span>
                       )}
