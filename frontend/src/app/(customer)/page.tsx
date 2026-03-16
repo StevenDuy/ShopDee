@@ -103,15 +103,27 @@ function Section({ title, icon: Icon, products, href }: { title: string; icon: R
 export default function CustomerHomePage() {
   const { t } = useTranslation();
   const [bannerIdx, setBannerIdx] = useState(0);
+  const [banners, setBanners] = useState<any[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
 
-  useEffect(() => {
-    const timer = setInterval(() => setBannerIdx((i) => (i + 1) % 3), 4000);
-    return () => clearInterval(timer);
-  }, []);
+  // Helper to get full image URL
+  const getFullImageUrl = (path: string | null) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    const baseUrl = API.replace("/api", "");
+    return `${baseUrl}${path}`;
+  };
 
   useEffect(() => {
+    if (banners.length > 0) {
+      const timer = setInterval(() => setBannerIdx((i) => (i + 1) % banners.length), 4000);
+      return () => clearInterval(timer);
+    }
+  }, [banners.length]);
+
+  useEffect(() => {
+    axios.get(`${API}/banners?active_only=1`).then((r) => setBanners(r.data)).catch(() => { });
     axios.get(`${API}/products?sort=newest&limit=8&status=active`).then((r) => setNewArrivals(r.data.data ?? r.data ?? [])).catch(() => { });
     axios.get(`${API}/products?sort=best_sellers&limit=8&status=active`).then((r) => setBestSellers(r.data.data ?? r.data ?? [])).catch(() => { });
   }, []);
@@ -122,41 +134,52 @@ export default function CustomerHomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Banner */}
-      <Link href="/products" className="block p-6 md:p-10">
-        <div className={`relative h-64 md:h-80 bg-gradient-to-r ${bannerColors[bannerIdx]} rounded-3xl flex items-center overflow-hidden cursor-pointer group shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]`}>
-          <motion.div
-            key={bannerIdx}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="px-10 z-10"
-          >
-            <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-500">{bannerEmojis[bannerIdx]}</div>
-            <h1 className="text-4xl md:text-5xl font-black text-white mb-2 leading-tight">
-              {t(`customer_home.banners.${bannerIdx}.title`)}
-            </h1>
-            <p className="text-white/90 text-xl font-medium">
-              {t(`customer_home.banners.${bannerIdx}.subtitle`)}
-            </p>
-          </motion.div>
-
-          {/* Dots */}
-          <div className="absolute bottom-6 left-10 flex gap-2 z-20">
-            {[0, 1, 2].map((i) => (
-              <button 
-                key={i} 
-                onClick={(e) => { e.preventDefault(); setBannerIdx(i); }} 
-                className={`w-2 h-2 rounded-full transition-all ${i === bannerIdx ? "bg-white w-8" : "bg-white/40"}`} 
+      {banners.length > 0 && (
+        <div className="w-full">
+          <Link href={`/products/${banners[bannerIdx].product?.slug || ""}`} className="block">
+            <div className="relative w-full aspect-[16/9] md:aspect-[21/7] bg-muted overflow-hidden cursor-pointer group shadow-xl transition-all">
+              
+              {/* Main Banner Image */}
+              <img 
+                src={getFullImageUrl(banners[bannerIdx].image_path)!} 
+                alt={banners[bannerIdx].title}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.05]" 
               />
-            ))}
-          </div>
 
-          {/* Decorative elements */}
-          <div className="absolute right-0 top-0 w-1/3 h-full bg-gradient-to-l from-white/10 to-transparent pointer-events-none" />
-          <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute -right-10 bottom-0 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+              {/* Content Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 md:p-12">
+                 <motion.div
+                   key={bannerIdx}
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ duration: 0.5 }}
+                   className="max-w-2xl"
+                 >
+                    <h1 className="text-2xl md:text-5xl font-black text-white mb-2 leading-tight drop-shadow-lg">
+                      {banners[bannerIdx].title}
+                    </h1>
+                    <p className="text-white/90 text-sm md:text-xl font-medium drop-shadow-md line-clamp-2">
+                      {banners[bannerIdx].subtitle}
+                    </p>
+                 </motion.div>
+              </div>
+
+              {/* Dots */}
+              {banners.length > 1 && (
+                <div className="absolute bottom-4 right-6 md:bottom-8 md:right-12 flex gap-2 z-20">
+                  {banners.map((_, i) => (
+                    <button 
+                      key={i} 
+                      onClick={(e) => { e.preventDefault(); setBannerIdx(i); }} 
+                      className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all ${i === bannerIdx ? "bg-white w-6 md:w-8" : "bg-white/40 hover:bg-white/60"}`} 
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </Link>
         </div>
-      </Link>
+      )}
 
       {/* Product Sections */}
       <div className="px-6 md:px-10 py-10 max-w-7xl mx-auto">

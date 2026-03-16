@@ -24,6 +24,7 @@ Route::prefix('products')->group(function () {
 use App\Http\Controllers\Customer\SellerController;
 Route::get('/shop/{id}', [SellerController::class, 'show']);
 Route::get('/shop/{id}/products', [SellerController::class, 'products']);
+Route::get('/banners', [\App\Http\Controllers\Admin\BannerController::class, 'index']);
 
 use App\Http\Controllers\Customer\OrderController;
 use App\Http\Controllers\Customer\ProfileController;
@@ -126,11 +127,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Banners
         Route::get('/banners/search-products', [\App\Http\Controllers\Admin\BannerController::class, 'searchProducts']);
-        Route::apiResource('/banners', \App\Http\Controllers\Admin\BannerController::class);
+        Route::apiResource('banners', \App\Http\Controllers\Admin\BannerController::class);
     });
 
-    // Public Banners (Maybe for Home)
-    Route::get('/banners', [\App\Http\Controllers\Admin\BannerController::class, 'index']);
 
     // --- PROXY ROUTES (To handle Map API CORS/Headers) ---
     Route::prefix('proxy')->group(function () {

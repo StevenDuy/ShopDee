@@ -27,9 +27,15 @@ class BannerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $banners = Banner::with('product')->orderBy('order')->get();
+        $query = Banner::with('product')->orderBy('order');
+        
+        if ($request->query('active_only')) {
+            $query->where('active', true);
+        }
+        
+        $banners = $query->get();
         return response()->json($banners);
     }
 
@@ -41,10 +47,10 @@ class BannerController extends Controller
         $request->validate([
             'title' => 'nullable|string|max:255',
             'subtitle' => 'nullable|string|max:255',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // Max 5MB
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:20480', 
             'product_id' => 'required|exists:products,id',
-            'active' => 'boolean',
-            'order' => 'integer'
+            'active' => 'required|in:0,1,true,false',
+            'order' => 'nullable|integer'
         ]);
 
         $data = $request->only(['title', 'subtitle', 'product_id', 'active', 'order']);
@@ -75,10 +81,10 @@ class BannerController extends Controller
         $request->validate([
             'title' => 'nullable|string|max:255',
             'subtitle' => 'nullable|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:20480',
             'product_id' => 'required|exists:products,id',
-            'active' => 'boolean',
-            'order' => 'integer'
+            'active' => 'required|in:0,1,true,false',
+            'order' => 'nullable|integer'
         ]);
 
         $data = $request->only(['title', 'subtitle', 'product_id', 'active', 'order']);
@@ -102,8 +108,10 @@ class BannerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Banner $banner)
+    public function destroy($id)
     {
+        $banner = Banner::findOrFail($id);
+        
         $oldPath = str_replace('/storage/', '', $banner->image_path);
         if (Storage::disk('public')->exists($oldPath)) {
             Storage::disk('public')->delete($oldPath);

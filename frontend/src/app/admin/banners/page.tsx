@@ -5,6 +5,7 @@ import axios from "axios";
 import { Plus, Trash2, Edit2, ShieldAlert, Image as ImageIcon, Save, X, ExternalLink, Package, Search } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -13,6 +14,14 @@ export default function AdminBannersPage() {
   const { token } = useAuthStore();
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper to get full image URL
+  const getFullImageUrl = (path: string | null) => {
+    if (!path) return null;
+    if (path.startsWith("http") || path.startsWith("blob:") || path.startsWith("data:")) return path;
+    const baseUrl = API_URL.replace("/api", "");
+    return `${baseUrl}${path}`;
+  };
   
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +31,6 @@ export default function AdminBannersPage() {
     subtitle: "",
     product_id: null as number | null,
     active: true,
-    order: 0,
     image: null as File | null
   });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -32,6 +40,9 @@ export default function AdminBannersPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearchingProducts, setIsSearchingProducts] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [imageWarning, setImageWarning] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
 
   const fetchBanners = async () => {
     if (!token) return;
@@ -82,9 +93,39 @@ export default function AdminBannersPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFormData({ ...formData, image: file });
-      setPreviewUrl(URL.createObjectURL(file));
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          if (img.width <= img.height) {
+             setPendingImage(file);
+             setImageWarning(t("admin.banners.aspect_ratio_warning"));
+             // Reset input value to allow re-selecting same file if canceled
+             e.target.value = "";
+             return;
+          }
+          setFormData(prev => ({ ...prev, image: file }));
+          setPreviewUrl(URL.createObjectURL(file));
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const confirmImage = () => {
+    if (pendingImage) {
+      setFormData(prev => ({ ...prev, image: pendingImage }));
+      setPreviewUrl(URL.createObjectURL(pendingImage));
+      setPendingImage(null);
+      setImageWarning(null);
+    }
+  };
+
+  const cancelImage = () => {
+    setPendingImage(null);
+    setImageWarning(null);
   };
 
   const resetForm = () => {
@@ -93,7 +134,6 @@ export default function AdminBannersPage() {
       subtitle: "",
       product_id: null,
       active: true,
-      order: 0,
       image: null
     });
     setPreviewUrl(null);
@@ -101,6 +141,9 @@ export default function AdminBannersPage() {
     setSelectedProduct(null);
     setProductSearch("");
     setSearchResults([]);
+    setShowDeleteConfirm(false);
+    setImageWarning(null);
+    setPendingImage(null);
   };
 
   const handleOpenAdd = () => {
@@ -115,7 +158,6 @@ export default function AdminBannersPage() {
       subtitle: banner.subtitle || "",
       product_id: banner.product_id || null,
       active: !!banner.active,
-      order: banner.order || 0,
       image: null
     });
     setPreviewUrl(banner.image_path);
@@ -131,12 +173,15 @@ export default function AdminBannersPage() {
     data.append("title", formData.title);
     data.append("subtitle", formData.subtitle);
     if (!formData.product_id) {
-       alert("Vui lòng chọn sản phẩm để liên kết banner!");
+       toast.warning(t("admin.banners.select_product_warning"));
        return;
     }
     data.append("product_id", formData.product_id.toString());
     data.append("active", formData.active ? "1" : "0");
-    data.append("order", formData.order.toString());
+    if (!formData.image && !editingBanner) {
+       toast.warning(t("admin.banners.upload_image_warning"));
+       return;
+    }
     if (formData.image) {
       data.append("image", formData.image);
     }
@@ -162,21 +207,33 @@ export default function AdminBannersPage() {
       setIsModalOpen(false);
       resetForm();
       fetchBanners();
-    } catch (err) {
+      toast.success(editingBanner ? t("admin.banners.update_success") : t("admin.banners.create_success"));
+    } catch (err: any) {
       console.error("Failed to save banner", err);
-      alert("Error saving banner. Please check all fields.");
+      const msg = err.response?.data?.message || t("admin.banners.save_error");
+      const errors = err.response?.data?.errors;
+      if (errors) {
+        const detailMsg = Object.values(errors).flat().join("\n");
+        toast.error(msg, { description: detailMsg });
+      } else {
+        toast.error(msg);
+      }
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!token || !confirm(t("admin.banners.delete_confirm"))) return;
+    if (!token) return;
     try {
       await axios.delete(`${API_URL}/admin/banners/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchBanners();
+      setIsModalOpen(false);
+      resetForm();
+      toast.success(t("admin.banners.delete_success"));
     } catch (err) {
       console.error("Failed to delete banner", err);
+      toast.error(t("admin.banners.delete_error"));
     }
   };
 
@@ -215,47 +272,43 @@ export default function AdminBannersPage() {
       ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {banners.map((banner) => (
-               <div key={banner.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm group hover:shadow-md transition-all">
+               <div 
+                 key={banner.id} 
+                 onClick={() => handleOpenEdit(banner)}
+                 className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer relative group"
+               >
                   <div className="aspect-video bg-muted relative overflow-hidden">
                      {banner.image_path ? (
-                        <img src={banner.image_path} alt={banner.title} className="w-full h-full object-cover" />
+                        <img src={getFullImageUrl(banner.image_path)!} alt={banner.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                      ) : (
                         <div className="w-full h-full flex items-center justify-center">
                            <ImageIcon className="text-muted-foreground/20" size={40} />
                         </div>
                      )}
-                     <div className="absolute top-2 right-2 flex gap-1 transform translate-y-[-10px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
-                        <button 
-                          onClick={() => handleOpenEdit(banner)}
-                          className="p-2 bg-white/90 dark:bg-black/90 text-primary rounded-lg shadow-sm hover:bg-primary hover:text-white transition-colors"
-                        >
-                           <Edit2 size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(banner.id)}
-                          className="p-2 bg-white/90 dark:bg-black/90 text-red-500 rounded-lg shadow-sm hover:bg-red-500 hover:text-white transition-colors"
-                        >
-                           <Trash2 size={16} />
-                        </button>
+                     
+                     <div className="absolute top-2 left-2 z-10 flex gap-2">
+                        {banner.active ? (
+                           <span className="px-2 py-1 bg-emerald-500 text-white text-[9px] font-bold rounded-lg uppercase tracking-wider shadow-lg">
+                              {t("admin.banners.status_active")}
+                           </span>
+                        ) : (
+                           <span className="px-2 py-1 bg-black/60 backdrop-blur-md text-white text-[9px] font-bold rounded-lg uppercase tracking-wider shadow-lg">
+                              {t("admin.banners.status_hidden")}
+                           </span>
+                        )}
                      </div>
-                     {!banner.active && (
-                         <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-                            <span className="px-3 py-1 bg-red-500 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">{t("admin.banners.active_label")}: NO</span>
-                         </div>
-                     )}
                   </div>
                   <div className="p-4">
                      <div className="flex justify-between items-start gap-2">
                         <div className="min-w-0 flex-1">
-                           <h3 className="font-bold line-clamp-1">{banner.title || "Untitled"}</h3>
+                           <h3 className="font-bold line-clamp-1 group-hover:text-primary transition-colors">{banner.title || "Untitled"}</h3>
                            <p className="text-xs text-muted-foreground line-clamp-1">{banner.subtitle}</p>
                         </div>
-                        <span className="shrink-0 w-6 h-6 rounded bg-muted flex items-center justify-center text-[10px] font-bold">#{banner.order}</span>
                      </div>
                      {banner.product && (
                         <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-[10px] text-primary font-bold overflow-hidden">
                            <Package size={12} />
-                           <span className="truncate">Sản phẩm: {banner.product.title}</span>
+                           <span className="truncate">{t("admin.banners.product_prefix")}{banner.product.title}</span>
                         </div>
                      )}
                      {/* Legacy link_url display removed */}
@@ -274,21 +327,46 @@ export default function AdminBannersPage() {
                   <button onClick={() => setIsModalOpen(false)} className="p-1.5 hover:bg-muted rounded-full transition-colors text-muted-foreground"><X size={20} /></button>
                </div>
 
-               <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+               <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto [scrollbar-gutter:stable]">
                   <div className="space-y-4">
                      {/* Image Preview / Upload */}
                      <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.image_label")}</label>
                         <div 
                           className="aspect-video rounded-xl border-2 border-dashed border-border bg-muted/30 relative flex items-center justify-center overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors"
-                          onClick={() => document.getElementById('imageInput')?.click()}
+                          onClick={() => !imageWarning && document.getElementById('imageInput')?.click()}
                         >
                            {previewUrl ? (
-                              <img src={previewUrl} className="w-full h-full object-cover" />
+                              <img src={getFullImageUrl(previewUrl)!} className="w-full h-full object-cover animate-in fade-in duration-500" />
                            ) : (
-                              <div className="text-center p-4">
-                                 <ImageIcon className="mx-auto mb-2 text-muted-foreground" size={32} />
-                                 <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Click to upload image</p>
+                               <div className="text-center p-4">
+                                  <ImageIcon className="mx-auto mb-2 text-muted-foreground" size={32} />
+                                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{t("admin.banners.upload_hint")}</p>
+                                  <p className="text-[10px] text-muted-foreground/60 mt-1 italic">{t("admin.banners.aspect_ratio_hint")}</p>
+                               </div>
+                           )}
+
+                           {/* Image Validation Overlay */}
+                           {imageWarning && (
+                              <div className="absolute inset-0 z-20 bg-amber-600/95 backdrop-blur-sm p-4 flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-200">
+                                 <ShieldAlert className="text-white mb-2" size={32} />
+                                 <p className="text-white text-xs font-medium leading-relaxed mb-4">{imageWarning}</p>
+                                 <div className="flex gap-2 w-full max-w-xs">
+                                    <button 
+                                      type="button" 
+                                      onClick={(e) => { e.stopPropagation(); cancelImage(); }}
+                                      className="flex-1 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold text-xs transition-colors"
+                                    >
+                                       {t("profile_page.cancel")}
+                                    </button>
+                                    <button 
+                                      type="button" 
+                                      onClick={(e) => { e.stopPropagation(); confirmImage(); }}
+                                      className="flex-[2] py-2 bg-white text-amber-600 hover:bg-amber-50 rounded-lg font-bold text-xs transition-colors shadow-lg"
+                                    >
+                                       {t("admin.banners.continue_btn")}
+                                    </button>
+                                 </div>
                               </div>
                            )}
                            <input 
@@ -303,13 +381,13 @@ export default function AdminBannersPage() {
 
                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tiêu đề</label>
+                           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.title_label")}</label>
                            <input 
                               type="text" 
                               value={formData.title}
                               onChange={(e) => setFormData({...formData, title: e.target.value})}
                               className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all"
-                              placeholder="Nhập tiêu đề banner"
+                              placeholder={t("admin.banners.placeholder_title")}
                            />
                         </div>
                         <div className="space-y-1">
@@ -319,13 +397,13 @@ export default function AdminBannersPage() {
                               value={formData.subtitle}
                               onChange={(e) => setFormData({...formData, subtitle: e.target.value})}
                               className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all"
-                              placeholder="Nhập phụ đề"
+                              placeholder={t("admin.banners.placeholder_subtitle")}
                            />
                         </div>
                      </div>
 
                      <div className="space-y-1 relative">
-                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Liên kết sản phẩm</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.product_link_label")}</label>
                         {selectedProduct ? (
                            <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl">
                               <div className="flex items-center gap-3">
@@ -353,7 +431,7 @@ export default function AdminBannersPage() {
                                  value={productSearch}
                                  onChange={(e) => setProductSearch(e.target.value)}
                                  className="w-full pl-11 pr-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all"
-                                 placeholder="Tìm kiếm sản phẩm để liên kết..."
+                                 placeholder={t("admin.banners.search_product_placeholder")}
                               />
                            </div>
                         )}
@@ -390,15 +468,6 @@ export default function AdminBannersPage() {
                      {/* Link URL field removed */}
 
                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.order_label")}</label>
-                           <input 
-                              type="number" 
-                              value={formData.order}
-                              onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 0})}
-                              className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all"
-                           />
-                        </div>
                         <div className="flex flex-col justify-end pb-1">
                            <label className="flex items-center gap-3 cursor-pointer group">
                               <input 
@@ -413,21 +482,55 @@ export default function AdminBannersPage() {
                      </div>
                   </div>
 
-                  <div className="pt-6 flex gap-3">
-                     <button 
-                       type="button"
-                       onClick={() => setIsModalOpen(false)}
-                       className="flex-1 py-3 bg-muted hover:bg-muted/80 rounded-xl font-bold transition-all"
-                     >
-                        Cancel
-                     </button>
-                     <button 
-                       type="submit"
-                       className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-bold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98]"
-                     >
-                        {editingBanner ? t("seller.products_manage.update") : t("admin.banners.add")}
-                     </button>
-                  </div>
+                   <div className="pt-6 border-t border-border mt-2 min-h-[140px] flex flex-col gap-3">
+                      <div className="flex gap-3">
+                         <button 
+                           type="button"
+                           onClick={() => setIsModalOpen(false)}
+                           className="flex-1 py-3 bg-muted hover:bg-muted/80 rounded-xl font-bold transition-all text-sm"
+                         >
+                            {t("profile_page.cancel")}
+                         </button>
+                         <button 
+                           type="submit"
+                           className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-bold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] text-sm"
+                         >
+                            {editingBanner ? t("seller.products_manage.update") : t("admin.banners.add")}
+                         </button>
+                      </div>
+                      
+                      {editingBanner && (
+                        <div className="pt-2 border-t border-border/50 min-h-[50px]">
+                           {!showDeleteConfirm ? (
+                             <button 
+                               type="button"
+                               onClick={() => setShowDeleteConfirm(true)}
+                               className="w-full py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-all text-xs flex items-center justify-center gap-2"
+                             >
+                                <Trash2 size={14} />
+                                {t("inbox.delete")} Banner
+                             </button>
+                           ) : (
+                             <div className="flex gap-2 animate-in slide-in-from-bottom-2 duration-300">
+                                <button 
+                                  type="button"
+                                  onClick={() => setShowDeleteConfirm(false)}
+                                  className="flex-1 py-2 bg-muted rounded-xl font-bold text-xs hover:bg-muted/80 transition-colors"
+                                >
+                                   {t("admin.banners.back_btn")}
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={() => handleDelete(editingBanner.id)}
+                                  className="flex-[2] py-2 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20"
+                                >
+                                   {t("admin.banners.confirm_delete_btn")}
+                                </button>
+                             </div>
+                           )}
+                        </div>
+                      )}
+                   </div>
                </form>
             </div>
          </div>
