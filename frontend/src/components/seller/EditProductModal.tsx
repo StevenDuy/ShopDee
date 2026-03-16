@@ -394,7 +394,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
             {/* Media */}
             <div>
               <h3 className="text-sm font-bold mb-3">{t("seller.products_manage.media")}</h3>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 pt-3 pl-3">
                 {formData.media?.map(m => (
                   <div key={m.id} className="relative aspect-square border border-border rounded-xl overflow-hidden group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -413,10 +413,12 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                       className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
                   </div>
                 ))}
-                <label className="aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors">
+                <label className="aspect-square border border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors group">
                   <input type="file" multiple accept="image/*,video/mp4" className="hidden" onChange={handleFileChange} />
-                  <Upload size={18} className="text-muted-foreground mb-1" />
-                  <span className="text-[10px] font-medium text-muted-foreground">{t("seller.products_manage.add_media")}</span>
+                  <div className="p-2 rounded-full bg-muted group-hover:bg-primary/10 transition-colors mb-1">
+                    <Upload size={14} className="text-muted-foreground group-hover:text-primary" />
+                  </div>
+                  <span className="text-[8px] font-bold uppercase tracking-tighter text-muted-foreground group-hover:text-primary">{t("seller.products_manage.add_media")}</span>
                 </label>
               </div>
             </div>

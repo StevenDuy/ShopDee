@@ -67,6 +67,9 @@
     "inbox_nav": "Tin nhắn",
     "finance_nav": "Tài chính",
     "settings_nav": "Thiết lập shop",
+    "inbox": {
+      "chat_now": "Chat ngay"
+    },
     "overview_desc": "Tổng quan về hiệu quả kinh doanh của cửa hàng.",
     "total_revenue": "Tổng doanh thu",
     "total_orders": "Tổng đơn hàng",
@@ -475,5 +478,19 @@
       "momo": "Ví MoMo",
       "vnpay": "VNPay"
     }
+  },
+  "product_details": {
+    "select": "Chọn",
+    "quantity": "Số lượng",
+    "subtotal": "Tổng tạm tính",
+    "description": "MÔ TẢ",
+    "reviews": "ĐÁNH GIÁ",
+    "product_story": "Câu chuyện sản phẩm",
+    "updating_data": "Dữ liệu đang được cập nhật...",
+    "ratings": "Xếp hạng",
+    "customer_experience": "Dựa trên trải nghiệm thực tế",
+    "customers_reviewed": "{{count}} khách hàng đã đánh giá",
+    "purchased": "Đã mua hàng",
+    "complete_selection_warning": "Vui lòng hoàn tất lựa chọn sản phẩm"
   }
 }

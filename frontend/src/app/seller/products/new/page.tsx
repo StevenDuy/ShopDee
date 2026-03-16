@@ -337,7 +337,7 @@ export default function NewProductPage() {
               <h2 className="text-lg font-bold">{t("seller.products_manage.media")}</h2>
               <p className="text-sm text-muted-foreground">{t("seller.products_manage.upload_hint")}</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 pt-3 pl-3">
               {files.map((file, i) => (
                 <div key={i} className="relative aspect-square border border-border rounded-xl overflow-hidden group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -349,12 +349,12 @@ export default function NewProductPage() {
                   {i === 0 && <span className="absolute bottom-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-[10px] uppercase font-bold rounded-md">Primary</span>}
                 </div>
               ))}
-              <label className="aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors">
+              <label className="aspect-square border border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors group">
                 <input type="file" multiple accept="image/*,video/mp4" className="hidden" onChange={handleFileChange} />
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-muted-foreground mb-1">
-                  <Plus size={20} />
+                <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-muted-foreground mb-1 group-hover:bg-primary/10 transition-colors">
+                  <Plus size={16} className="group-hover:text-primary" />
                 </div>
-                <span className="text-sm font-medium">{t("seller.products_manage.add_media")}</span>
+                <span className="text-[8px] font-bold uppercase tracking-tighter text-muted-foreground group-hover:text-primary">{t("seller.products_manage.add_media")}</span>
               </label>
             </div>
           </div>

@@ -236,7 +236,7 @@ export default function ProductDetailPage() {
         <div className="grid lg:grid-cols-2 gap-8 md:gap-12">
 
           {/* Gallery */}
-          <div className="space-y-3">
+          <div className="space-y-5">
             <div className="aspect-square rounded-2xl overflow-hidden bg-muted shadow-inner border border-border/50">
               <AnimatePresence mode="wait">
                 <motion.img key={activeImg} src={images[activeImg].full_url} alt={product.title}
@@ -246,10 +246,10 @@ export default function ProductDetailPage() {
               </AnimatePresence>
             </div>
             {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+              <div className="flex gap-3 overflow-x-auto pb-4 pt-2 pl-2 no-scrollbar">
                 {images.map((img, i) => (
                   <button key={img.id} onClick={() => setActiveImg(i)}
-                    className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden border-2 shrink-0 transition-all shadow-sm ${i === activeImg ? "border-primary scale-105 shadow-md" : "border-transparent opacity-60 hover:opacity-100"}`}>
+                    className={`w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden border shrink-0 transition-all shadow-sm ${i === activeImg ? "border-primary scale-110 shadow-md ring-2 ring-primary/20 -translate-y-1" : "border-transparent opacity-60 hover:opacity-100"}`}>
                     <img src={img.full_url} alt="" loading="lazy" className="w-full h-full object-cover" />
                   </button>
                 ))}
@@ -361,11 +361,6 @@ export default function ProductDetailPage() {
                                     ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20" 
                                     : outOfStock ? "opacity-30 border-dashed cursor-not-allowed line-through grayscale" : "bg-card hover:border-primary/40"}`}>
                                 {val.option_value}
-                                {(!val.sub_values || val.sub_values.length === 0) && parseFloat(String(val.price_adjustment)) > 0 && (
-                                  <span className={`ml-2 text-[10px] opacity-70 ${isSelected ? "text-white" : "text-primary"}`}>
-                                    +{formatPrice(parseFloat(String(val.price_adjustment)))}
-                                  </span>
-                                )}
                               </button>
                             );
                           })}
@@ -374,7 +369,7 @@ export default function ProductDetailPage() {
 
                       {selectedParent?.sub_values?.length > 0 && !isLocked && (
                         <div className="pt-2 pl-5 border-l-2 border-primary/20 space-y-4">
-                          <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest underline decoration-2 underline-offset-4">Chọn {selectedParent.option_value}:</p>
+                          <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest underline decoration-2 underline-offset-4">{t("product_details.select")} {selectedParent.option_value}:</p>
                           <div className="flex flex-wrap gap-2">
                             {selectedParent.sub_values.map(sub => {
                               const isSubSelected = selSub[selectedParent.id]?.id === sub.id;
@@ -384,9 +379,6 @@ export default function ProductDetailPage() {
                                   className={`px-4 py-2.5 rounded-xl border text-[10px] md:text-xs font-black transition-all shadow-sm
                                     ${isSubSelected ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/10" : subOutOfStock ? "opacity-20 line-through" : "bg-card hover:border-primary/30"}`}>
                                   {sub.option_value}
-                                  {parseFloat(String(sub.price_adjustment)) > 0 && (
-                                    <span className="ml-1 opacity-70">+{formatPrice(parseFloat(String(sub.price_adjustment)))}</span>
-                                  )}
                                 </button>
                               );
                             })}
@@ -402,7 +394,7 @@ export default function ProductDetailPage() {
 
             {!allComplete && options.length > 0 && (
               <div className="text-xs font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-center text-center">
-                Vui lòng hoàn tất lựa chọn sản phẩm
+                {t("product_details.complete_selection_warning")}
               </div>
             )}
 
@@ -411,7 +403,7 @@ export default function ProductDetailPage() {
               {(options.length === 0 || allComplete) && (
                 <div className="flex items-center justify-between bg-muted/30 p-4 rounded-2xl border border-border/50">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Số lượng</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">{t("product_details.quantity")}</p>
                     <div className="flex items-center gap-1.5 pt-1">
                       <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-8 h-8 flex items-center justify-center bg-card border border-border rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm active:scale-90"><Minus size={14} /></button>
                       <span className="w-10 text-center text-sm md:text-base font-bold">{qty}</span>
@@ -420,7 +412,7 @@ export default function ProductDetailPage() {
                   </div>
                   {qty > 1 && (
                     <div className="text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">Tổng tạm tính</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">{t("product_details.subtotal")}</p>
                       <p className="text-lg md:text-xl font-bold text-primary tracking-tighter">{formatPrice(totalPrice * qty)}</p>
                     </div>
                   )}
@@ -431,12 +423,12 @@ export default function ProductDetailPage() {
                 <button onClick={handleAddToCart} disabled={effectiveStock === 0 || !allComplete}
                   className="flex-1 py-3.5 border-2 border-primary text-primary hover:bg-primary hover:text-white rounded-2xl font-bold text-xs md:text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:grayscale active:scale-95 shadow-md shadow-primary/5">
                   <ShoppingCart size={18} />
-                  {addedMsg ? t("common.added_success") : t("cart")}
+                  {addedMsg ? t("added_success") : t("cart")}
                 </button>
                 <Link href="/checkout" onClick={handleAddToCart}
                   className={`flex-1 py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-xs md:text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-primary/30
                     ${(!allComplete || effectiveStock === 0) ? "opacity-30 grayscale pointer-events-none" : ""}`}>
-                  <Zap size={18} /> {t("common.buy_now")}
+                  <Zap size={18} /> {t("buy_now")}
                 </Link>
               </div>
             </div>
@@ -447,8 +439,8 @@ export default function ProductDetailPage() {
         <div className="mt-12 bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
           <div className="flex border-b border-border bg-muted/20 overflow-x-auto no-scrollbar scroll-smooth">
             {[
-              { id: "description", label: "MÔ TẢ", icon: Package },
-              { id: "reviews",     label: `ĐÁNH GIÁ (${reviews.length})`, icon: Star },
+              { id: "description", label: t("product_details.description"), icon: Package },
+              { id: "reviews",     label: `${t("product_details.reviews")} (${reviews.length})`, icon: Star },
             ].map((tab) => (
               <button key={tab.id} onClick={() => setDetailTab(tab.id as any)}
                 className={`flex items-center gap-2 px-8 py-5 text-xs md:text-sm font-bold tracking-widest transition-all relative shrink-0
@@ -465,13 +457,12 @@ export default function ProductDetailPage() {
             <AnimatePresence mode="wait">
               {detailTab === "description" && (
                 <motion.div key="desc" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4 max-w-4xl mx-auto">
-                  <h3 className="text-xl md:text-2xl font-bold text-primary tracking-tighter uppercase italic">Câu chuyện sản phẩm</h3>
                   {product.description ? (
                     <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-justify italic">
                       {product.description}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground italic font-medium opacity-60 uppercase text-center py-10">Dữ liệu đang được cập nhật...</p>
+                    <p className="text-muted-foreground italic font-medium opacity-60 uppercase text-center py-10">{t("product_details.updating_data")}</p>
                   )}
                 </motion.div>
               )}
@@ -481,15 +472,15 @@ export default function ProductDetailPage() {
                 <motion.div key="reviews" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-4xl mx-auto">
                   <div className="bg-muted/30 p-6 md:p-8 rounded-3xl border border-border flex flex-col md:flex-row items-center justify-between gap-6 mb-8 shadow-inner">
                     <div className="text-center md:text-left">
-                      <h3 className="text-2xl font-bold text-primary tracking-tighter uppercase">Xếp hạng</h3>
-                      <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest mt-1 italic opacity-60">Dựa trên trải nghiệm thực tế</p>
+                      <h3 className="text-2xl font-bold text-primary tracking-tighter uppercase">{t("product_details.ratings")}</h3>
+                      <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest mt-1 italic opacity-60">{t("product_details.customer_experience")}</p>
                     </div>
                     <div className="flex flex-col items-center md:items-end gap-2">
                       <div className="flex items-center gap-4 bg-card px-6 py-4 rounded-2xl shadow-sm border border-border">
                          <span className="text-3xl md:text-4xl font-bold text-primary leading-none tracking-tighter">{avgRating.toFixed(1)}</span>
                          <StarRow rating={avgRating} />
                       </div>
-                      <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-60 italic">{reviews.length} khách hàng đã đánh giá</span>
+                      <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-60 italic">{t("product_details.customers_reviewed", { count: reviews.length })}</span>
                     </div>
                   </div>
 
@@ -512,7 +503,7 @@ export default function ProductDetailPage() {
                                 <div className="flex items-center gap-2">
                                   <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest italic opacity-40">{new Date(review.created_at).toLocaleDateString()}</p>
                                   <span className="text-[10px] text-primary/60 font-black uppercase tracking-tighter bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
-                                    🏷️ {review.order_item?.product?.title || 'Đã mua hàng'}
+                                    🏷️ {review.order_item?.product?.title || t("product_details.purchased")}
                                     {review.order_item?.selected_options && Object.keys(review.order_item.selected_options).length > 0 && (
                                         <span className="ml-1 opacity-70">
                                             ({Object.entries(review.order_item.selected_options).map(([k,v]) => `${k}: ${v}`).join(', ')})

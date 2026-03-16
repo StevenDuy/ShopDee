@@ -67,6 +67,9 @@
     "inbox_nav": "Inbox",
     "finance_nav": "Finance",
     "settings_nav": "Shop Settings",
+    "inbox": {
+      "chat_now": "Chat Now"
+    },
     "overview_desc": "Overview of your store's performance.",
     "total_revenue": "Total Revenue",
     "total_orders": "Total Orders",
@@ -456,5 +459,19 @@
       "momo": "MoMo Wallet",
       "vnpay": "VNPay"
     }
+  },
+  "product_details": {
+    "select": "Select",
+    "quantity": "Quantity",
+    "subtotal": "Subtotal",
+    "description": "DESCRIPTION",
+    "reviews": "REVIEWS",
+    "product_story": "Product Story",
+    "updating_data": "Updating data...",
+    "ratings": "Ratings",
+    "customer_experience": "Based on real experience",
+    "customers_reviewed": "{{count}} customers reviewed",
+    "purchased": "Purchased",
+    "complete_selection_warning": "Please complete product selection"
   }
 }

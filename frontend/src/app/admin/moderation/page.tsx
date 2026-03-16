@@ -251,13 +251,13 @@ export default function AdminModerationPage() {
                          <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
                                {p.media && p.media.length > 0 ? (
-                                  <img src={p.media[0].file_path} alt={p.name} className="w-full h-full object-cover" />
+                                  <img src={p.media[0].full_url} alt={p.title} className="w-full h-full object-cover" />
                                ) : (
                                   <span className="text-xs text-muted-foreground">No img</span>
                                )}
                             </div>
                             <div>
-                               <p className="font-bold line-clamp-1" title={p.name}>{p.name}</p>
+                               <p className="font-bold line-clamp-1" title={p.title}>{p.title}</p>
                                <p className="text-xs text-muted-foreground mt-0.5" title={p.seller?.name}>{t("admin.user")}: {p.seller?.name}</p>
                             </div>
                          </div>
@@ -291,7 +291,7 @@ export default function AdminModerationPage() {
                              )}
    
                              <button 
-                               onClick={() => handleDeleteProduct(p.id, p.name)}
+                               onClick={() => handleDeleteProduct(p.id, p.title)}
                                className="p-1.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-md transition-colors"
                                title={t("admin.moderation.force_delete")}
                              >
@@ -338,7 +338,7 @@ export default function AdminModerationPage() {
                            {r.reported_product_id && (
                               <div className="flex items-center gap-2">
                                  <ShieldAlert size={14} className="text-amber-500" />
-                                 <span className="font-medium line-clamp-1">{t("admin.moderation.type_product")}: {r.reported_product?.name}</span>
+                                 <span className="font-medium line-clamp-1">{t("admin.moderation.type_product")}: {r.reported_product?.title}</span>
                               </div>
                            )}
                            {r.reported_user_id && (

@@ -27,8 +27,7 @@ class ModerationController extends Controller
         }
 
         if ($request->has('search')) {
-            $s = $request->search;
-            $query->where('name', 'LIKE', "%{$s}%");
+            $query->where('title', 'LIKE', "%" . $request->search . "%");
         }
 
         $products = $query->latest()->paginate(15);
