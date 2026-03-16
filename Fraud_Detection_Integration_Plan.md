@@ -1,120 +1,103 @@
-# Hướng dẫn Tích hợp Module AI Security (Fraud Detection) vào ShopDee
+# Kế hoạch Tích hợp Chi tiết: Phát hiện Rủi ro Gian lận dựa trên Hành vi Tài khoản (RF vs SVM)
 
-Tài liệu này mô tả chi tiết bài toán, quy trình, kiến trúc hệ thống, và cách tích hợp Module "Phát hiện Gian lận Hành vi thông qua Random Forest và Support Vector Machine" vào nền tảng E-commerce ShopDee hiện tại.
-
----
-
-## 1. Mục tiêu Nghiên cứu và Kiến trúc Hệ thống
-
-Mục tiêu chính của đề tài là xây dựng một luồng đánh giá rủi ro gian lận thời gian thực (Real-time Fraud Risk Detection) dựa trên **Hành vi Người dùng (User Behavior)**, sau đó so sánh hiệu năng giữa hai thuật toán phổ biến: **Random Forest (RF)** và **Support Vector Machine (SVM)**.
-
-Dự án ShopDee sẽ được mở rộng từ kiến trúc 2 tầng hiện tại thành **kiến trúc 3 tầng phân tán (3-tier architecture)** nhằm đảm bảo hiệu năng, độc lập phát triển và dễ dàng demo:
-
-1. **Tầng Ứng dụng (Web Application - Next.js):**
-   - Thu thập ngầm các thông số hành vi của người dùng (Customer) trong quá trình thao tác.
-   - Cung cấp một **Dashboard (Admin Role)** hiển thị kết quả phân tích, biểu đồ so sánh hai mô hình (RF/SVM) và một "Công cụ Giả lập" (Simulator) để nhập liệu test.
-2. **Tầng Backend & Dữ liệu (API Gateway - Laravel & MySQL):**
-   - Lưu trữ dữ liệu hệ thống cơ bản và Log hành vi (User Behavior Log).
-   - Laravel đóng vai trò là cầu nối: Nhận dữ liệu hành vi từ Frontend trong quá trình Checkout/Thanh toán, chuẩn bị định dạng dữ liệu và gọi API sang tầng Machine Learning.
-3. **Tầng Xử lý Máy học (ML Engine - Python):**
-   - Một Microservice độc lập viết bằng **FastAPI** hoặc **Flask**.
-   - Cốt lõi của nghiên cứu: Chịu trách nhiệm Load các mô hình AI đã huấn luyện (SMOTE + RF & SVM).
-   - Chạy logic tính toán nội bộ (Inference) và trả về kết quả dự đoán cùng các chỉ số đi kèm (Độ chính xác, Thời gian phản hồi).
+Tài liệu này cung cấp hướng dẫn từng bước để triển khai hệ thống nghiên cứu so sánh giữa **Random Forest (RF)** và **Support Vector Machine (SVM)**, tích hợp trực tiếp vào nền tảng ShopDee.
 
 ---
 
-## 2. Chi tiết: Khai thác "Đặc trưng Hành vi" (Behavioral Features)
+## 1. Đánh giá sự đáp ứng yêu cầu (Compliance Review)
 
-Vì đề tài nhấn mạnh vào "Hành vi" (Behaviour-based) thay vì chỉ thông tin thẻ tín dụng, chúng ta cần số hóa các hành động của tài khoản thành các rủi ro.
-
-Tại ShopDee, chúng ta sẽ thu thập các Vector Đặc Trưng (Feature Vector) sau cho mỗi luồng điểm chạm nhạy cảm (như lúc Login hoặc Checkout):
-
-* **A. Nhóm Đặc trưng Tương tác (Interaction & Timing):**
-  * `time_to_checkout`: Thời gian (giây) từ lúc đăng nhập/mở web đến lúc bấm "Đặt hàng". (Bot thường có thời gian cực kỳ ngắn, gần như lập tức).
-  * `pages_viewed`: Số lượng các trang khác nhau người dùng xem trước khi mua (Hành vi người dùng thực thường đi tham khảo nhiều nơi).
-* **B. Nhóm Đặc trưng Điểm truy cập (Network & Identity):**
-  * `ip_distance`: Khoảng cách địa lý ước tính từ IP hiện tại đến IP thường xuyên sử dụng nhất của tài khoản (tính bằng km).
-  * `device_changed`: `1` (Thiết bị mới/lạ) hoặc `0` (Thiết bị quen thuộc).
-  * `failed_login_attempts`: Số lần đăng nhập sai liên tiếp trước khi thành công.
-* **C. Nhóm Đặc trưng Giao dịch (Transactional Pattern):**
-  * `order_amount`: Tổng số tiền đơn hàng hiện tại.
-  * `amount_deviation_ratio`: Tỷ lệ lệch của số tiền đơn hàng hiện tại so với *số tiền trung bình* trong lịch sử giao dịch của user này (Sự bất thường).
-  * `orders_in_last_hour`: Tần suất/Số lượng đơn hàng tài khoản đã đặt trong 1 giờ qua (Spam/Carding attack).
-  * `address_changed_suddenly`: `1` hoặc `0` (vừa được thêm mới/đổi mới hoàn toàn ngay trước khi thanh toán).
-
-**Cách triển khai thu thập:**
-* Trên Next.js (Customer Role): Cài đặt một Tracker Context (dùng `useEffect`) để đếm thời gian và ghi nhận các trang đã xem. Khi gọi API `/orders`, gửi đính kèm object `behavior_features: {...}` về cho Laravel.
+Hệ thống này được thiết kế để đáp ứng chính xác các mục tiêu nghiên cứu của bạn:
+*   **Mục tiêu so sánh:** Triển khai song song cả RF và SVM để đánh giá hiệu năng (Accuracy, Time, F1) trong cùng một môi trường.
+*   **Hành vi tài khoản:** Tập trung vào các đặc trưng phi tài chính (Hành vi):
+    *   `failed_login_attempts`: Theo dõi đăng nhập sai.
+    *   `time_to_checkout`: Đo tốc độ thao tác (phát hiện bot).
+    *   `ip_distance`: Khoảng cách địa lý truy cập.
+    *   `amount_deviation`: Độ lệch chi tiêu so với lịch sử.
+*   **Kiến trúc 3 tầng:** Tách biệt rõ ràng Frontend (Next.js), Backend (Laravel), và ML Engine (Python/FastAPI).
+*   **Xử lý dữ liệu:** Bao gồm bước SMOTE (cân bằng dữ liệu) và Normalization (quan trọng cho SVM).
 
 ---
 
-## 3. Xây dựng ML Engine (Python Service)
+## 2. Hướng dẫn Triển khai Chi tiết (Step-by-Step)
 
-Không nên chạy model ML chung trên nền PHP. Cần khởi tạo 1 thư mục riêng biệt (VD: `ml-engine`) chứa server Python.
+### Bước 1: Chuẩn bị Dữ liệu và Mô hình (Offline - Google Colab)
+Bạn sẽ thực hiện bước này trên Colab để lấy các file mô hình đã huấn luyện.
 
-### 3.1 Giai đoạn Huấn luyện (Preprocessing & Training - Offline)
-Chúng ta sẽ sử dụng File Notebook (.ipynb) với thư viện `scikit-learn` trên dữ liệu E-commerce Fraud Dataset (VD: IEEE-CIS) để:
-1. **Trích xuất đặc trưng (Feature Engineering):** Gắn các cột tương tự như mục 2 ở trên.
-2. **Tiền xử lý (Preprocessing):**
-   - **Xử lý mất cân bằng lớp (Imbalanced Data):** Gian lận chiếm < 1%. Sử dụng kỹ thuật **SMOTE** (Synthetic Minority Over-sampling Technique) để nội suy tăng dữ liệu mẫu gian lận, giúp mô hình học chính xác hơn.
-   - **Chuẩn hóa dữ liệu (Normalization/Scaling):** Sử dụng `StandardScaler`. (Bước này **cực kì quan trọng đối với SVM**, vì dải dữ liệu `order_amount` lớn sẽ làm lệch thuật toán chia hyperplane. RF thì dùng Decision Tree nên ít bị ảnh hưởng hơn).
-3. **Huấn luyện mô hình:**
-   - `RandomForestClassifier`: Tinh chỉnh (hyper-tuning) số lượng cây `n_estimators`, độ sâu `max_depth`.
-   - `SVC` (Support Vector Classifier): Tinh chỉnh Kernel (`RBF`, `Linear`), `C`, và `Gamma`. Lấy ra vector probability (`probability=True`).
-4. **Đánh giá hiệu năng:** Tính các chỉ số Accuracy, Precision, Recall, F1-Score lưu lại file config tĩnh. Export mô hình ra 2 files: `rf_model.pkl` và `svm_model.pkl`.
+1.  **Dataset:** Sử dụng bộ dữ liệu [IEEE-CIS Fraud Detection](https://www.kaggle.com/c/ieee-fraud-detection) (Kaggle).
+2.  **Feature Engineering:** Tạo các cột dựa trên hành vi như đã mô tả.
+3.  **Preprocessing:** 
+    - `imbalanced-learn` (SMOTE).
+    - `StandardScaler` từ `sklearn`.
+4.  **Export:**
+    - Sau khi `fit`, lưu mô hình:
+      ```python
+      import joblib
+      joblib.dump(rf_model, 'fraud_rf_model.pkl')
+      joblib.dump(svm_model, 'fraud_svm_model.pkl')
+      joblib.dump(standard_scaler, 'scaler.pkl')
+      ```
 
-### 3.2 Giai đoạn Khai thác (Inference API - Online)
-Xây dựng file `main.py` (FastAPI) chạy ở cổng `:5000` với 2 API chính:
+### Bước 2: Xây dựng Tầng ML Engine (Python Service)
+Tạo thư mục `ml-engine` nằm ngoài thư mục frontend/backend của ShopDee.
 
-* **`GET /api/ml/metrics`**: Trả về các chỉ số tĩnh lúc training (Accuracy, Precision, Recall, F1, Train Time) của 2 thuật toán để NextJS vẽ biểu đồ so sánh bên trong Admin Dashboard.
-* **`POST /api/ml/predict`**: 
-  - *Input:* JSON chứa Vector Cấu hình hành vi (từ bước 2).
-  - *Pipeline:* Đọc Vector -> Chạy qua `scaler` -> Kích hoạt 2 luồng tính toán (RF & SVM) -> Đo thời gian chờ (Inference time).
-  - *Output:*
-    ```json
-    {
-      "results": {
-        "random_forest": { "is_fraud": 0, "probability": 0.15, "inference_time_ms": 12 },
-        "svm": { "is_fraud": 1, "probability": 0.62, "inference_time_ms": 45 }
-      }
-    }
+1.  **Tạo file `requirements.txt`:**
+    ```text
+    fastapi
+    uvicorn
+    scikit-learn
+    joblib
+    pandas
+    numpy
+    ```
+2.  **Tạo file `main.py`:**
+    - Implement API nhận input, chuẩn hóa bằng `scaler.pkl`.
+    - Gọi dự đoán từ cả 2 model.
+    - Đo thời gian thực thi bằng `time.process_time()`.
+
+### Bước 3: Tích hợp Tầng Backend (Laravel Gateway)
+Laravel đóng vai trò "người điều phối" (Orchestrator).
+
+1.  **Tạo Controller mới:** `php artisan make:controller Api/FraudDetectionController`
+2.  **Log Logic:** Khi người dùng thực hiện các hành động (Login, Add to cart), Laravel sẽ ghi nhận vào bảng `user_activity_logs`.
+3.  **Bridge Logic:**
+    - Tại phương thức `simulateCheck` hoặc trong luồng `Checkout`, Laravel gọi tới Python Service:
+    ```php
+    $response = Http::post('http://localhost:5000/api/predict', $behaviorData);
+    return $response->json();
     ```
 
----
+### Bước 4: Tích hợp Tầng Ứng dụng Web (Frontend Next.js)
+Đây là nơi hiển thị Dashboard so sánh cho công trình nghiên cứu.
 
-## 4. Tích hợp Hệ thống: Web Demo Component (Admin Role)
-
-Để hoàn thiện kiến trúc, trên bộ giao diện Admin của hệ thống ShopDee (Menu nằm ở Sidebar bên trái), chúng ta sẽ thêm một module **AI Security Dashboard & Simulator**.
-
-Trang này có 2 chức năng cốt lõi bắt buộc phải có để minh họa nghiên cứu:
-
-### Giao diện 1: So sánh Hiệu năng (Model Comparative Analysis)
-* Sử dụng thư viện `recharts` / `chart.js` để render nhóm biểu đồ:
-  * **Radar Chart / Bar Chart:** Trực quan hóa so sánh độ chính xác `Accuracy`, `Precision`, `Recall`, `F1-score` giữa RF và SVM để chứng minh cái nào tối ưu hơn cho bài toán gian lận.
-  * **Performance Metrics:** Bảng so sánh "Thời gian Huấn Luyện (Training Time)" và "Thời gian Dự đoán (Inference Time)".
-  * Đưa ra nhận xét (VD: RF thì huấn luyện lâu nhưng khả năng phán đoán ở môi trường production nhanh hơn, ít bị nhạy cảm bởi giá trị ngoại lai, trong khi SVM dự đoán chậm hơn nhưng...).
-
-### Giao diện 2: Kiểm thử Rủi ro Giả lập (Live Behavior Simulator)
-Đây là công cụ kiểm tra mô hình một cách trực tiếp ngay trên web:
-* Một biểu mẫu (Form) cho phép người dùng (cụ thể là Hội đồng chấm/Giáo viên) tùy ý điều chỉnh các giả định thông số:
-  * Ví dụ: Kéo thanh trượt `time_to_checkout = 1s`, nhập `failed_login_attempts = 5`, chọn `device_changed = true`.
-* Nút bấm **"Run Fraud Detection Analysis"**.
-* **Luồng xử lý:** 
-  1. Frontend đóng gói Input -> Gửi cho Backend Laravel.
-  2. Laravel call thông qua Python API -> Python xử lý và trả kết quả về.
-  3. Frontend hiển thị output thành 2 bảng kề nhau.
-      - **Random Forest Insight:** "Gian lận (92%) - Tín hiệu cảnh báo: Thời gian checkout < 2s."
-      - **Support Vector Machine Insight:** "Gian lận (89%) - Cảnh báo: Lịch sử nạp tiền lệch chuẩn."
-  4. Hệ thống quyết định đưa ra (Ví dụ khóa tài khoản hoặc cho phép tiếp tục) nếu Tỉ lệ Rủi ro vượt ngưỡng chung.
+1.  **Tạo Tracker Context:**
+    - Tạo `src/context/BehaviorTracker.tsx` để ghi nhận: `pages_visited`, `start_time`, `click_count`.
+2.  **Xây dựng Admin Dashboard (`/admin/fraud-analysis`):**
+    - **Tab 1: Comparative Dashboard:** Dùng biểu đồ cột so sánh Accuracy, F1-Score của RF và SVM.
+    - **Tab 2: Simulator:** Form nhập liệu tay các thông số (Login fails, IP...) -> Nhấn "Test" -> Hiển thị kết quả so sánh thời gian thực.
 
 ---
 
-## 5. Quy trình & Các Bước Triển Khai (Roadmap)
+## 3. Cách Tính toán các "Đặc trưng Hành vi" trong ShopDee
 
-Nếu bắt đầu tích hợp, chúng ta sẽ thực hiện theo trình tự sau:
+Để hệ thống thực sự "hiểu" hành vi, chúng ta sẽ cài đặt logic tính toán tại Backend:
 
-* **Bước 1 (Xây dựng Model & Mock API):** Setup Python API độc lập với FastAPI. Có thể ban đầu trả về dữ liệu Mock JSON cứng để dev Web giao diện trước.
-* **Bước 2 (API Gateway - Laravel):** Viết `AiSecurityController.php` ở backend Laravel, làm nhiệm vụ bảo mật giao tiếp, lấy danh sách Model Metrics, nhận dữ liệu giả lập để forward tới Python.
-* **Bước 3 (Admin UI Construction):** Cập nhật `Sidebar.tsx` trong frontend Next.js -> Tạo trang `/admin/ai-security`. Thêm Chart. Thêm Input Form.
-* **Bước 4 (Customer Checkout Hooking):** (Khuyến nghị/Nâng cao): Gắn thuật toán ghi nhận log thực tế vào các luồng thao tác của Customer trên frontend để làm bằng chứng cho tính thực tiễn của công trình.
+| Đặc trưng | Nguồn dữ liệu / Cách tính | Vai trò trong Fraud |
+| :--- | :--- | :--- |
+| **Login Fails** | Đếm số bản ghi `status=failed` trong bảng `login_attempts` của user ID trong 24h qua. | Dấu hiệu của Brute Force / Account Takeover. |
+| **Time to Checkout** | `(Giờ bấm Pay) - (Giờ Login)` lấy từ Session. | Bot thường thanh toán trong < 10 giây. |
+| **IP Distance** | Dùng thư viện GeoIP để lấy tọa độ IP hiện tại so với tọa độ IP gần nhất. | Dự đoán việc đánh cắp session từ nơi xa. |
+| **Amount Deviation** | `(Đơn hiện tại) / (Trung bình 10 đơn trước đó)`. | Gian lận thường cố gắng mua món đồ đắt tiền nhất có thể. |
 
-Bản thân file hướng dẫn này có vai trò như bảng "Thiết kế Kiến Trúc Chuyên Sâu" giúp bạn dễ dàng định hình và tự tin thuyết trình về hệ thống thông minh, phân bổ rõ trách nhiệm 3 môi trường Next.js - Laravel - Data Science.
+---
+
+## 4. Hướng dẫn Quy trình tích hợp (Workflow)
+
+1.  **Tạo thư mục:** Khởi tạo `fraud-engine` và cài đặt môi trường ảo Python (`venv`).
+2.  **Copy mô hình:** Đưa 3 file `.pkl` từ Colab vào thư mục `models/` của engine.
+3.  **Chạy server:** `uvicorn main:app --port 5000`.
+4.  **Kiểm tra kết nối:** Dùng Postman test endpoint `/api/predict` để đảm bảo kết quả trả về đúng định dạng so sánh giữa RF và SVM.
+5.  **Cập nhật Sidebar:** Thêm menu "Fraud Dashboard" vào file `src/components/admin/Sidebar.tsx` của ShopDee.
+
+---
+
+**Kết luận:** Quá trình này không chỉ là lập trình, mà là hiện thực hóa một bài toán Khoa học Dữ liệu vào một ứng dụng thực tế. Việc tích hợp này đáp ứng đầy đủ tiêu chí của một đề tài nghiên cứu chuyên sâu về an ninh thương mại điện tử.

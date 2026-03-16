@@ -214,6 +214,7 @@
     "inbox_nav": "Inbox",
     "settings_nav": "System Config",
     "banners_nav": "Advertising Banners",
+    "ai_security_nav": "AI Fraud Research",
     "banners": {
       "title": "Banner Management",
       "desc": "Add, edit or delete advertising banners on the homepage.",

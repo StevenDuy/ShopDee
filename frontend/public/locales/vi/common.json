@@ -214,6 +214,7 @@
     "inbox_nav": "Hộp thư",
     "settings_nav": "Cấu hình hệ thống",
     "banners_nav": "Banner quảng cáo",
+    "ai_security_nav": "Nghiên cứu AI (Fraud)",
     "banners": {
       "title": "Quản lý Banner",
       "desc": "Thêm, sửa hoặc xóa các banner quảng cáo trên trang chủ.",
