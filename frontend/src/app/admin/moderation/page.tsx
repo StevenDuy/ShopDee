@@ -210,24 +210,19 @@ export default function AdminModerationPage() {
         {/* Pagination Controls */}
         {!loading && pagination.last_page > 1 && (
           <div className="px-6 py-4 border-t border-border bg-muted/10 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Page {pagination.current_page} of {pagination.last_page}
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              Page <b>{pagination.current_page}</b> of <b>{pagination.last_page}</b>
             </span>
-            <div className="flex gap-2">
-              <button 
-                disabled={pagination.current_page <= 1}
-                onClick={() => fetchProducts(pagination.current_page - 1)}
-                className="px-4 py-2 text-sm font-medium bg-background border border-border rounded-lg hover:bg-accent disabled:opacity-50 transition-colors"
-              >
-                Previous
-              </button>
-              <button 
-                disabled={pagination.current_page >= pagination.last_page}
-                onClick={() => fetchProducts(pagination.current_page + 1)}
-                className="px-4 py-2 text-sm font-medium bg-background border border-border rounded-lg hover:bg-accent disabled:opacity-50 transition-colors"
-              >
-                Next
-              </button>
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+              {[...Array(pagination.last_page)].map((_, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => fetchProducts(i + 1)}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all shrink-0 ${pagination.current_page === i + 1 ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "bg-background border border-border hover:bg-accent"}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
             </div>
           </div>
         )}

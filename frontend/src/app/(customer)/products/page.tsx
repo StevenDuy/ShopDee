@@ -38,7 +38,12 @@ function ProductCard({ product }: { product: Product }) {
         className="bg-card border border-border rounded-2xl overflow-hidden group h-full flex flex-col transition-shadow"
       >
         <div className="relative aspect-square overflow-hidden bg-muted">
-          <img src={img} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img 
+            src={img} 
+            alt={product.title} 
+            loading="lazy"
+            className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" 
+          />
           {product.sale_price && (
             <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
               -{Math.round((1 - product.sale_price / product.price) * 100)}%
@@ -106,7 +111,11 @@ export default function ProductsPage() {
     finally { setLoading(false); }
   }, [search, category, sort, minPrice, maxPrice, currentPage]);
 
-  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => { 
+    fetchProducts();
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [fetchProducts]);
   useEffect(() => { axios.get(`${API}/products/categories`).then(r => setCategories(r.data)).catch(() => { }); }, []);
 
   return (

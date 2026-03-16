@@ -18,7 +18,7 @@ type DashboardStats = {
     status: string;
     total_amount: number;
     created_at: string;
-    customer: { profile?: { first_name: string; last_name: string }; email: string };
+    customer: { name: string; email: string };
   }[];
 };
 
@@ -113,9 +113,7 @@ export default function SellerDashboard() {
                         <tr key={order.id} className="hover:bg-muted/30 transition-colors">
                            <td className="px-6 py-3">
                               <span className="font-medium text-foreground">
-                                 {order.customer.profile 
-                                   ? `${order.customer.profile.first_name} ${order.customer.profile.last_name}` 
-                                   : order.customer.email}
+                                 {order.customer.name || order.customer.email}
                               </span>
                               <span className="block text-xs text-muted-foreground">
                                  {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}

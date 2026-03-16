@@ -247,10 +247,22 @@ export default function NewProductPage() {
 
       createdProductId = res.data.id;
 
-      // Upload files
+      // 3. Upload files
       for (let i = 0; i < files.length; i++) {
         const fd = new FormData();
-        fd.append("file", files[i]);
+        let fileToUpload = files[i];
+
+        // Compress image if it's an image
+        if (fileToUpload.type.startsWith("image/")) {
+          try {
+            const compressionOptions = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
+            fileToUpload = await (await import("browser-image-compression")).default(fileToUpload, compressionOptions);
+          } catch (compErr) {
+            console.warn("Compression failed, uploading original.", compErr);
+          }
+        }
+
+        fd.append("file", fileToUpload);
         if (i === 0) fd.append("is_primary", "1");
         await axios.post(`${API}/seller/products/${createdProductId}/media`, fd, {
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }

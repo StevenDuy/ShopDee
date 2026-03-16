@@ -239,6 +239,7 @@ export default function ProductDetailPage() {
               <AnimatePresence mode="wait">
                 <motion.img key={activeImg} src={images[activeImg].full_url} alt={product.title}
                   initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.3 }}
+                  loading="lazy"
                   className="w-full h-full object-cover" />
               </AnimatePresence>
             </div>
@@ -247,7 +248,7 @@ export default function ProductDetailPage() {
                 {images.map((img, i) => (
                   <button key={img.id} onClick={() => setActiveImg(i)}
                     className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden border-2 shrink-0 transition-all shadow-sm ${i === activeImg ? "border-primary scale-105 shadow-md" : "border-transparent opacity-60 hover:opacity-100"}`}>
-                    <img src={img.full_url} alt="" className="w-full h-full object-cover" />
+                    <img src={img.full_url} alt="" loading="lazy" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

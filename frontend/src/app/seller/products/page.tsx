@@ -24,20 +24,33 @@ export default function SellerProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
 
-  const fetchProducts = () => {
+  const fetchProducts = (page = 1, query = "") => {
     if (!token) return;
     setLoading(true);
-    axios.get(`${API}/seller/products`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => setProducts(res.data.data || []))
+    axios.get(`${API}/seller/products?page=${page}${query ? `&search=${query}` : ""}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => {
+        setProducts(res.data.data || []);
+        setTotalPages(res.data.last_page || 1);
+        setCurrentPage(res.data.current_page || 1);
+      })
       .catch(err => console.error("Error fetching products", err))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(currentPage, search);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, currentPage]);
+
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    setCurrentPage(1);
+    fetchProducts(1, val);
+  };
 
   const handleDelete = async (id: number) => {
     if (!token) return;
@@ -72,6 +85,8 @@ export default function SellerProductsPage() {
             <input 
               type="text" 
               placeholder="Search products..." 
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
             />
           </div>
@@ -115,7 +130,7 @@ export default function SellerProductsPage() {
                       <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center overflow-hidden text-muted-foreground shrink-0 border border-border">
                         {p.media && p.media.length > 0 ? (
                            // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.media[0].full_url} alt={p.title} className="object-cover w-full h-full" />
+                          <img src={p.media[0].full_url} alt={p.title} loading="lazy" className="object-cover w-full h-full" />
                         ) : (
                           <ImageIcon size={20} />
                         )}
@@ -148,6 +163,21 @@ export default function SellerProductsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-border flex justify-center gap-2">
+            {[...Array(totalPages)].map((_, i) => (
+              <button 
+                key={i} 
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === i + 1 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted hover:bg-muted/80"}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       
       {editingId && (

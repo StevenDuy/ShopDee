@@ -38,22 +38,28 @@ export default function SellerOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [viewingOrder, setViewingOrder] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchOrders = (status = "all") => {
+  const fetchOrders = (status = "all", page = 1) => {
     if (!token) return;
     setLoading(true);
-    axios.get(`${API}/seller/orders${status !== 'all' ? `?status=${status}` : ''}`, { 
+    axios.get(`${API}/seller/orders?page=${page}${status !== 'all' ? `&status=${status}` : ''}`, { 
       headers: { Authorization: `Bearer ${token}` } 
     })
-      .then(res => setOrders(res.data.data || []))
+      .then(res => {
+        setOrders(res.data.data || []);
+        setTotalPages(res.data.last_page || 1);
+        setCurrentPage(res.data.current_page || 1);
+      })
       .catch(err => console.error("Error fetching orders", err))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchOrders(filter);
+    fetchOrders(filter, currentPage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, filter]);
+  }, [token, filter, currentPage]);
 
   const updateOrderStatus = async (id: number, status: string) => {
     if (!token) return;
@@ -104,7 +110,7 @@ export default function SellerOrdersPage() {
             <Filter size={18} className="text-muted-foreground" />
             <select 
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              onChange={(e) => { setFilter(e.target.value); setCurrentPage(1); }}
               className="bg-input border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full md:w-auto"
             >
               <option value="all">All Orders</option>
@@ -200,6 +206,21 @@ export default function SellerOrdersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-border flex justify-center gap-2">
+            {[...Array(totalPages)].map((_, i) => (
+              <button 
+                key={i} 
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === i + 1 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted hover:bg-muted/80"}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {viewingOrder && (
