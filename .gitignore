@@ -7,20 +7,56 @@ frontend/.env*
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
+frontend/.vercel
 
 # Backend
 backend/vendor/
 backend/.env
+backend/.env.backup
+backend/.env.production
 backend/.env.*
 backend/storage/*.key
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+backend/bootstrap/cache/*
 backend/public/storage
 backend/public/hot
-backend/storage/logs/
-backend/storage/framework/
+backend/.phpunit.result.cache
 
-# Global
+# Python / ML Engine
+ml-engine/__pycache__/
+ml-engine/*.py[cod]
+ml-engine/*$py.class
+ml-engine/.venv/
+ml-engine/venv/
+ml-engine/ENV/
+ml-engine/*.pkl
+ml-engine/*.ipynb_checkpoints/
+ml-engine/.env*
+
+# Databases
+*.sqlite
+*.sql
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+.project
+.settings/
+.classpath
+
+# Global / OS
 .env
 .env.*
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-config.php
+config.php
