@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, LayoutDashboard, Users, ShieldAlert, Settings, Store, Menu, MessageCircle } from "lucide-react";
+import { LogOut, LayoutDashboard, Users, ShieldAlert, Settings, Store, Menu, MessageCircle, Image as ImageIcon } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useState } from "react";
 
@@ -19,6 +19,7 @@ export function AdminSidebar() {
   const menuItems = [
     { href: "/admin", icon: LayoutDashboard, label: t("admin.dashboard") },
     { href: "/admin/users", icon: Users, label: t("admin.users_nav") },
+    { href: "/admin/banners", icon: ImageIcon, label: t("admin.banners_nav") },
     { href: "/admin/moderation", icon: ShieldAlert, label: t("admin.moderation_nav") },
     { href: "/admin/inbox", icon: MessageCircle, label: t("admin.inbox_nav") },
     { href: "/admin/settings", icon: Settings, label: t("admin.settings_nav") },

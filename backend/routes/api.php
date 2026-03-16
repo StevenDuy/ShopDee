@@ -124,10 +124,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/moderation/reports', [\App\Http\Controllers\Admin\ModerationController::class, 'reports']);
         Route::put('/moderation/reports/{id}', [\App\Http\Controllers\Admin\ModerationController::class, 'updateReportStatus']);
 
-        // System Config
-        Route::get('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'index']);
-        Route::put('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'update']);
+        // Banners
+        Route::get('/banners/search-products', [\App\Http\Controllers\Admin\BannerController::class, 'searchProducts']);
+        Route::apiResource('/banners', \App\Http\Controllers\Admin\BannerController::class);
     });
+
+    // Public Banners (Maybe for Home)
+    Route::get('/banners', [\App\Http\Controllers\Admin\BannerController::class, 'index']);
 
     // --- PROXY ROUTES (To handle Map API CORS/Headers) ---
     Route::prefix('proxy')->group(function () {

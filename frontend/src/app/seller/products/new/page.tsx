@@ -35,6 +35,12 @@ const emptySubValue = (): SubValue => ({ option_value: "", price_adjustment: 0, 
 const emptyValue = (): OptionValue => ({ option_value: "", price_adjustment: 0, stock_quantity: 0, sub_values: [] });
 const emptyOption = (): ProductOption => ({ option_name: "", values: [emptyValue(), emptyValue()] });
 
+const formatPrice = (val: string | number) => {
+  if (val === undefined || val === null || val === "") return "";
+  const str = val.toString().replace(/\D/g, "");
+  return str.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
 export default function NewProductPage() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -310,15 +316,15 @@ export default function NewProductPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* General Info */}
           <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
-            <h2 className="text-lg font-bold">General Information</h2>
+            <h2 className="text-lg font-bold">{t("seller.products_manage.general_info")}</h2>
             <div>
-              <label className="block text-sm font-medium mb-2">Product Title <span className="text-destructive">*</span></label>
+              <label className="block text-sm font-medium mb-2">{t("seller.products_manage.product_title")} <span className="text-destructive">*</span></label>
               <input type="text" name="title" required value={formData.title} onChange={handleChange}
                 placeholder="E.g. Apple iPhone 15 Pro Max"
                 className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Description <span className="text-destructive">*</span></label>
+              <label className="block text-sm font-medium mb-2">{t("seller.products_manage.description")} <span className="text-destructive">*</span></label>
               <textarea name="description" required rows={5} value={formData.description} onChange={handleChange}
                 placeholder="Detailed description of the product..."
                 className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-y" />
@@ -328,8 +334,8 @@ export default function NewProductPage() {
           {/* Media */}
           <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
             <div>
-              <h2 className="text-lg font-bold">Media</h2>
-              <p className="text-sm text-muted-foreground">Upload product images (first image is primary)</p>
+              <h2 className="text-lg font-bold">{t("seller.products_manage.media")}</h2>
+              <p className="text-sm text-muted-foreground">{t("seller.products_manage.upload_hint")}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {files.map((file, i) => (
@@ -345,10 +351,10 @@ export default function NewProductPage() {
               ))}
               <label className="aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors">
                 <input type="file" multiple accept="image/*,video/mp4" className="hidden" onChange={handleFileChange} />
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-muted-foreground mb-2">
-                  <ImageIcon size={20} />
+                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-muted-foreground mb-1">
+                  <Plus size={20} />
                 </div>
-                <span className="text-sm font-medium">Add Media</span>
+                <span className="text-sm font-medium">{t("seller.products_manage.add_media")}</span>
               </label>
             </div>
           </div>
@@ -357,18 +363,18 @@ export default function NewProductPage() {
           <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold">Product Options</h2>
-                <p className="text-sm text-muted-foreground">Add options like Color, Size (optional)</p>
+                <h2 className="text-lg font-bold">{t("seller.products_manage.product_options")}</h2>
+                <p className="text-sm text-muted-foreground">{t("seller.products_manage.options_hint")}</p>
               </div>
               <button type="button" onClick={addOption}
                 className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-medium hover:bg-primary/20 transition-colors">
-                <Plus size={16} /> Add Option
+                <Plus size={16} /> {t("seller.products_manage.add_option")}
               </button>
             </div>
 
             {options.length === 0 && (
               <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed border-border rounded-xl">
-                No options yet. Click &quot;Add Option&quot; to add variants.
+                {t("seller.products_manage.no_options_hint")}
               </div>
             )}
 
@@ -381,13 +387,13 @@ export default function NewProductPage() {
                       type="text"
                       value={opt.option_name}
                       onChange={e => updateOptionName(oi, e.target.value)}
-                      placeholder="Option name (e.g. Color)"
+                      placeholder={t("seller.products_manage.option_name_placeholder")}
                       className="w-40 shrink-0 px-2 py-1.5 bg-input border border-border rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
-                    <div className="flex-1 text-xs text-muted-foreground">ít nhất 2 giá trị</div>
+                    <div className="flex-1 text-xs text-muted-foreground">{t("seller.products_manage.min_2_values")}</div>
                     {/* Option total stock badge */}
                     <div className="flex items-center gap-1 text-xs text-muted-foreground" title="Tổng stock option = SUM của tất cả values">
-                      <span className="text-[10px] uppercase tracking-wide">Tổng:</span>
+                      <span className="text-[10px] uppercase tracking-wide">{t("seller.products_manage.total")}:</span>
                       <span className="px-1.5 py-0.5 bg-primary/10 text-primary font-bold rounded">{computedOptionStock(opt)}</span>
                     </div>
                     <button type="button" onClick={() => removeOption(oi)}
@@ -398,7 +404,7 @@ export default function NewProductPage() {
 
                   {/* Column headers */}
                   <div className="grid grid-cols-[1fr_100px_70px_auto] gap-2 text-[11px] font-medium text-muted-foreground pl-1">
-                    <span>Value</span><span>+Giá (VNĐ)</span><span>Stock</span><span className="flex gap-1"><span className="w-6"></span><span className="w-6"></span></span>
+                    <span>{t("seller.products_manage.product")}</span><span>+ {t("seller.products_manage.price")} (VNĐ)</span><span>{t("seller.products_manage.inventory")}</span><span className="flex gap-1"><span className="w-6"></span><span className="w-6"></span></span>
                   </div>
 
                   {/* Values */}
@@ -413,17 +419,22 @@ export default function NewProductPage() {
                           <div className="grid grid-cols-[1fr_100px_70px_auto] gap-2 items-center">
                             <input type="text" value={val.option_value}
                               onChange={e => updateValue(oi, vi, "option_value", e.target.value)}
-                              placeholder="e.g. Red"
+                              placeholder={t("seller.products_manage.value_placeholder")}
                               className="px-2 py-1.5 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
 
                             {/* Price: ẩn khi có sub_values */}
                             {hasSubs ? (
                               <div className="px-2 py-1.5 bg-muted border border-dashed border-border rounded-lg text-xs text-muted-foreground text-center" title="Tính từ giá option con">
-                                từ sub
+                                {t("seller.products_manage.from_sub")}
                               </div>
                             ) : (
-                              <input type="number" value={val.price_adjustment} min="0" step="1000"
-                                onChange={e => updateValue(oi, vi, "price_adjustment", parseFloat(e.target.value) || 0)}
+                              <input type="text" value={formatPrice(val.price_adjustment)}
+                                onChange={e => {
+                                  const raw = e.target.value.replace(/\./g, "");
+                                  if (!isNaN(Number(raw)) || raw === "") {
+                                    updateValue(oi, vi, "price_adjustment", parseFloat(raw) || 0);
+                                  }
+                                }}
                                 className="px-2 py-1.5 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                             )}
 
@@ -467,10 +478,15 @@ export default function NewProductPage() {
                               </div>
                               <input type="text" value={sub.option_value}
                                 onChange={e => updateSubValue(oi, vi, si, "option_value", e.target.value)}
-                                placeholder="Sub-value (optional)"
+                                placeholder={t("seller.products_manage.sub_value_placeholder")}
                                 className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
-                              <input type="number" value={sub.price_adjustment} min="0" step="1000"
-                                onChange={e => updateSubValue(oi, vi, si, "price_adjustment", parseFloat(e.target.value) || 0)}
+                              <input type="text" value={formatPrice(sub.price_adjustment)}
+                                onChange={e => {
+                                  const raw = e.target.value.replace(/\./g, "");
+                                  if (!isNaN(Number(raw)) || raw === "") {
+                                    updateSubValue(oi, vi, si, "price_adjustment", parseFloat(raw) || 0);
+                                  }
+                                }}
                                 className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
                               <input type="number" value={sub.stock_quantity} min="0"
                                 onChange={e => updateSubValue(oi, vi, si, "stock_quantity", parseInt(e.target.value) || 0)}
@@ -489,7 +505,7 @@ export default function NewProductPage() {
 
                     <button type="button" onClick={() => addValue(oi)}
                       className="text-xs text-primary hover:underline flex items-center gap-1 mt-1">
-                      <Plus size={11} /> Add value
+                      <Plus size={11} /> {t("seller.products_manage.add_value")}
                     </button>
                   </div>
                 </div>
@@ -503,18 +519,18 @@ export default function NewProductPage() {
           {/* Organization */}
           <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Organization</h2>
+              <h2 className="text-lg font-bold">{t("seller.products_manage.organization")}</h2>
               <button type="button" onClick={() => setShowAddCategory(true)}
                 className="flex items-center gap-1 text-xs text-primary hover:underline">
-                <Plus size={12} /> New Category
+                <Plus size={12} /> {t("seller.products_manage.new")}
               </button>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Category <span className="text-destructive">*</span></label>
+              <label className="block text-sm font-medium mb-2">{t("seller.products_manage.category")} <span className="text-destructive">*</span></label>
               <div className="relative">
                 <select name="categoryId" required value={formData.categoryId} onChange={handleChange}
                   className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50 pr-10">
-                  <option value="">Select a category</option>
+                  <option value="">{t("seller.products_manage.select_category")}</option>
                   {categories.map(cat => (
                     <optgroup key={cat.id} label={cat.name}>
                       <option value={cat.id}>{cat.name}</option>
@@ -529,14 +545,14 @@ export default function NewProductPage() {
 
           {/* Pricing */}
           <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
-            <h2 className="text-lg font-bold">Pricing &amp; Inventory</h2>
+            <h2 className="text-lg font-bold">{t("seller.products_manage.pricing_inventory")}</h2>
             <div>
               <label className="block text-sm font-medium mb-2">
-                Base Price (VNĐ) <span className="text-destructive">*</span>
+                {t("seller.products_manage.base_price")} (VNĐ) <span className="text-destructive">*</span>
               </label>
               {options.length > 0 ? (
                 <div className="w-full px-4 py-3 bg-muted border border-dashed border-border rounded-xl text-sm font-medium">
-                  <span className="text-muted-foreground">Giá rẻ nhất: </span>
+                  <span className="text-muted-foreground">{t("seller.products_manage.cheapest_price")}: </span>
                   <span className="text-primary">
                     {(() => {
                       let min = Infinity;
@@ -553,18 +569,24 @@ export default function NewProductPage() {
                   </span>
                 </div>
               ) : (
-                <input type="number" name="price" required min="0" value={formData.price} onChange={handleChange}
+                <input type="text" name="price" required value={formatPrice(formData.price)} 
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\./g, "");
+                    if (!isNaN(Number(raw)) || raw === "") {
+                      setFormData({ ...formData, price: raw });
+                    }
+                  }}
                   placeholder="0"
                   className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
               )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
-                Stock Quantity <span className="text-destructive">*</span>
+                {t("seller.products_manage.stock")} <span className="text-destructive">*</span>
               </label>
               {options.length > 0 ? (
                 <div className="w-full px-4 py-3 bg-muted border border-dashed border-border rounded-xl text-sm">
-                  <span className="text-muted-foreground">Tổng từ options: </span>
+                  <span className="text-muted-foreground">{t("seller.products_manage.total_from_options")} </span>
                   <span className="font-bold text-foreground">
                     {options.reduce((total, opt) => {
                       return total + opt.values.reduce((vs, v) => {
@@ -602,7 +624,7 @@ export default function NewProductPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">Add New Category</h3>
+              <h3 className="text-lg font-bold">{t("seller.products_manage.add_category_title")}</h3>
               <button onClick={() => { setShowAddCategory(false); setAddCategoryError(null); }}
                 className="p-1.5 hover:bg-muted rounded-full text-muted-foreground transition-colors">
                 <X size={18} />
@@ -610,7 +632,7 @@ export default function NewProductPage() {
             </div>
             {addCategoryError && <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-xl">{addCategoryError}</div>}
             <div>
-              <label className="block text-sm font-medium mb-1">Category Name <span className="text-destructive">*</span></label>
+              <label className="block text-sm font-medium mb-1">{t("seller.products_manage.category_name")} <span className="text-destructive">*</span></label>
               <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)}
                 placeholder="e.g. Electronics"
                 className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />

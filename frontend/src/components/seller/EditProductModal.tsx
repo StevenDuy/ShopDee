@@ -32,6 +32,12 @@ interface Props { productId: number; onClose: () => void; onSuccess: () => void;
 const emptySubValue = (): SubValue => ({ option_value: "", price_adjustment: 0, stock_quantity: 0 });
 const emptyValue = (): OptionValue => ({ option_value: "", price_adjustment: 0, stock_quantity: 0, sub_values: [] });
 
+const formatPrice = (val: string | number) => {
+  if (val === undefined || val === null || val === "") return "";
+  const str = val.toString().replace(/\D/g, "");
+  return str.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
+
 export function EditProductModal({ productId, onClose, onSuccess }: Props) {
   const { t } = useTranslation();
   const { token } = useAuthStore();
@@ -292,12 +298,12 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">{t("seller.finance.description")}</label>
+                <label className="block text-sm font-medium mb-1">{t("seller.products_manage.product_title")}</label>
                 <input type="text" name="title" value={formData.title} onChange={handleChange} required
                   className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">{t("seller.finance.description")}</label>
+                <label className="block text-sm font-medium mb-1">{t("seller.products_manage.description")}</label>
                 <textarea name="description" value={formData.description} onChange={handleChange} required rows={3}
                   className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
@@ -347,10 +353,17 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                         }));
                         return min === Infinity ? `0 ${t("currency_code")}` : new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(min);
                       })()}
-                    </span>
+                      </span>
                   </div>
                 ) : (
-                  <input type="number" name="price" value={formData.price} onChange={handleChange} required min="0"
+                  <input type="text" name="price" value={formatPrice(formData.price)} 
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\./g, "");
+                      if (!isNaN(Number(raw)) || raw === "") {
+                        setFormData({ ...formData, price: raw });
+                      }
+                    }}
+                    required
                     className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
                 )}
               </div>
@@ -358,7 +371,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                 <label className="block text-sm font-medium mb-1">{t("seller.products_manage.stock")}</label>
                 {options.length > 0 ? (
                   <div className="w-full px-3 py-2 bg-muted border border-dashed border-border rounded-xl text-sm">
-                    <span className="text-muted-foreground">Tổng từ options: </span>
+                    <span className="text-muted-foreground">{t("seller.products_manage.total_from_options")} </span>
                     <span className="font-bold text-foreground">
                       {options.reduce((total, opt) =>
                         total + opt.values.reduce((vs, v) => {
@@ -380,7 +393,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
 
             {/* Media */}
             <div>
-              <h3 className="text-sm font-bold mb-3">Media</h3>
+              <h3 className="text-sm font-bold mb-3">{t("seller.products_manage.media")}</h3>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {formData.media?.map(m => (
                   <div key={m.id} className="relative aspect-square border border-border rounded-xl overflow-hidden group">
@@ -403,7 +416,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                 <label className="aspect-square border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors">
                   <input type="file" multiple accept="image/*,video/mp4" className="hidden" onChange={handleFileChange} />
                   <Upload size={18} className="text-muted-foreground mb-1" />
-                  <span className="text-[10px] font-medium text-muted-foreground">Upload</span>
+                  <span className="text-[10px] font-medium text-muted-foreground">{t("seller.products_manage.add_media")}</span>
                 </label>
               </div>
             </div>
@@ -413,13 +426,13 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
             {/* Options */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-bold">Product Options</h3>
-                <button type="button" onClick={addOption} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus size={12} /> Add Option</button>
+                <h3 className="text-sm font-bold">{t("seller.products_manage.product_options")}</h3>
+                <button type="button" onClick={addOption} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus size={12} /> {t("seller.products_manage.add_option")}</button>
               </div>
 
               {options.length === 0 && (
                 <div className="text-center py-6 text-muted-foreground text-xs border-2 border-dashed border-border rounded-xl">
-                  No options. Click &quot;Add Option&quot; to add variants.
+                  {t("seller.products_manage.no_options_hint")}
                 </div>
               )}
 
@@ -429,11 +442,11 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                     {/* Option name row */}
                     <div className="flex items-center gap-2">
                       <input type="text" value={opt.option_name} onChange={e => updateOptionName(oi, e.target.value)}
-                        placeholder="e.g. Color" className="w-36 shrink-0 px-2 py-1.5 bg-input border border-border rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                      <div className="flex-1 text-xs text-muted-foreground">min 2 values</div>
+                        placeholder={t("seller.products_manage.option_name_placeholder")} className="w-36 shrink-0 px-2 py-1.5 bg-input border border-border rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                      <div className="flex-1 text-xs text-muted-foreground">{t("seller.products_manage.min_2_values")}</div>
                       {/* Option total stock badge */}
                       <div className="flex items-center gap-1 text-xs text-muted-foreground" title="Tổng stock = SUM tất cả values">
-                        <span className="text-[10px] uppercase tracking-wide">Tổng:</span>
+                        <span className="text-[10px] uppercase tracking-wide">{t("seller.products_manage.total")}:</span>
                         <span className="px-1.5 py-0.5 bg-primary/10 text-primary font-bold rounded text-[11px]">{computedOptionStock(opt)}</span>
                       </div>
                       <button type="button" onClick={() => removeOption(oi)}
@@ -442,7 +455,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
 
                     {/* Column headers */}
                     <div className="grid grid-cols-[1fr_90px_65px_auto] gap-1.5 text-[11px] font-medium text-muted-foreground px-0.5">
-                      <span>Value</span><span>Giá (VNĐ)</span><span>Stock</span><span className="flex gap-1"><span className="w-5 inline-block" /><span className="w-5 inline-block" /></span>
+                      <span>{t("seller.products_manage.product")}</span><span>{t("seller.products_manage.price")} (VNĐ)</span><span>{t("seller.products_manage.inventory")}</span><span className="flex gap-1"><span className="w-5 inline-block" /><span className="w-5 inline-block" /></span>
                     </div>
 
                     <div className="space-y-3">
@@ -454,15 +467,21 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                             {/* Parent value */}
                             <div className="grid grid-cols-[1fr_90px_65px_auto] gap-1.5 items-center">
                               <input type="text" value={val.option_value} onChange={e => updateValue(oi, vi, "option_value", e.target.value)}
-                                placeholder="e.g. Red" className="px-2 py-1.5 bg-input border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                placeholder={t("seller.products_manage.value_placeholder")} className="px-2 py-1.5 bg-input border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/50" />
 
                               {/* Price: readonly khi có sub_values */}
                               {hasSubs ? (
                                 <div className="px-2 py-1.5 bg-muted border border-dashed border-border rounded-lg text-[10px] text-muted-foreground text-center" title="Tính từ option con">
-                                  từ sub
+                                  {t("seller.products_manage.from_sub")}
                                 </div>
                               ) : (
-                                <input type="number" value={val.price_adjustment} min="0" step="1000" onChange={e => updateValue(oi, vi, "price_adjustment", parseFloat(e.target.value) || 0)}
+                                <input type="text" value={formatPrice(val.price_adjustment)}
+                                  onChange={e => {
+                                    const raw = e.target.value.replace(/\./g, "");
+                                    if (!isNaN(Number(raw)) || raw === "") {
+                                      updateValue(oi, vi, "price_adjustment", parseFloat(raw) || 0);
+                                    }
+                                  }}
                                   className="px-2 py-1.5 bg-input border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/50" />
                               )}
 
@@ -494,8 +513,14 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                                   <div className="w-px h-3 bg-border opacity-50 mx-auto" />
                                 </div>
                                 <input type="text" value={sub.option_value} onChange={e => updateSubValue(oi, vi, si, "option_value", e.target.value)}
-                                  placeholder="Sub (optional)" className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
-                                <input type="number" value={sub.price_adjustment} min="0" step="1000" onChange={e => updateSubValue(oi, vi, si, "price_adjustment", parseFloat(e.target.value) || 0)}
+                                  placeholder={t("seller.products_manage.sub_value_placeholder")} className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
+                                <input type="text" value={formatPrice(sub.price_adjustment)}
+                                  onChange={e => {
+                                    const raw = e.target.value.replace(/\./g, "");
+                                    if (!isNaN(Number(raw)) || raw === "") {
+                                      updateSubValue(oi, vi, si, "price_adjustment", parseFloat(raw) || 0);
+                                    }
+                                  }}
                                   className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
                                 <input type="number" value={sub.stock_quantity} min="0" onChange={e => updateSubValue(oi, vi, si, "stock_quantity", parseInt(e.target.value) || 0)}
                                   className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
@@ -509,7 +534,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                         );
                       })}
                       <button type="button" onClick={() => addValue(oi)} className="text-xs text-primary hover:underline flex items-center gap-1">
-                        <Plus size={11} /> Add value
+                        <Plus size={11} /> {t("seller.products_manage.add_value")}
                       </button>
                     </div>
                   </div>
@@ -557,18 +582,18 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold">Add New Category</h3>
+              <h3 className="text-base font-bold">{t("seller.products_manage.add_category_title")}</h3>
               <button onClick={() => { setShowAddCategory(false); setAddCategoryError(null); }}
                 className="p-1.5 hover:bg-muted rounded-full text-muted-foreground"><X size={16} /></button>
             </div>
             {addCategoryError && <div className="p-3 bg-destructive/10 text-destructive text-xs rounded-xl">{addCategoryError}</div>}
             <div>
-              <label className="block text-sm font-medium mb-1">Name <span className="text-destructive">*</span></label>
+              <label className="block text-sm font-medium mb-1">{t("seller.products_manage.category_name")} <span className="text-destructive">*</span></label>
               <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="e.g. Electronics"
                 className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Parent <span className="text-muted-foreground font-normal text-xs">(optional)</span></label>
+              <label className="block text-sm font-medium mb-1">{t("seller.products_manage.parent_category")} <span className="text-muted-foreground font-normal text-xs">({t("seller.products_manage.optional")})</span></label>
               <select value={newCategoryParentId} onChange={e => setNewCategoryParentId(e.target.value)}
                 className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
                 <option value="">None</option>
@@ -577,10 +602,10 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
             </div>
             <div className="flex gap-2 pt-1">
               <button type="button" onClick={() => { setShowAddCategory(false); setAddCategoryError(null); }}
-                className="flex-1 px-3 py-2 rounded-xl border border-border text-sm font-medium hover:bg-accent transition-colors">Cancel</button>
+                className="flex-1 px-3 py-2 rounded-xl border border-border text-sm font-medium hover:bg-accent transition-colors">{t("profile_page.cancel")}</button>
               <button type="button" onClick={handleAddCategory} disabled={addingCategory || !newCategoryName.trim()}
                 className="flex-1 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50">
-                {addingCategory ? "Adding..." : "Add"}
+                {addingCategory ? t("loading") : t("inbox.unified_title") === "Hộp thư Hợp nhất" ? "Thêm" : "Add"}
               </button>
             </div>
           </div>
