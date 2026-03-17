@@ -127,7 +127,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Banners
         Route::get('/banners/search-products', [\App\Http\Controllers\Admin\BannerController::class, 'searchProducts']);
-        Route::apiResource('banners', \App\Http\Controllers\Admin\BannerController::class);
+        Route::get('/banners', [\App\Http\Controllers\Admin\BannerController::class, 'index']);
+        Route::post('/banners', [\App\Http\Controllers\Admin\BannerController::class, 'store']);
+        Route::get('/banners/{id}', [\App\Http\Controllers\Admin\BannerController::class, 'show']);
+        Route::put('/banners/{id}', [\App\Http\Controllers\Admin\BannerController::class, 'update']);
+        Route::delete('/banners/{id}', [\App\Http\Controllers\Admin\BannerController::class, 'destroy']);
     });
 
 

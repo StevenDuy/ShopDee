@@ -68,16 +68,19 @@ class BannerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Banner $banner)
+    public function show($id)
     {
-        return response()->json($banner->load('product'));
+        $banner = Banner::with('product')->findOrFail($id);
+        return response()->json($banner);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Banner $banner)
+    public function update(Request $request, $id)
     {
+        $banner = Banner::findOrFail($id);
+        
         $request->validate([
             'title' => 'nullable|string|max:255',
             'subtitle' => 'nullable|string|max:255',
@@ -91,9 +94,11 @@ class BannerController extends Controller
 
         if ($request->hasFile('image')) {
             // Delete old image
-            $oldPath = str_replace('/storage/', '', $banner->image_path);
-            if (Storage::disk('public')->exists($oldPath)) {
-                Storage::disk('public')->delete($oldPath);
+            if ($banner->image_path) {
+                $oldPath = str_replace('/storage/', '', $banner->image_path);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
             }
 
             $path = $request->file('image')->store('banners', 'public');
@@ -112,9 +117,11 @@ class BannerController extends Controller
     {
         $banner = Banner::findOrFail($id);
         
-        $oldPath = str_replace('/storage/', '', $banner->image_path);
-        if (Storage::disk('public')->exists($oldPath)) {
-            Storage::disk('public')->delete($oldPath);
+        if ($banner->image_path) {
+            $oldPath = str_replace('/storage/', '', $banner->image_path);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
         }
 
         $banner->delete();

@@ -163,6 +163,17 @@
       "edit_product": "Chỉnh sửa sản phẩm",
       "select_category": "Chọn danh mục",
       "update": "Cập nhật",
+      "save": "Lưu sản phẩm",
+      "specifications": "Thông số sản phẩm",
+      "add_specification": "Thêm thông số",
+      "spec_name_placeholder": "Tên thông số (VD: Thương hiệu)",
+      "spec_value_placeholder": "Giá trị (VD: Apple)",
+      "yes_delete": "Xóa ngay",
+      "primary": "Ảnh chính",
+      "adding": "Đang thêm...",
+      "add_category": "Thêm danh mục",
+      "none": "Không có",
+      "top_level": "Danh mục gốc",
       "general_info": "Thông tin chung",
       "product_title": "Tên sản phẩm",
       "description": "Mô tả sản phẩm",
@@ -503,6 +514,7 @@
     "customer_experience": "Dựa trên trải nghiệm thực tế",
     "customers_reviewed": "{{count}} khách hàng đã đánh giá",
     "purchased": "Đã mua hàng",
+    "specifications": "THÔNG SỐ",
     "complete_selection_warning": "Vui lòng hoàn tất lựa chọn sản phẩm"
   }
 }

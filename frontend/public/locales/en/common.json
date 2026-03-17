@@ -163,6 +163,17 @@
       "edit_product": "Edit Product",
       "select_category": "Select Category",
       "update": "Update",
+      "save": "Save Product",
+      "specifications": "Product Specifications",
+      "add_specification": "Add Specification",
+      "spec_name_placeholder": "Spec Name (e.g. Brand)",
+      "spec_value_placeholder": "Spec Value (e.g. Apple)",
+      "yes_delete": "Delete Now",
+      "primary": "Primary",
+      "adding": "Adding...",
+      "add_category": "Add Category",
+      "none": "None",
+      "top_level": "Top Level",
       "general_info": "General Information",
       "product_title": "Product Title",
       "description": "Description",
@@ -484,6 +495,7 @@
     "customer_experience": "Based on real experience",
     "customers_reviewed": "{{count}} customers reviewed",
     "purchased": "Purchased",
+    "specifications": "SPECIFICATIONS",
     "complete_selection_warning": "Please complete product selection"
   }
 }

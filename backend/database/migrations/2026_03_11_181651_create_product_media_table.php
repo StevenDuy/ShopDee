@@ -13,6 +13,7 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->enum('media_type', ['image', 'video'])->default('image');
             $table->string('url');
+            $table->string('public_id')->nullable();
             $table->boolean('is_primary')->default(false);
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();

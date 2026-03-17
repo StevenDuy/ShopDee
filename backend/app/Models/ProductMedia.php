@@ -9,7 +9,7 @@ class ProductMedia extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'media_type', 'url', 'is_primary', 'sort_order'];
+    protected $fillable = ['product_id', 'media_type', 'url', 'public_id', 'is_primary', 'sort_order'];
 
     protected $casts = ['is_primary' => 'boolean'];
 
@@ -17,7 +17,7 @@ class ProductMedia extends Model
 
     public function getFullUrlAttribute()
     {
-        $url = $this->attributes['url'] ?? null;
+        $url = $this->url ?? null;
         if (!$url) return null;
         if (str_starts_with($url, 'http')) return $url;
         

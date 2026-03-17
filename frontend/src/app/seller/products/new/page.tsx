@@ -57,6 +57,7 @@ export default function NewProductPage() {
 
   // Product Options state
   const [options, setOptions] = useState<ProductOption[]>([]);
+  const [attributes, setAttributes] = useState<{ attribute_name: string; attribute_value: string }[]>([]);
 
   // Add Category modal
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -251,6 +252,7 @@ export default function NewProductPage() {
         title: formData.title, category_id: formData.categoryId,
         price: finalPrice, stock_quantity: finalStock,
         description: formData.description,
+        attributes: attributes.filter(a => a?.attribute_name?.trim() && a?.attribute_value?.trim()),
       }, { headers: { Authorization: `Bearer ${token}` } });
 
       createdProductId = res.data.id;
@@ -346,7 +348,7 @@ export default function NewProductPage() {
                     className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                     <Trash2 size={14} />
                   </button>
-                  {i === 0 && <span className="absolute bottom-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-[10px] uppercase font-bold rounded-md">Primary</span>}
+                  {i === 0 && <span className="absolute bottom-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-[10px] uppercase font-bold rounded-md">{t("seller.products_manage.primary")}</span>}
                 </div>
               ))}
               <label className="aspect-square border border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors group">
@@ -357,6 +359,58 @@ export default function NewProductPage() {
                 <span className="text-[8px] font-bold uppercase tracking-tighter text-muted-foreground group-hover:text-primary">{t("seller.products_manage.add_media")}</span>
               </label>
             </div>
+          </div>
+
+          {/* Product Specifications */}
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">{t("seller.products_manage.specifications")}</h2>
+              <button type="button" onClick={() => setAttributes([...attributes, { attribute_name: "", attribute_value: "" }])}
+                className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl text-sm font-medium hover:bg-primary/20 transition-colors">
+                <Plus size={16} /> {t("seller.products_manage.add_specification")}
+              </button>
+            </div>
+            {attributes.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground text-sm border-2 border-dashed border-border rounded-xl">
+                {t("product_details.updating_data")}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {attributes.map((attr, idx) => (
+                  <div key={idx} className="flex gap-4 items-start">
+                    <input
+                      type="text"
+                      placeholder={t("seller.products_manage.spec_name_placeholder")}
+                      value={attr.attribute_name}
+                      onChange={(e) => {
+                        const newAttrs = [...attributes];
+                        newAttrs[idx].attribute_name = e.target.value;
+                        setAttributes(newAttrs);
+                      }}
+                      className="flex-1 px-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    <input
+                      type="text"
+                      placeholder={t("seller.products_manage.spec_value_placeholder")}
+                      value={attr.attribute_value}
+                      onChange={(e) => {
+                        const newAttrs = [...attributes];
+                        newAttrs[idx].attribute_value = e.target.value;
+                        setAttributes(newAttrs);
+                      }}
+                      className="flex-1 px-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setAttributes(attributes.filter((_, i) => i !== idx))}
+                      className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Options */}
@@ -638,19 +692,19 @@ export default function NewProductPage() {
                 className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Parent <span className="text-muted-foreground font-normal text-xs">(optional)</span></label>
+              <label className="block text-sm font-medium mb-1">{t("seller.products_manage.parent_category")} <span className="text-muted-foreground font-normal text-xs">({t("seller.products_manage.optional")})</span></label>
               <select value={newCategoryParentId} onChange={e => setNewCategoryParentId(e.target.value)}
                 className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                <option value="">None (top-level)</option>
+                <option value="">{t("seller.products_manage.none")} ({t("seller.products_manage.top_level")})</option>
                 {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
             </div>
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={() => { setShowAddCategory(false); setAddCategoryError(null); }}
-                className="flex-1 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-accent transition-colors">Cancel</button>
+                className="flex-1 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-accent transition-colors">{t("profile_page.cancel")}</button>
               <button type="button" onClick={handleAddCategory} disabled={addingCategory || !newCategoryName.trim()}
                 className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {addingCategory ? "Adding..." : "Add Category"}
+                {addingCategory ? t("seller.products_manage.adding") : t("seller.products_manage.add_category")}
               </button>
             </div>
           </div>

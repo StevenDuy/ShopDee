@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
+import { Skeleton } from "@/components/Skeleton";
 import { Package, Truck, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -25,7 +26,7 @@ interface Order {
     unit_price: number;
     product: {
       title: string;
-      media: { url: string }[];
+      media: { url: string; full_url: string }[];
     };
     selected_options?: Record<string, string> | null;
     review?: {
@@ -118,14 +119,6 @@ export default function MyOrdersPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen px-6 md:px-10 py-8 max-w-5xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
@@ -135,9 +128,32 @@ export default function MyOrdersPage() {
         <h1 className="text-2xl font-bold">{t("my_orders")}</h1>
       </div>
 
-      <div className="space-y-6">
-        {orders.length === 0 ? (
-          <div className="text-center py-24 text-muted-foreground bg-card border border-border rounded-2xl shadow-sm">
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <div key="loading" className="space-y-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-card border border-border rounded-3xl p-6 space-y-4">
+                <div className="flex justify-between">
+                  <Skeleton className="h-6 w-1/4" />
+                  <Skeleton className="h-6 w-1/4" />
+                </div>
+                <div className="flex gap-4">
+                  <Skeleton className="w-20 h-20 rounded-2xl" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-24 text-muted-foreground bg-card border border-border rounded-2xl shadow-sm"
+          >
             <Package size={64} className="mx-auto mb-4 opacity-20" />
             <p className="text-lg">{t("customer_orders.no_orders_yet")}</p>
             <button 
@@ -146,9 +162,15 @@ export default function MyOrdersPage() {
             >
                 {t("customer_orders.shop_now")}
             </button>
-          </div>
+          </motion.div>
         ) : (
-          orders.map((order) => {
+          <motion.div
+            key="content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            {orders.map((order) => {
             const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", icon: Clock };
             const StatusIcon = statusInfo.icon;
 
@@ -191,13 +213,9 @@ export default function MyOrdersPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {order.items.map((item) => (
                       <div key={item.id} className="flex items-center gap-3 bg-card border border-border/50 rounded-xl p-3 hover:border-primary/20 transition-colors">
-                        <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-border shadow-sm">
-                          <img 
-                            src={item.product.media[0]?.url ? `http://localhost:8000${item.product.media[0].url}` : `https://picsum.photos/seed/${item.id}/80/80`} 
-                            alt={item.product.title} 
-                            className="w-full h-full object-cover" 
-                          />
-                        </div>
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden border border-border bg-muted shrink-0 relative">
+                        <OrderImageItem src={item.product?.media?.[0]?.full_url || `https://picsum.photos/seed/${item.id}/80/80`} alt={item.product?.title} />
+                      </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold line-clamp-1">
                             {item.product.title}
@@ -332,9 +350,10 @@ export default function MyOrdersPage() {
                 </div>
               </motion.div>
             );
-          })
+          })}
+          </motion.div>
         )}
-      </div>
+        </AnimatePresence>
 
       <ReviewModal 
         isOpen={isReviewModalOpen}
@@ -346,5 +365,20 @@ export default function MyOrdersPage() {
         onSuccess={fetchOrders}
       />
     </div>
+  );
+}
+
+function OrderImageItem({ src, alt }: { src: string, alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      {!loaded && <Skeleton className="absolute inset-0 z-10 rounded-none" />}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        className={`w-full h-full object-cover transition-all duration-500 ${loaded ? "opacity-100 scale-100" : "opacity-0 scale-110"}`}
+      />
+    </>
   );
 }

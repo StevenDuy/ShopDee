@@ -15,7 +15,7 @@ type OrderItem = {
   product_id: number;
   product: {
     title: string;
-    media: { url: string }[];
+    media: { url: string; full_url: string }[];
   };
 };
 
@@ -176,7 +176,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                         <div className="w-10 h-10 bg-muted rounded-lg overflow-hidden border border-border shrink-0">
                           {item.product.media && item.product.media.length > 0 ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={`http://localhost:8000${item.product.media[0].url}`} alt="" className="w-full h-full object-cover" />
+                            <img src={item.product.media[0].full_url} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package size={16}/></div>
                           )}

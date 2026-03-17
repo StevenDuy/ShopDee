@@ -12,6 +12,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::with(['category', 'media', 'seller'])
+            ->select('id', 'seller_id', 'category_id', 'title', 'slug', 'price', 'sale_price', 'stock_quantity', 'status', 'created_at')
             ->where('status', $request->get('status', 'active'));
 
         // Search
@@ -63,8 +64,7 @@ class ProductController extends Controller
             'attributes',
             'options.values',
             'seller',
-            'reviews.customer.profile',
-            'reviews.orderItem.product',
+            // Removed reviews here as they are fetched separately via /reviews endpoint
         ])->where('slug', $slug)->where('status', 'active')->firstOrFail();
 
         return response()->json($product);

@@ -22,22 +22,22 @@ interface Order {
 
 const API = "http://localhost:8000/api";
 const STATUS_COLORS: Record<string, string> = {
-  pending:   "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-  paid:      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  shipping:  "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  paid: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  shipping: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
   completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
 const TABS = [
-  { id: "info",      label: "Profile Info", icon: User },
-  { id: "addresses",label: "Addresses",    icon: MapPin },
-  { id: "password", label: "Password",     icon: Lock },
+  { id: "info", label: "Profile Info", icon: User },
+  { id: "addresses", label: "Addresses", icon: MapPin },
+  { id: "password", label: "Password", icon: Lock },
 ];
 
 export default function ProfilePage() {
   const { t } = useTranslation();
-  const router  = useRouter();
+  const router = useRouter();
   const { token, user: authUser, logout } = useAuthStore();
   const { formatPrice } = useCurrencyStore();
   const searchParams = useSearchParams();
@@ -50,9 +50,9 @@ export default function ProfilePage() {
     }
   }, [tabFromUrl]);
 
-  const [profile,   setProfile]   = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [orders,    setOrders]    = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -74,7 +74,7 @@ export default function ProfilePage() {
       setProfile(r.data); setName(r.data.name); setPhone(r.data.profile?.phone ?? ""); setBio(r.data.profile?.bio ?? "");
     });
     fetchAddresses();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const fetchAddresses = async () => {
@@ -189,8 +189,8 @@ export default function ProfilePage() {
                   </p>
                 </div>
               </div>
-              <button 
-                onClick={() => handleDeleteAddress(addr.id)} 
+              <button
+                onClick={() => handleDeleteAddress(addr.id)}
                 className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-2 rounded-xl transition-all"
                 title={t("profile_page.delete_tooltip")}
               >
@@ -213,8 +213,8 @@ export default function ProfilePage() {
           <form onSubmit={handleChangePassword} className="bg-card border border-border rounded-2xl p-6 space-y-4 max-w-md">
             <h2 className="font-semibold text-lg">{t("profile_page.change_password")}</h2>
             {["current_password", "new_password", "confirm_new_password"].map((labelKey, i) => {
-              const val  = [curPw, newPw, confPw][i];
-              const set  = [setCurPw, setNewPw, setConfPw][i];
+              const val = [curPw, newPw, confPw][i];
+              const set = [setCurPw, setNewPw, setConfPw][i];
               return (
                 <div key={labelKey}><label className="block text-sm font-medium mb-2">{t(`profile_page.${labelKey}`)}</label>
                   <input type="password" value={val} onChange={(e) => set(e.target.value)} required
@@ -229,10 +229,10 @@ export default function ProfilePage() {
         </motion.div>
       )}
       {/* Address Modal */}
-      <AddressModal 
-        isOpen={isAddrModalOpen} 
-        onClose={() => setIsAddrModalOpen(false)} 
-        onSuccess={fetchAddresses} 
+      <AddressModal
+        isOpen={isAddrModalOpen}
+        onClose={() => setIsAddrModalOpen(false)}
+        onSuccess={fetchAddresses}
         token={token}
       />
     </div>

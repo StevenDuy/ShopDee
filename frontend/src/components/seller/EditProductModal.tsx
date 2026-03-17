@@ -51,6 +51,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
   const [formData, setFormData] = useState<Product | null>(null);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [options, setOptions] = useState<ProductOption[]>([]);
+  const [attributes, setAttributes] = useState<{ attribute_name: string; attribute_value: string }[]>([]);
 
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -86,6 +87,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
         })),
       }));
       setOptions(mapped);
+      setAttributes(prodRes.data.attributes || []);
     }).catch(err => {
       console.error(err);
       setError("Failed to load product.");
@@ -258,6 +260,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
         price: finalPrice,
         stock_quantity: finalStock,
         description: formData.description, status: formData.status,
+        attributes: attributes.filter(a => a?.attribute_name?.trim() && a?.attribute_value?.trim()),
       }, { headers: { Authorization: `Bearer ${token}` } });
 
       for (const file of newFiles) {
@@ -401,14 +404,14 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                     <img src={m.full_url} alt="" className="object-cover w-full h-full" />
                     <button type="button" onClick={() => deleteExistingMedia(m.id)}
                       className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
-                    {m.is_primary && <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[8px] uppercase font-bold rounded-sm">Primary</span>}
+                    {m.is_primary && <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[8px] uppercase font-bold rounded-sm">{t("seller.products_manage.primary")}</span>}
                   </div>
                 ))}
                 {newFiles.map((file, i) => (
                   <div key={`new-${i}`} className="relative aspect-square border-2 border-primary/50 rounded-xl overflow-hidden group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={URL.createObjectURL(file)} alt="" className="object-cover w-full h-full opacity-70" />
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white bg-black/30">NEW</span>
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white bg-black/30 text-center px-1 uppercase">{t("seller.products_manage.new")}</span>
                     <button type="button" onClick={() => setNewFiles(prev => prev.filter((_, idx) => idx !== i))}
                       className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
                   </div>
@@ -420,6 +423,47 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                   </div>
                   <span className="text-[8px] font-bold uppercase tracking-tighter text-muted-foreground group-hover:text-primary">{t("seller.products_manage.add_media")}</span>
                 </label>
+              </div>
+            </div>
+
+            <hr className="border-border" />
+
+            {/* Product Specifications */}
+            <hr className="border-border" />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold">{t("seller.products_manage.specifications")}</h3>
+                <button type="button" onClick={() => setAttributes([...attributes, { attribute_name: "", attribute_value: "" }])}
+                  className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus size={12} /> {t("seller.products_manage.add_specification")}</button>
+              </div>
+
+              {attributes.length === 0 && (
+                <div className="text-center py-6 text-muted-foreground text-xs border-2 border-dashed border-border rounded-xl">
+                  {t("product_details.updating_data")}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {attributes.map((attr, idx) => (
+                  <div key={idx} className="flex gap-3 items-center">
+                    <input type="text" placeholder={t("seller.products_manage.spec_name_placeholder")} value={attr.attribute_name}
+                      onChange={(e) => {
+                        const newAttrs = [...attributes];
+                        newAttrs[idx].attribute_name = e.target.value;
+                        setAttributes(newAttrs);
+                      }}
+                      className="flex-1 px-3 py-1.5 bg-input border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input type="text" placeholder={t("seller.products_manage.spec_value_placeholder")} value={attr.attribute_value}
+                      onChange={(e) => {
+                        const newAttrs = [...attributes];
+                        newAttrs[idx].attribute_value = e.target.value;
+                        setAttributes(newAttrs);
+                      }}
+                      className="flex-1 px-3 py-1.5 bg-input border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <button type="button" onClick={() => setAttributes(attributes.filter((_, i) => i !== idx))}
+                      className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -554,16 +598,16 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
               <Trash2 size={16} /> Delete Product
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2 bg-destructive/10 border border-border rounded-xl px-3 py-2">
               <AlertTriangle size={16} className="text-destructive shrink-0" />
-              <span className="text-xs font-medium text-destructive">Delete permanently?</span>
+              <span className="text-xs font-medium text-destructive">{t("confirm_delete")}</span>
               <button type="button" onClick={handleDelete} disabled={deleting}
                 className="px-3 py-1 bg-destructive text-white rounded-lg text-xs font-bold hover:opacity-90 disabled:opacity-50">
-                {deleting ? "Deleting..." : "Yes, delete"}
+                {deleting ? t("loading") : t("seller.products_manage.yes_delete")}
               </button>
               <button type="button" onClick={() => setConfirmDelete(false)} disabled={deleting}
                 className="px-3 py-1 border border-border rounded-lg text-xs font-medium hover:bg-accent transition-colors">
-                Cancel
+                {t("profile_page.cancel")}
               </button>
             </div>
           )}
@@ -598,7 +642,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
               <label className="block text-sm font-medium mb-1">{t("seller.products_manage.parent_category")} <span className="text-muted-foreground font-normal text-xs">({t("seller.products_manage.optional")})</span></label>
               <select value={newCategoryParentId} onChange={e => setNewCategoryParentId(e.target.value)}
                 className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                <option value="">None</option>
+                <option value="">{t("seller.products_manage.none")}</option>
                 {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
             </div>
@@ -607,7 +651,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                 className="flex-1 px-3 py-2 rounded-xl border border-border text-sm font-medium hover:bg-accent transition-colors">{t("profile_page.cancel")}</button>
               <button type="button" onClick={handleAddCategory} disabled={addingCategory || !newCategoryName.trim()}
                 className="flex-1 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50">
-                {addingCategory ? t("loading") : t("inbox.unified_title") === "Hộp thư Hợp nhất" ? "Thêm" : "Add"}
+                {addingCategory ? t("seller.products_manage.adding") : t("seller.products_manage.add_category")}
               </button>
             </div>
           </div>

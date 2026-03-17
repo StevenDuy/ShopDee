@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, Store, ChevronRight, MessageCircle, Package } from "lucide-react";
+import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, Store, ChevronRight, MessageCircle, Package, ClipboardList } from "lucide-react";
+import { Skeleton } from "@/components/Skeleton";
 import axios from "axios";
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -92,7 +93,7 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
   const [addedMsg, setAddedMsg] = useState(false);
-  const [detailTab, setDetailTab] = useState<"description" | "reviews">("description");
+  const [detailTab, setDetailTab] = useState<"description" | "specifications" | "reviews">("description");
 
   useEffect(() => {
     setLoading(true);
@@ -110,8 +111,31 @@ export default function ProductDetailPage() {
   }, [slug, router]);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+    <div className="min-h-screen px-6 md:px-10 py-8 max-w-7xl mx-auto space-y-8">
+      <div className="grid md:grid-cols-2 gap-10">
+        <div className="space-y-4">
+          <Skeleton className="aspect-square rounded-3xl" />
+          <div className="flex gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="w-20 h-20 rounded-xl" />)}
+          </div>
+        </div>
+        <div className="space-y-6">
+          <Skeleton className="h-4 w-1/4" />
+          <Skeleton className="h-10 w-3/4" />
+          <Skeleton className="h-6 w-1/2" />
+          <div className="py-6 border-y border-border space-y-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+          <div className="flex gap-4">
+            <Skeleton className="h-14 flex-1 rounded-2xl" />
+            <Skeleton className="h-14 flex-1 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+      <div className="mt-12">
+        <Skeleton className="h-64 w-full rounded-3xl" />
+      </div>
     </div>
   );
   if (!product) return null;
@@ -232,24 +256,26 @@ export default function ProductDetailPage() {
         <span className="text-foreground font-medium truncate max-w-[200px]">{product.title}</span>
       </div>
 
-      <div className="px-4 md:px-10 py-6 md:py-8 max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-8 md:gap-12">
+      <div className="px-6 md:px-10 py-8 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-10 items-start">
 
           {/* Gallery */}
-          <div className="space-y-5">
-            <div className="aspect-square rounded-2xl overflow-hidden bg-muted shadow-inner border border-border/50">
-              <AnimatePresence mode="wait">
-                <motion.img key={activeImg} src={images[activeImg].full_url} alt={product.title}
-                  initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.3 }}
-                  loading="lazy"
-                  className="w-full h-full object-cover" />
-              </AnimatePresence>
+          <div className="space-y-4 sticky top-24">
+            <div className="relative aspect-square rounded-3xl overflow-hidden bg-muted shadow-2xl group border border-border">
+              <ProductDetailImage src={images[activeImg].full_url} alt={product.title} />
+
+              {/* Zoom interaction hint */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-4 group-hover:translate-y-0 duration-500">
+                  <span className="bg-white/90 backdrop-blur-sm text-black text-xs font-bold px-4 py-2 rounded-full shadow-lg">Click to zoom</span>
+                </div>
+              </div>
             </div>
             {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-4 pt-2 pl-2 no-scrollbar">
+              <div className="flex gap-3 overflow-x-auto pb-4 pt-2 px-2 scrollbar-thin scrollbar-thumb-primary/20 hover:scrollbar-thumb-primary/40 scroll-smooth">
                 {images.map((img, i) => (
                   <button key={img.id} onClick={() => setActiveImg(i)}
-                    className={`w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden border shrink-0 transition-all shadow-sm ${i === activeImg ? "border-primary scale-110 shadow-md ring-2 ring-primary/20 -translate-y-1" : "border-transparent opacity-60 hover:opacity-100"}`}>
+                    className={`w-14 h-14 md:w-20 md:h-20 rounded-xl overflow-hidden border shrink-0 transition-all shadow-sm ${i === activeImg ? "border-primary scale-105 shadow-md ring-2 ring-primary/20 -translate-y-1" : "border-border/50 opacity-60 hover:opacity-100 hover:border-primary/30"}`}>
                     <img src={img.full_url} alt="" loading="lazy" className="w-full h-full object-cover" />
                   </button>
                 ))}
@@ -309,8 +335,8 @@ export default function ProductDetailPage() {
                   </Link>
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => {
                   if (!token) { router.push(`/login?redirect=/products/${slug}`); return; }
                   router.push(`/inbox?userId=${product.seller.id}`);
@@ -357,8 +383,8 @@ export default function ProductDetailPage() {
                             return (
                               <button key={val.id} onClick={() => !outOfStock && handleSelectParent(opt.id, val, optIdx)} disabled={outOfStock}
                                 className={`px-4 py-2 rounded-xl border text-xs md:text-sm font-bold transition-all active:scale-95 shadow-sm
-                                  ${isSelected 
-                                    ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20" 
+                                  ${isSelected
+                                    ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
                                     : outOfStock ? "opacity-30 border-dashed cursor-not-allowed line-through grayscale" : "bg-card hover:border-primary/40"}`}>
                                 {val.option_value}
                               </button>
@@ -440,7 +466,8 @@ export default function ProductDetailPage() {
           <div className="flex border-b border-border bg-muted/20 overflow-x-auto no-scrollbar scroll-smooth">
             {[
               { id: "description", label: t("product_details.description"), icon: Package },
-              { id: "reviews",     label: `${t("product_details.reviews")} (${reviews.length})`, icon: Star },
+              { id: "specifications", label: t("product_details.specifications"), icon: ClipboardList },
+              { id: "reviews", label: `${t("product_details.reviews")} (${reviews.length})`, icon: Star },
             ].map((tab) => (
               <button key={tab.id} onClick={() => setDetailTab(tab.id as any)}
                 className={`flex items-center gap-2 px-8 py-5 text-xs md:text-sm font-bold tracking-widest transition-all relative shrink-0
@@ -458,7 +485,7 @@ export default function ProductDetailPage() {
               {detailTab === "description" && (
                 <motion.div key="desc" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4 max-w-4xl mx-auto">
                   {product.description ? (
-                    <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-justify italic">
+                    <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-left whitespace-pre-wrap">
                       {product.description}
                     </div>
                   ) : (
@@ -467,6 +494,29 @@ export default function ProductDetailPage() {
                 </motion.div>
               )}
 
+              {detailTab === "specifications" && (
+                <motion.div key="specs" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="max-w-4xl mx-auto">
+                  {Array.isArray(product.attributes) && product.attributes.length > 0 ? (
+                    <div className="grid border border-border rounded-3xl overflow-hidden divide-y divide-border shadow-md bg-card">
+                      {product.attributes.map((attr, idx) => (
+                        <div key={attr.id || idx} className="grid grid-cols-[120px_1fr] md:grid-cols-[180px_1fr] hover:bg-muted/30 transition-colors">
+                          <div className="px-6 py-5 bg-muted/20 text-[10px] md:text-xs font-black text-muted-foreground border-r border-border uppercase tracking-widest flex items-center">
+                            {attr.attribute_name}
+                          </div>
+                          <div className="px-6 py-5 text-xs md:text-sm text-foreground font-semibold flex items-center">
+                            {attr.attribute_value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-20 bg-muted/10 rounded-3xl border-2 border-dashed border-border flex flex-col items-center justify-center opacity-40">
+                      <ClipboardList size={48} className="mb-4 text-muted-foreground" />
+                      <p className="text-xs md:text-sm font-bold uppercase tracking-widest text-muted-foreground">{t("product_details.updating_data")}</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
 
               {detailTab === "reviews" && (
                 <motion.div key="reviews" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-4xl mx-auto">
@@ -477,8 +527,8 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="flex flex-col items-center md:items-end gap-2">
                       <div className="flex items-center gap-4 bg-card px-6 py-4 rounded-2xl shadow-sm border border-border">
-                         <span className="text-3xl md:text-4xl font-bold text-primary leading-none tracking-tighter">{avgRating.toFixed(1)}</span>
-                         <StarRow rating={avgRating} />
+                        <span className="text-3xl md:text-4xl font-bold text-primary leading-none tracking-tighter">{avgRating.toFixed(1)}</span>
+                        <StarRow rating={avgRating} />
                       </div>
                       <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest opacity-60 italic">{t("product_details.customers_reviewed", { count: reviews.length })}</span>
                     </div>
@@ -493,7 +543,7 @@ export default function ProductDetailPage() {
                     <div className="grid gap-4">
                       {reviews.map(review => (
                         <div key={review.id} className="bg-card border border-border rounded-2xl p-5 md:p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                           <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold shadow-inner border border-primary/10">
                                 {review.customer.name.charAt(0)}
@@ -505,9 +555,9 @@ export default function ProductDetailPage() {
                                   <span className="text-[10px] text-primary/60 font-black uppercase tracking-tighter bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
                                     🏷️ {review.order_item?.product?.title || t("product_details.purchased")}
                                     {review.order_item?.selected_options && Object.keys(review.order_item.selected_options).length > 0 && (
-                                        <span className="ml-1 opacity-70">
-                                            ({Object.entries(review.order_item.selected_options).map(([k,v]) => `${k}: ${v}`).join(', ')})
-                                        </span>
+                                      <span className="ml-1 opacity-70">
+                                        ({Object.entries(review.order_item.selected_options).map(([k, v]) => `${k}: ${v}`).join(', ')})
+                                      </span>
                                     )}
                                   </span>
                                 </div>
@@ -554,5 +604,20 @@ export default function ProductDetailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ProductDetailImage({ src, alt }: { src: string, alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      {!loaded && <Skeleton className="absolute inset-0 z-10 rounded-none" />}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${loaded ? "opacity-100" : "opacity-0"}`}
+      />
+    </>
   );
 }

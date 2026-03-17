@@ -18,7 +18,7 @@ interface ReviewModalProps {
     product_id: number;
     product: {
       title: string;
-      media: { url: string }[];
+      media: { url: string; full_url: string }[];
     };
     selected_options?: Record<string, string> | null;
   } | null;
@@ -135,7 +135,7 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
             <div className="flex gap-4 items-center bg-muted/30 p-4 rounded-2xl border border-border/50">
               <div className="w-16 h-16 rounded-xl overflow-hidden border border-border shrink-0">
                 <img
-                  src={orderItem.product.media[0]?.url ? `http://localhost:8000${orderItem.product.media[0].url}` : `https://picsum.photos/seed/${orderItem.id}/80/80`}
+                  src={orderItem.product.media[0]?.full_url || `https://picsum.photos/seed/${orderItem.id}/80/80`}
                   alt={orderItem.product.title}
                   className="w-full h-full object-cover"
                 />

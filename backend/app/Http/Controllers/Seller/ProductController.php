@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -17,7 +20,9 @@ class ProductController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $query = Product::where('seller_id', $request->user()->id)->with(['category', 'media']);
+        $query = Product::where('seller_id', $request->user()->id)
+            ->select('id', 'seller_id', 'category_id', 'title', 'slug', 'price', 'sale_price', 'stock_quantity', 'status', 'created_at')
+            ->with(['category', 'media']);
 
         if ($request->has('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
@@ -37,7 +42,10 @@ class ProductController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:0'
+            'stock_quantity' => 'required|integer|min:0',
+            'attributes' => 'sometimes|array',
+            'attributes.*.attribute_name' => 'required|string|max:255',
+            'attributes.*.attribute_value' => 'required|string|max:255',
         ]);
 
         $product = Product::create([
@@ -52,7 +60,42 @@ class ProductController extends Controller
             'sku' => strtoupper(uniqid('SKU-')),
         ]);
 
-        return response()->json($product, 201);
+        DB::beginTransaction();
+        try {
+            if ($request->has('attributes')) {
+                $inputAttributes = $request->input('attributes');
+                
+                if (is_string($inputAttributes)) {
+                    $inputAttributes = json_decode($inputAttributes, true);
+                }
+
+                if (is_array($inputAttributes)) {
+                    $dataToSave = [];
+                    foreach ($inputAttributes as $attr) {
+                        $name = $attr['attribute_name'] ?? ($attr['name'] ?? '');
+                        $value = $attr['attribute_value'] ?? ($attr['value'] ?? '');
+                        
+                        if (!empty(trim($name)) && !empty(trim($value))) {
+                            $dataToSave[] = [
+                                'attribute_name' => trim($name),
+                                'attribute_value' => trim($value),
+                            ];
+                        }
+                    }
+
+                    if (!empty($dataToSave)) {
+                        $product->attributes()->createMany($dataToSave);
+                        Log::info("Saved " . count($dataToSave) . " attributes for product {$product->id}");
+                    }
+                }
+            }
+            \DB::commit();
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            Log::error("Failed to save attributes: " . $e->getMessage());
+        }
+
+        return response()->json($product->load('attributes'), 201);
     }
 
     public function show(Request $request, $id)
@@ -82,7 +125,10 @@ class ProductController extends Controller
             'description' => 'sometimes|string',
             'price' => 'sometimes|numeric|min:0',
             'stock_quantity' => 'sometimes|integer|min:0',
-            'status' => 'sometimes|in:active,inactive,archived'
+            'status' => 'sometimes|in:active,inactive,archived',
+            'attributes' => 'sometimes|array',
+            'attributes.*.attribute_name' => 'required|string|max:255',
+            'attributes.*.attribute_value' => 'required|string|max:255',
         ]);
 
         $product->update($request->all());
@@ -91,7 +137,43 @@ class ProductController extends Controller
             $product->update(['slug' => Str::slug($request->title) . '-' . $product->id]);
         }
 
-        return response()->json($product);
+        DB::beginTransaction();
+        try {
+            if ($request->has('attributes')) {
+                $inputAttributes = $request->input('attributes');
+                
+                if (is_string($inputAttributes)) {
+                    $inputAttributes = json_decode($inputAttributes, true);
+                }
+
+                if (is_array($inputAttributes)) {
+                    $dataToSave = [];
+                    foreach ($inputAttributes as $attr) {
+                        $name = $attr['attribute_name'] ?? ($attr['name'] ?? '');
+                        $value = $attr['attribute_value'] ?? ($attr['value'] ?? '');
+                        
+                        if (!empty(trim($name)) && !empty(trim($value))) {
+                            $dataToSave[] = [
+                                'attribute_name' => trim($name),
+                                'attribute_value' => trim($value),
+                            ];
+                        }
+                    }
+
+                    $product->attributes()->delete();
+                    if (!empty($dataToSave)) {
+                        $product->attributes()->createMany($dataToSave);
+                        Log::info("Updated " . count($dataToSave) . " attributes for product {$product->id}");
+                    }
+                }
+            }
+            \DB::commit();
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            Log::error("Failed to update attributes: " . $e->getMessage());
+        }
+
+        return response()->json($product->load(['category', 'attributes', 'media']));
     }
 
     public function destroy(Request $request, $id)
@@ -113,9 +195,8 @@ class ProductController extends Controller
             });
             // Media storage cleanup
             foreach ($product->media as $media) {
-                $path = ltrim(str_replace('/storage/', '', $media->url), '/');
-                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                if ($media->public_id) {
+                    Cloudinary::destroy($media->public_id);
                 }
             }
             $product->media()->delete();

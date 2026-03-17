@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductMedia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProductMediaController extends Controller
 {
@@ -34,9 +35,33 @@ class ProductMediaController extends Controller
         $extension = strtolower($file->getClientOriginalExtension());
         $mediaType = in_array($extension, ['mp4', 'webm']) ? 'video' : 'image';
 
-        // Store file
-        $path = $file->store('products', 'public');
-        $url = Storage::url($path);
+        // Store file on Cloudinary using the SDK v2 method
+        try {
+            \Log::info('Attempting Cloudinary upload', ['file' => $file->getClientOriginalName()]);
+            // Use uploadApi()->upload() for SDK v2
+            $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
+                'folder' => 'products',
+                'resource_type' => 'auto'
+            ]);
+            
+            if (!$result || !isset($result['secure_url'])) {
+                \Log::error('Cloudinary upload returned invalid result', ['result' => $result]);
+                return response()->json(['message' => 'Cloudinary upload failed (invalid result)'], 500);
+            }
+            
+            $url = $result['secure_url'];
+            $publicId = $result['public_id'];
+            \Log::info('Cloudinary upload success', ['url' => $url, 'public_id' => $publicId]);
+        } catch (\Exception $e) {
+            \Log::error('Cloudinary upload error: ' . $e->getMessage(), [
+                'exception' => get_class($e),
+                'trace' => substr($e->getTraceAsString(), 0, 500)
+            ]);
+            return response()->json([
+                'message' => 'Cloudinary upload error: ' . $e->getMessage(),
+                'hint' => 'Check your .env CLOUDINARY keys'
+            ], 500);
+        }
 
         // If this is set as primary, unset other primary images
         $isPrimary = $request->boolean('is_primary', false);
@@ -53,6 +78,7 @@ class ProductMediaController extends Controller
             'product_id' => $product->id,
             'media_type' => $mediaType,
             'url' => $url,
+            'public_id' => $publicId,
             'is_primary' => $isPrimary,
             'sort_order' => $request->input('sort_order', 0),
         ]);
@@ -74,13 +100,8 @@ class ProductMediaController extends Controller
         
         $media = ProductMedia::where('product_id', $product->id)->findOrFail($mediaId);
 
-        // Extract path from URL to delete file
-        $url = $media->url;
-        $path = str_replace('/storage/', '', $url);
-        $path = ltrim($path, '/');
-        
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        if ($media->public_id) {
+            Cloudinary::destroy($media->public_id);
         }
 
         $wasPrimary = $media->is_primary;

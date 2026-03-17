@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Search, SlidersHorizontal, Star, ChevronDown, ShoppingCart, X } from "lucide-react";
+import { Skeleton, ProductCardSkeleton } from "@/components/Skeleton";
+import { AnimatePresence, motion } from "framer-motion";
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -23,21 +24,26 @@ const API = "http://localhost:8000/api";
 
 function ProductCard({ product }: { product: Product }) {
   const { formatPrice } = useCurrencyStore();
+  const [imgLoaded, setImgLoaded] = useState(false);
   const img = product.media.find((m) => m.is_primary)?.full_url ?? product.media[0]?.full_url ?? `https://picsum.photos/seed/${product.id}/300/300`;
 
   return (
     <Link href={`/products/${product.slug}`}>
       <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         whileHover={{ y: -6 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="bg-card border border-border rounded-2xl overflow-hidden group h-full flex flex-col transition-shadow"
       >
         <div className="relative aspect-square overflow-hidden bg-muted">
-          <img 
-            src={img} 
-            alt={product.title} 
+          {!imgLoaded && <Skeleton className="absolute inset-0 z-10 rounded-none" />}
+          <img
+            src={img}
+            alt={product.title}
             loading="lazy"
-            className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" 
+            onLoad={() => setImgLoaded(true)}
+            className={`w-full h-full object-contain p-2 group-hover:scale-105 transition-all duration-500 ${imgLoaded ? "opacity-100 scale-100" : "opacity-0 scale-110"}`}
           />
           {product.sale_price && (
             <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
@@ -107,7 +113,7 @@ export default function ProductsPage() {
     finally { setLoading(false); }
   }, [search, category, sort, minPrice, maxPrice, currentPage]);
 
-  useEffect(() => { 
+  useEffect(() => {
     fetchProducts();
     // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -191,7 +197,7 @@ export default function ProductsPage() {
       <div className="px-6 md:px-10 py-8 max-w-7xl mx-auto">
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => <div key={i} className="bg-muted rounded-2xl aspect-[3/4] animate-pulse" />)}
+            {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-24 text-muted-foreground">
@@ -201,7 +207,9 @@ export default function ProductsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {products.map((p) => <ProductCard key={p.id} product={p} />)}
+            <AnimatePresence>
+              {products.map((p) => <ProductCard key={p.id} product={p} />)}
+            </AnimatePresence>
           </div>
         )}
 

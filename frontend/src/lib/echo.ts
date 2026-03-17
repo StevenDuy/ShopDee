@@ -11,12 +11,19 @@ declare global {
 if (typeof window !== 'undefined') {
   window.Pusher = Pusher;
 
-  window.Echo = new Echo({
-    broadcaster: 'pusher',
-    key: process.env.NEXT_PUBLIC_PUSHER_APP_KEY,
-    cluster: process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER,
-    forceTLS: true,
-  });
+  const pusherKey = process.env.NEXT_PUBLIC_PUSHER_APP_KEY;
+  const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER;
+
+  if (pusherKey && pusherCluster) {
+    window.Echo = new Echo({
+      broadcaster: 'pusher',
+      key: pusherKey,
+      cluster: pusherCluster,
+      forceTLS: true,
+    });
+  } else {
+    console.warn("Pusher configuration missing. Real-time features (Chat, Notifications) will not work.");
+  }
 }
 
 export default typeof window !== 'undefined' ? window.Echo : undefined;
