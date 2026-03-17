@@ -60,5 +60,3 @@ ml-engine/.env*
 ehthumbs.db
 Thumbs.db
 config.php
-
-backend/storage/firebase-credentials.json
