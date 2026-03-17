@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Store, Star, Package, Calendar, MessageCircle, ArrowLeft, Search } from "lucide-react";
 import axios from "axios";
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import FullPageLoader from "@/components/FullPageLoader";
 
 interface SellerInfo {
   id: number;
@@ -70,17 +71,20 @@ export default function SellerShopPage() {
     router.push(`/inbox?userId=${id}`);
   };
 
-  if (loading && !seller) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-    </div>
-  );
-
-  if (!seller) return null;
-
   return (
     <div className="min-h-screen bg-muted/20">
-      {/* Header / Cover */}
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {seller && (
+          <>
+            {/* Header / Cover */}
       <div className="bg-card border-b border-border pt-8 pb-12 px-6 md:px-10">
         <div className="max-w-7xl mx-auto">
           <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
@@ -184,6 +188,9 @@ export default function SellerShopPage() {
           </div>
         )}
       </div>
+          </>
+        )}
+      </motion.div>
     </div>
   );
 }

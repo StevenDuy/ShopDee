@@ -39,7 +39,7 @@ class ProductController extends Controller
         // Sorting
         switch ($request->get('sort', 'newest')) {
             case 'best_sellers':
-                $query->withCount('reviews')->orderBy('reviews_count', 'desc');
+                $query->orderBy('review_count', 'desc');
                 break;
             case 'price_asc':
                 $query->orderBy('price', 'asc');
@@ -75,10 +75,9 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         $reviews = $product->reviews()->with(['customer.profile', 'orderItem.product'])->latest()->paginate(10);
 
-        $avgRating = $product->reviews()->avg('rating');
         return response()->json([
-            'avg_rating' => round($avgRating, 1),
-            'total' => $product->reviews()->count(),
+            'avg_rating' => round($product->rating_avg, 1),
+            'total' => $reviews->total(),
             'data' => $reviews,
         ]);
     }

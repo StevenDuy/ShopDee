@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { Search, Eye, Filter, CheckCircle, Package, Truck, RotateCcw, XCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -9,8 +10,9 @@ import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { OrderDetailsModal } from "@/components/seller/OrderDetailsModal";
 import { useTranslation } from "react-i18next";
+import FullPageLoader from "@/components/FullPageLoader";
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 type OrderItem = {
   id: number;
@@ -91,15 +93,25 @@ export default function SellerOrdersPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("seller.orders.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("seller.orders.desc")}</p>
-        </div>
-      </div>
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
 
-      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="p-6 md:p-8 max-w-7xl mx-auto space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t("seller.orders.title")}</h1>
+            <p className="text-muted-foreground mt-1">{t("seller.orders.desc")}</p>
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-border flex flex-col md:flex-row items-center gap-4 justify-between">
           <div className="relative w-full md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
@@ -213,6 +225,7 @@ export default function SellerOrdersPage() {
           onStatusChange={updateOrderStatus} 
         />
       )}
-    </div>
+    </motion.div>
+  </div>
   );
 }

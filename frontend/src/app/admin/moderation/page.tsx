@@ -6,6 +6,8 @@ import { ShieldAlert, Search, Filter, CheckCircle, XCircle, Trash2, Eye, Flag, U
 import { useAuthStore } from "@/store/useAuthStore";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
+import FullPageLoader from "@/components/FullPageLoader";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -33,7 +35,7 @@ export default function AdminModerationPage() {
   const fetchProducts = async (page = 1) => {
     if (!token) return;
     try {
-      setLoading(true);
+      // setLoading(true); // Don't trigger full page loader for pagination
       const res = await axios.get(`${API_URL}/admin/moderation/products`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
@@ -58,7 +60,7 @@ export default function AdminModerationPage() {
   const fetchReports = async (page = 1) => {
     if (!token) return;
     try {
-      setLoading(true);
+      // setLoading(true);
       const res = await axios.get(`${API_URL}/admin/moderation/reports`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
@@ -81,6 +83,7 @@ export default function AdminModerationPage() {
   };
 
   useEffect(() => {
+    setLoading(true);
     if (activeTab === "products") {
         fetchProducts(1);
     } else {
@@ -138,12 +141,22 @@ export default function AdminModerationPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-           <h1 className="text-3xl font-bold tracking-tight">{t("admin.moderation.title")}</h1>
-           <p className="text-muted-foreground mt-1">{t("admin.moderation.desc")}</p>
-        </div>
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6 max-w-7xl mx-auto"
+      >
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+             <h1 className="text-3xl font-bold tracking-tight">{t("admin.moderation.title")}</h1>
+             <p className="text-muted-foreground mt-1">{t("admin.moderation.desc")}</p>
+          </div>
 
         <div className="flex bg-muted p-1 rounded-xl">
            <button 
@@ -412,6 +425,7 @@ export default function AdminModerationPage() {
           </div>
         )}
       </div>
+     </motion.div>
     </div>
   );
 }

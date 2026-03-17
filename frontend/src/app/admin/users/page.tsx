@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { format } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { Users, Search, Filter, ShieldAlert, MoreVertical, Trash2, Eye } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
+import FullPageLoader from "@/components/FullPageLoader";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -78,7 +80,17 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6 max-w-7xl mx-auto"
+      >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t("admin.users")}</h1>
@@ -219,6 +231,7 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+      </motion.div>
     </div>
   );
 }

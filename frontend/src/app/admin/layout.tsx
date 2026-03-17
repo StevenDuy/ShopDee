@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AdminSidebar } from "@/components/admin/Sidebar";
 
+import FullPageLoader from "@/components/FullPageLoader";
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, token } = useAuthStore();
@@ -20,7 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [token, user, router]);
 
   if (!mounted || !token || !user || user.role_id !== 1) {
-    return null; // Return null while checking auth to prevent flash
+    return <FullPageLoader />;
   }
 
   return (

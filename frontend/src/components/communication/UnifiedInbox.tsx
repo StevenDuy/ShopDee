@@ -17,7 +17,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import imageCompression from "browser-image-compression";
 import { useTranslation } from "react-i18next";
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 const getNotifIcon = (type: string) => {
   if (type.includes("order")) return <Package size={20} />;

@@ -8,7 +8,10 @@ import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
-const API = "http://localhost:8000/api";
+import { motion, AnimatePresence } from "framer-motion";
+import FullPageLoader from "@/components/FullPageLoader";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 type Category = { id: number; name: string; children: Category[] };
 
@@ -52,7 +55,8 @@ export default function NewProductPage() {
   });
 
   const [files, setFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Product Options state
@@ -66,9 +70,19 @@ export default function NewProductPage() {
   const [addingCategory, setAddingCategory] = useState(false);
   const [addCategoryError, setAddCategoryError] = useState<string | null>(null);
 
-  useEffect(() => { fetchCategories(); /* eslint-disable-next-line */ }, []);
-  const fetchCategories = () =>
-    axios.get(`${API}/products/categories`).then(r => setCategories(r.data || []));
+  useEffect(() => { 
+    fetchCategories(); 
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const r = await axios.get(`${API}/products/categories`);
+      setCategories(r.data || []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -244,7 +258,7 @@ export default function NewProductPage() {
       }
     }
 
-    setLoading(true); setError(null);
+    setIsSubmitting(true); setError(null);
     let createdProductId: number | null = null;
 
     try {
@@ -297,22 +311,32 @@ export default function NewProductPage() {
         }).catch(cleanupErr => console.error("Cleanup failed", cleanupErr));
       }
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/seller/products" className="p-2 bg-card border border-border rounded-xl hover:bg-accent transition-colors">
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("seller.products_manage.add_product")}</h1>
-          <p className="text-muted-foreground mt-1">{t("seller.products_manage.desc")}</p>
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="p-6 md:p-8 max-w-5xl mx-auto space-y-6"
+      >
+        <div className="flex items-center gap-4">
+          <Link href="/seller/products" className="p-2 bg-card border border-border rounded-xl hover:bg-accent transition-colors">
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t("seller.products_manage.add_product")}</h1>
+            <p className="text-muted-foreground mt-1">{t("seller.products_manage.desc")}</p>
+          </div>
         </div>
-      </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -664,9 +688,9 @@ export default function NewProductPage() {
             <div className="p-4 bg-destructive/10 text-destructive text-sm rounded-xl border border-destructive/20">{error}</div>
           )}
 
-          <button type="submit" disabled={loading}
+          <button type="submit" disabled={isSubmitting}
             className="w-full bg-primary text-primary-foreground flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
-            {loading
+            {isSubmitting
               ? <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
               : <><Save size={18} /> {t("seller.products_manage.add_product")}</>}
           </button>
@@ -710,6 +734,7 @@ export default function NewProductPage() {
           </div>
         </div>
       )}
+      </motion.div>
     </div>
   );
 }

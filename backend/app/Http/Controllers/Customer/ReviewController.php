@@ -76,6 +76,18 @@ class ReviewController extends Controller
                 'media'         => $mediaUrls,
             ]);
 
+            // Update product rating cache
+            $product = \App\Models\Product::find($request->product_id);
+            if ($product) {
+                $stats = Review::where('product_id', $product->id)
+                    ->selectRaw('count(*) as count, avg(rating) as avg')
+                    ->first();
+                $product->update([
+                    'rating_avg' => $stats->avg ?? 0,
+                    'review_count' => $stats->count ?? 0,
+                ]);
+            }
+
             try {
                 // Notify seller
                 Notification::create([

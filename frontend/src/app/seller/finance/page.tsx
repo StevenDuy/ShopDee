@@ -7,6 +7,8 @@ import { vi, enUS } from "date-fns/locale";
 import { DollarSign, ArrowUpRight, ArrowDownRight, Clock, Building, Plus, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
+import FullPageLoader from "@/components/FullPageLoader";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -50,7 +52,7 @@ export default function SellerFinancePage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOverview(res.data.overview);
-      setTransactions(res.data.transactions.data);
+      setTransactions(res.data.transactions);
     } catch (err) {
       console.error("Failed to fetch finance data", err);
     } finally {
@@ -62,9 +64,9 @@ export default function SellerFinancePage() {
     fetchFinanceData();
   }, [token]);
 
-  const handleWithdraw = async (e: React.FormEvent) => {
+  const handleWithdrawRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return;
+    if (!token || !withdrawAmount || Number(withdrawAmount) < 10) return;
 
     setError("");
     const amountNum = parseFloat(withdrawAmount);
@@ -93,44 +95,48 @@ export default function SellerFinancePage() {
       setBankName("");
       setBankAccount("");
       fetchFinanceData(); // refresh data
+      alert(t("seller.finance.withdraw_success") || "Withdrawal request submitted successfully!");
     } catch (err: any) {
-      setError(err.response?.data?.message || t("seller.finance.withdraw_modal.update_error") || "Failed to submit withdrawal request.");
+      setError(err.response?.data?.message || t("seller.finance.withdraw_modal.update_error") || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat(t("locale"), { 
-      style: "currency", 
-      currency: t("currency_code") 
+    const currency = (user as any)?.currency || 'USD';
+    return new Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
+      style: 'currency',
+      currency: currency,
     }).format(val);
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("seller.finance.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("seller.finance.desc")}</p>
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6 max-w-6xl mx-auto p-4 md:p-8"
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t("seller.finance.title")}</h1>
+            <p className="text-muted-foreground mt-1">{t("seller.finance.desc")}</p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            disabled={!overview || overview.available_balance < 10}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Building size={18} />
+            {t("seller.finance.request_withdrawal")}
+          </button>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          disabled={!overview || overview.available_balance < 10}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Building size={18} />
-          {t("seller.finance.request_withdrawal")}
-        </button>
-      </div>
 
       {/* Stats Grid */}
       {overview && (
@@ -270,7 +276,7 @@ export default function SellerFinancePage() {
               </button>
             </div>
             
-            <form onSubmit={handleWithdraw} className="p-6 space-y-4">
+            <form onSubmit={handleWithdrawRequest} className="p-6 space-y-4">
               {error && (
                 <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-center gap-2">
                   <AlertCircle size={16} />
@@ -344,6 +350,7 @@ export default function SellerFinancePage() {
           </div>
         </div>
       )}
+      </motion.div>
     </div>
   );
 }

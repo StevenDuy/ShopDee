@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, SlidersHorizontal, Star, ChevronDown, ShoppingCart, X } from "lucide-react";
-import { Skeleton, ProductCardSkeleton } from "@/components/Skeleton";
+import FullPageLoader from "@/components/FullPageLoader";
 import { AnimatePresence, motion } from "framer-motion";
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -20,7 +20,7 @@ interface Product {
   seller_id: number;
 }
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 function ProductCard({ product }: { product: Product }) {
   const { formatPrice } = useCurrencyStore();
@@ -37,7 +37,6 @@ function ProductCard({ product }: { product: Product }) {
         className="bg-card border border-border rounded-2xl overflow-hidden group h-full flex flex-col transition-shadow"
       >
         <div className="relative aspect-square overflow-hidden bg-muted">
-          {!imgLoaded && <Skeleton className="absolute inset-0 z-10 rounded-none" />}
           <img
             src={img}
             alt={product.title}
@@ -122,109 +121,115 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Top Bar */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-6 py-4">
-        <div className="flex items-center gap-3 max-w-7xl mx-auto">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              defaultValue={search}
-              placeholder={t("products_page.search_placeholder")}
-              onChange={(e) => updateParam("search", e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-            />
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Top Bar */}
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border px-6 py-4">
+          <div className="flex items-center gap-3 max-w-7xl mx-auto">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                defaultValue={search}
+                placeholder={t("products_page.search_placeholder")}
+                onChange={(e) => updateParam("search", e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              />
+            </div>
+
+            {/* Sort */}
+            <div className="relative">
+              <select
+                value={sort}
+                onChange={(e) => updateParam("sort", e.target.value)}
+                className="pl-3 pr-8 py-2.5 bg-input border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="newest">{t("products_page.sort_newest")}</option>
+                <option value="best_sellers">{t("products_page.sort_best_sellers")}</option>
+                <option value="price_asc">{t("products_page.sort_price_asc")}</option>
+                <option value="price_desc">{t("products_page.sort_price_desc")}</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            </div>
+
+            {/* Filter toggle */}
+            <button onClick={() => setShowFilters(s => !s)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${showFilters ? "bg-primary text-primary-foreground border-primary" : "bg-input border-border"}`}>
+              <SlidersHorizontal size={16} /> {t("products_page.filters")}
+            </button>
           </div>
 
-          {/* Sort */}
-          <div className="relative">
-            <select
-              value={sort}
-              onChange={(e) => updateParam("sort", e.target.value)}
-              className="pl-3 pr-8 py-2.5 bg-input border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="newest">{t("products_page.sort_newest")}</option>
-              <option value="best_sellers">{t("products_page.sort_best_sellers")}</option>
-              <option value="price_asc">{t("products_page.sort_price_asc")}</option>
-              <option value="price_desc">{t("products_page.sort_price_desc")}</option>
-            </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          </div>
+          {/* Filters Row */}
+          {showFilters && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className="mt-4 flex flex-wrap gap-3 max-w-7xl mx-auto">
+              {/* Category */}
+              <select value={category} onChange={(e) => updateParam("category", e.target.value)}
+                className="px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <option value="">{t("products_page.all_categories")}</option>
+                {categories.map((c) => (
+                  <optgroup key={c.id} label={c.name}>
+                    <option value={c.slug}>{c.name} (All)</option>
+                    {c.children?.map((child) => <option key={child.id} value={child.slug}>{child.name}</option>)}
+                  </optgroup>
+                ))}
+              </select>
 
-          {/* Filter toggle */}
-          <button onClick={() => setShowFilters(s => !s)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${showFilters ? "bg-primary text-primary-foreground border-primary" : "bg-input border-border"}`}>
-            <SlidersHorizontal size={16} /> {t("products_page.filters")}
-          </button>
+              {/* Price range */}
+              <input type="number" placeholder={t("products_page.min_price")} defaultValue={minPrice}
+                onChange={(e) => updateParam("min_price", e.target.value)}
+                className="w-32 px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              <input type="number" placeholder={t("products_page.max_price")} defaultValue={maxPrice}
+                onChange={(e) => updateParam("max_price", e.target.value)}
+                className="w-32 px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+
+              {(search || category || minPrice || maxPrice) && (
+                <button onClick={() => router.push("/products")}
+                  className="flex items-center gap-1 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-xl transition-colors">
+                  <X size={14} /> {t("products_page.clear_all")}
+                </button>
+              )}
+            </motion.div>
+          )}
         </div>
 
-        {/* Filters Row */}
-        {showFilters && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            className="mt-4 flex flex-wrap gap-3 max-w-7xl mx-auto">
-            {/* Category */}
-            <select value={category} onChange={(e) => updateParam("category", e.target.value)}
-              className="px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-              <option value="">{t("products_page.all_categories")}</option>
-              {categories.map((c) => (
-                <optgroup key={c.id} label={c.name}>
-                  <option value={c.slug}>{c.name} (All)</option>
-                  {c.children?.map((child) => <option key={child.id} value={child.slug}>{child.name}</option>)}
-                </optgroup>
+        {/* Product Grid */}
+        <div className="px-6 md:px-10 py-8 max-w-7xl mx-auto">
+          {products.length === 0 && !loading ? (
+            <div className="text-center py-24 text-muted-foreground">
+              <Search size={48} className="mx-auto mb-4 opacity-30" />
+              <p className="text-lg font-medium">{t("products_page.no_products")}</p>
+              <p className="text-sm mt-1">{t("products_page.no_products_desc")}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <AnimatePresence>
+                {products.map((p) => <ProductCard key={p.id} product={p} />)}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-10">
+              {[...Array(totalPages)].map((_, i) => (
+                <button key={i} onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 rounded-xl text-sm font-medium transition-colors ${currentPage === i + 1 ? "bg-primary text-primary-foreground" : "bg-input hover:bg-accent"}`}>
+                  {i + 1}
+                </button>
               ))}
-            </select>
-
-            {/* Price range */}
-            <input type="number" placeholder={t("products_page.min_price")} defaultValue={minPrice}
-              onChange={(e) => updateParam("min_price", e.target.value)}
-              className="w-32 px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-            <input type="number" placeholder={t("products_page.max_price")} defaultValue={maxPrice}
-              onChange={(e) => updateParam("max_price", e.target.value)}
-              className="w-32 px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-
-            {(search || category || minPrice || maxPrice) && (
-              <button onClick={() => router.push("/products")}
-                className="flex items-center gap-1 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-xl transition-colors">
-                <X size={14} /> {t("products_page.clear_all")}
-              </button>
-            )}
-          </motion.div>
-        )}
-      </div>
-
-      {/* Product Grid */}
-      <div className="px-6 md:px-10 py-8 max-w-7xl mx-auto">
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => <ProductCardSkeleton key={i} />)}
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-24 text-muted-foreground">
-            <Search size={48} className="mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium">{t("products_page.no_products")}</p>
-            <p className="text-sm mt-1">{t("products_page.no_products_desc")}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <AnimatePresence>
-              {products.map((p) => <ProductCard key={p.id} product={p} />)}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-10">
-            {[...Array(totalPages)].map((_, i) => (
-              <button key={i} onClick={() => setCurrentPage(i + 1)}
-                className={`w-10 h-10 rounded-xl text-sm font-medium transition-colors ${currentPage === i + 1 ? "bg-primary text-primary-foreground" : "bg-input hover:bg-accent"}`}>
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

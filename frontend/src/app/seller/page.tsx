@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign, Package, ShoppingCart, ArrowUpRight, ArrowDownRight, Clock, Eye } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
@@ -8,8 +9,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import FullPageLoader from "@/components/FullPageLoader";
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 type DashboardStats = {
   total_products: number;
@@ -23,6 +25,7 @@ type DashboardStats = {
     customer: { name: string; email: string };
   }[];
 };
+
 export default function SellerDashboard() {
   const { t } = useTranslation();
   const { token } = useAuthStore();
@@ -37,23 +40,22 @@ export default function SellerDashboard() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) {
-     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto flex items-center justify-center min-h-[50vh]">
-          <div className="flex flex-col items-center justify-center text-muted-foreground">
-             <span className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-             <p>{t("loading")}</p>
-          </div>
-        </div>
-     );
-  }
-
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t("seller.dashboard")}</h1>
-        <p className="text-muted-foreground mt-1">{t("seller.overview_desc")}</p>
-      </div>
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="p-6 md:p-8 max-w-7xl mx-auto space-y-8"
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t("seller.dashboard")}</h1>
+          <p className="text-muted-foreground mt-1">{t("seller.overview_desc")}</p>
+        </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -151,6 +153,7 @@ export default function SellerDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
+  </div>
   );
 }

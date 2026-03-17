@@ -49,7 +49,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-          const res = await axios.get("http://localhost:8000/api/user");
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+          const res = await axios.get(`${apiUrl}/user`);
           set({ user: res.data, isLoading: false });
         } catch {
           set({ user: null, token: null, isLoading: false });

@@ -76,38 +76,12 @@ class OrderController extends Controller
                 // Handle Stock Restoration if moving to cancelled/returned from a non-cancelled state
                 if (!in_array($oldStatus, ['cancelled', 'returned']) && in_array($newStatus, ['cancelled', 'returned'])) {
                     foreach ($order->items as $item) {
-                        $product = \App\Models\Product::find($item->product_id);
-                        if ($product) {
-                            $product->increment('stock_quantity', $item->quantity);
-                            
-                            if (!empty($item->selected_options)) {
-                                foreach ($item->selected_options as $optionName => $valueString) {
-                                    $parts = array_map('trim', explode('/', $valueString));
-                                    $parentValName = $parts[0];
-                                    $childValName = count($parts) > 1 ? $parts[1] : null;
-
-                                    $option = \App\Models\ProductOption::where('product_id', $product->id)
-                                        ->where('option_name', $optionName)
-                                        ->first();
-
-                                    if ($option) {
-                                        $parentValue = \App\Models\ProductOptionValue::where('product_option_id', $option->id)
-                                            ->where('option_value', $parentValName)
-                                            ->whereNull('parent_id')
-                                            ->first();
-
-                                        if ($parentValue) {
-                                            if ($childValName) {
-                                                $childValue = \App\Models\ProductOptionValue::where('parent_id', $parentValue->id)
-                                                    ->where('option_value', $childValName)
-                                                    ->first();
-                                                if ($childValue) $childValue->increment('stock_quantity', $item->quantity);
-                                            }
-                                            $parentValue->increment('stock_quantity', $item->quantity);
-                                        }
-                                    }
-                                }
+                        if (!empty($item->variant_ids)) {
+                            foreach ($item->variant_ids as $vId) {
+                                \App\Models\ProductOptionValue::where('id', $vId)->increment('stock_quantity', $item->quantity);
                             }
+                        } else {
+                            \App\Models\Product::where('id', $item->product_id)->increment('stock_quantity', $item->quantity);
                         }
                     }
                 }

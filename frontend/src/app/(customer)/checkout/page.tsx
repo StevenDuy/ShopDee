@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { CreditCard, ArrowLeft, CheckCircle, MapPin } from "lucide-react";
 import axios from "axios";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
+import FullPageLoader from "@/components/FullPageLoader";
 
 interface Address { id: number; address_line_1: string; city: string; country: string; is_default: boolean }
 
@@ -32,14 +33,23 @@ export default function CheckoutPage() {
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   useEffect(() => {
     if (!token) { router.replace("/login"); return; }
     if (items.length === 0) { router.replace("/cart"); return; }
-    axios.get("http://localhost:8000/api/profile/addresses", { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => { setAddresses(r.data); const def = r.data.find((a: Address) => a.is_default); if (def) setSelectedAddr(def.id); })
-      .catch(() => {});
-  }, [token, items, router]);
+    
+    setIsInitialLoading(true);
+    axios.get(`${API}/profile/addresses`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => { 
+        setAddresses(r.data); 
+        const def = r.data.find((a: Address) => a.is_default); 
+        if (def) setSelectedAddr(def.id); 
+      })
+      .catch(() => {})
+      .finally(() => setIsInitialLoading(false));
+  }, [token, items, router, API]);
 
   const subtotal = totalPrice();
   const shipping = subtotal > 500000 ? 0 : 30000;
@@ -58,7 +68,7 @@ export default function CheckoutPage() {
     try {
       await Promise.all(
         Object.entries(bySeller).map(([sellerId, sellerItems]) =>
-          axios.post("http://localhost:8000/api/orders", {
+          axios.post(`${API}/orders`, {
             seller_id: Number(sellerId),
             shipping_address_id: selectedAddr,
             payment_method: payMethod,
@@ -67,7 +77,8 @@ export default function CheckoutPage() {
               product_id: i.productId, 
               quantity: i.quantity, 
               unit_price: i.salePrice ?? i.price,
-              selected_options: i.attributes
+              selected_options: i.attributes,
+              variant_ids: i.variantIds
             })),
           }, { headers: { Authorization: `Bearer ${token}` } })
         )
@@ -85,7 +96,10 @@ export default function CheckoutPage() {
 
   if (success) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6">
-      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200 }}>
+      <AnimatePresence>
+        {isInitialLoading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+      <motion.div initial={{ scale: 0 }} animate={{ scale: items.length > 0 ? 1 : 0 }} transition={{ type: "spring", stiffness: 200 }}>
         <CheckCircle size={80} className="text-green-500" />
       </motion.div>
       <h1 className="text-2xl font-bold">{t("checkout_page.order_success")}</h1>
@@ -94,7 +108,17 @@ export default function CheckoutPage() {
   );
 
   return (
-    <div className="min-h-screen px-6 md:px-10 py-8 max-w-5xl mx-auto">
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {isInitialLoading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isInitialLoading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="px-6 md:px-10 py-8 max-w-5xl mx-auto"
+      >
       <button onClick={() => router.back()} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
         <ArrowLeft size={18} /> {t("checkout_page.back_to_cart")}
       </button>
@@ -176,6 +200,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      </motion.div>
     </div>
   );
 }

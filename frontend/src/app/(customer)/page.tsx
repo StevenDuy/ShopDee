@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Star, TrendingUp, Sparkles, ShoppingCart } from "lucide-react";
-import { Skeleton, ProductCardSkeleton, BannerSkeleton } from "@/components/Skeleton";
+import FullPageLoader from "@/components/FullPageLoader";
 import { AnimatePresence, motion } from "framer-motion";
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -24,7 +24,7 @@ interface Product {
   seller_id: number;
 }
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 function ProductCard({ product }: { product: Product }) {
   const { formatPrice } = useCurrencyStore();
@@ -41,7 +41,6 @@ function ProductCard({ product }: { product: Product }) {
         className="bg-card border border-border rounded-2xl overflow-hidden group h-full flex flex-col transition-shadow"
       >
         <div className="relative aspect-square overflow-hidden bg-muted">
-          {!imgLoaded && <Skeleton className="absolute inset-0 z-10 rounded-none" />}
           <img
             src={img}
             alt={product.title}
@@ -91,17 +90,11 @@ function Section({ title, icon: Icon, products, href }: { title: string; icon: R
           {useTranslation().t("view_all")} <ArrowRight size={16} />
         </Link>
       </div>
-      {products.length === 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <ProductCardSkeleton key={i} />)}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <AnimatePresence>
-            {products.slice(0, 8).map((p) => <ProductCard key={p.id} product={p} />)}
-          </AnimatePresence>
-        </div>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <AnimatePresence>
+          {products.slice(0, 8).map((p) => <ProductCard key={p.id} product={p} />)}
+        </AnimatePresence>
+      </div>
     </section>
   );
 }
@@ -112,6 +105,7 @@ export default function CustomerHomePage() {
   const [banners, setBanners] = useState<any[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Helper to get full image URL
   const getFullImageUrl = (path: string | null) => {
@@ -129,9 +123,27 @@ export default function CustomerHomePage() {
   }, [banners.length]);
 
   useEffect(() => {
-    axios.get(`${API}/banners?active_only=1`).then((r) => setBanners(r.data)).catch(() => { });
-    axios.get(`${API}/products?sort=newest&limit=8&status=active`).then((r) => setNewArrivals(r.data.data ?? r.data ?? [])).catch(() => { });
-    axios.get(`${API}/products?sort=best_sellers&limit=8&status=active`).then((r) => setBestSellers(r.data.data ?? r.data ?? [])).catch(() => { });
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+    
+    const fetchData = async () => {
+      try {
+        const [bannersRes, newArrivalsRes, bestSellersRes] = await Promise.all([
+          axios.get(`${API_URL}/banners?active_only=1`),
+          axios.get(`${API_URL}/products?sort=newest&limit=8&status=active`),
+          axios.get(`${API_URL}/products?sort=best_sellers&limit=8&status=active`)
+        ]);
+
+        setBanners(bannersRes.data);
+        setNewArrivals(newArrivalsRes.data.data ?? newArrivalsRes.data ?? []);
+        setBestSellers(bestSellersRes.data.data ?? bestSellersRes.data ?? []);
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu trang chủ:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const bannerColors = ["from-violet-600 to-indigo-600", "from-rose-600 to-pink-600", "from-emerald-600 to-teal-600"];
@@ -139,18 +151,25 @@ export default function CustomerHomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Banner */}
-      <div className="w-full">
-        <AnimatePresence mode="wait">
-          {banners.length === 0 ? (
-            <BannerSkeleton key="banner-loading" />
-          ) : (
-            <motion.div
-              key="banner-content"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Hero Banner */}
+        <div className="w-full">
+          <AnimatePresence mode="wait">
+            {banners.length > 0 && (
+              <motion.div
+                key="banner-content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
               <Link href={`/products/${banners[bannerIdx].product?.slug || ""}`} className="block">
                 <div className="relative w-full aspect-[16/9] md:aspect-[21/7] bg-muted overflow-hidden cursor-pointer group shadow-xl transition-all">
 
@@ -203,6 +222,7 @@ export default function CustomerHomePage() {
         <Section title={t("customer_home.best_sellers")} icon={TrendingUp} products={bestSellers} href="/products?sort=best_sellers" />
         <Section title={t("customer_home.new_arrivals")} icon={Sparkles} products={newArrivals} href="/products?sort=newest" />
       </div>
+      </motion.div>
     </div>
   );
 }

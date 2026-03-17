@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { SellerSidebar } from "@/components/seller/Sidebar";
 
+import FullPageLoader from "@/components/FullPageLoader";
+
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const { user, token, hasHydrated } = useAuthStore();
   const router = useRouter();
@@ -21,11 +23,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   }, [hasHydrated, token, user, router]);
 
   if (!hasHydrated || !token || !user || (user.role_id !== 2 && user.role_id !== 1)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <FullPageLoader />;
   }
 
   return (

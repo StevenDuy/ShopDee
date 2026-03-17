@@ -7,6 +7,8 @@ import { Eye, EyeOff, LogIn, ShoppingBag } from "lucide-react";
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
@@ -22,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.post("http://localhost:8000/api/login", { email, password });
+      const res = await axios.post(`${API_URL}/login`, { email, password });
       const user = res.data.user;
       setAuth(user, res.data.token);
       

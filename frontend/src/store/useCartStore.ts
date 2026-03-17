@@ -13,6 +13,7 @@ export interface CartItem {
   sellerId: number;
   sellerName: string;
   attributes: Record<string, string>; // { Color: "Red", Size: "XL" }
+  variantIds?: number[];
 }
 
 interface CartState {

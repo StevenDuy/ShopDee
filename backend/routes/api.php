@@ -132,6 +132,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/banners/{id}', [\App\Http\Controllers\Admin\BannerController::class, 'show']);
         Route::put('/banners/{id}', [\App\Http\Controllers\Admin\BannerController::class, 'update']);
         Route::delete('/banners/{id}', [\App\Http\Controllers\Admin\BannerController::class, 'destroy']);
+
+        // Admin Settings
+        Route::get('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'index']);
+        Route::put('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'update']);
     });
 
 

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import FullPageLoader from "@/components/FullPageLoader";
 
 // --- Types ---
 interface ModelMetric {
@@ -107,9 +108,14 @@ const SCENARIOS: AttackScenario[] = [
 
 export default function AISecurityPage() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "simulator" | "monitor">("dashboard");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedScenario, setSelectedScenario] = useState<AttackScenario | null>(null);
   const [simResult, setSimResult] = useState<any>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Mock Performance Data
   const metrics = {
@@ -119,12 +125,12 @@ export default function AISecurityPage() {
 
   const handleRunSimulation = async (scenario: AttackScenario) => {
     setSelectedScenario(scenario);
-    setLoading(true);
+    // Note: this internal simulation loading is separate from the full page loader
     setSimResult(null);
+    const startSimLoading = true;
     
     // Simulate API Call to ML Engine
     setTimeout(() => {
-      setLoading(false);
       // Logic giả định kết quả so sánh
       const rf_risk = scenario.severity === "critical" ? 0.98 : (scenario.severity === "high" ? 0.85 : 0.65);
       const svm_risk = rf_risk - 0.05 - (Math.random() * 0.1); // Giả định SVM kém hơn chút trong bài toán này
@@ -143,40 +149,50 @@ export default function AISecurityPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 bg-background min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-             <div className="p-2 bg-primary/10 rounded-xl">
-               <Brain className="text-primary" size={28} />
-             </div>
-             <h1 className="text-3xl font-bold tracking-tight">AI Fraud Research</h1>
+    <div className="bg-background min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="p-6 md:p-8 max-w-7xl mx-auto space-y-8"
+      >
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+               <div className="p-2 bg-primary/10 rounded-xl">
+                 <Brain className="text-primary" size={28} />
+               </div>
+               <h1 className="text-3xl font-bold tracking-tight">AI Fraud Research</h1>
+            </div>
+            <p className="text-muted-foreground">Nghiên cứu so sánh Random Forest & SVM trong phát hiện gian lận hành vi.</p>
           </div>
-          <p className="text-muted-foreground">Nghiên cứu so sánh Random Forest & SVM trong phát hiện gian lận hành vi.</p>
+          
+          <div className="flex bg-muted p-1 rounded-xl">
+            <button 
+              onClick={() => setActiveTab("dashboard")}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <BarChart3 size={16} className="inline mr-2" /> Dashboard
+            </button>
+            <button 
+              onClick={() => setActiveTab("simulator")}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'simulator' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Terminal size={16} className="inline mr-2" /> Simulator
+            </button>
+            <button 
+              onClick={() => setActiveTab("monitor")}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'monitor' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <ShieldAlert size={16} className="inline mr-2" /> Monitor
+            </button>
+          </div>
         </div>
-        
-        <div className="flex bg-muted p-1 rounded-xl">
-          <button 
-            onClick={() => setActiveTab("dashboard")}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'dashboard' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            <BarChart3 size={16} className="inline mr-2" /> Dashboard
-          </button>
-          <button 
-            onClick={() => setActiveTab("simulator")}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'simulator' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            <Terminal size={16} className="inline mr-2" /> Simulator
-          </button>
-          <button 
-            onClick={() => setActiveTab("monitor")}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'monitor' ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            <ShieldAlert size={16} className="inline mr-2" /> Monitor
-          </button>
-        </div>
-      </div>
 
       <AnimatePresence mode="wait">
         {/* --- TAB 1: DASHBOARD --- */}
@@ -451,6 +467,7 @@ export default function AISecurityPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

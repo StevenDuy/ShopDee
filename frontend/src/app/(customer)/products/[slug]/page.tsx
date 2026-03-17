@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, Store, ChevronRight, MessageCircle, Package, ClipboardList } from "lucide-react";
-import { Skeleton } from "@/components/Skeleton";
+import FullPageLoader from "@/components/FullPageLoader";
 import axios from "axios";
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -58,7 +58,7 @@ interface Product {
   options: ProductOption[];
 }
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -110,42 +110,12 @@ export default function ProductDetailPage() {
       .catch(() => router.push("/products"));
   }, [slug, router]);
 
-  if (loading) return (
-    <div className="min-h-screen px-6 md:px-10 py-8 max-w-7xl mx-auto space-y-8">
-      <div className="grid md:grid-cols-2 gap-10">
-        <div className="space-y-4">
-          <Skeleton className="aspect-square rounded-3xl" />
-          <div className="flex gap-4">
-            {[...Array(4)].map((_, i) => <Skeleton key={i} className="w-20 h-20 rounded-xl" />)}
-          </div>
-        </div>
-        <div className="space-y-6">
-          <Skeleton className="h-4 w-1/4" />
-          <Skeleton className="h-10 w-3/4" />
-          <Skeleton className="h-6 w-1/2" />
-          <div className="py-6 border-y border-border space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-          <div className="flex gap-4">
-            <Skeleton className="h-14 flex-1 rounded-2xl" />
-            <Skeleton className="h-14 flex-1 rounded-2xl" />
-          </div>
-        </div>
-      </div>
-      <div className="mt-12">
-        <Skeleton className="h-64 w-full rounded-3xl" />
-      </div>
-    </div>
-  );
-  if (!product) return null;
-
-  const images = product.media.length > 0
+  const images = product?.media && product.media.length > 0
     ? product.media
-    : [{ id: 0, full_url: `https://picsum.photos/seed/${product.id}/600/600`, is_primary: true, media_type: "image" }];
+    : product ? [{ id: 0, full_url: `https://picsum.photos/seed/${product.id}/600/600`, is_primary: true, media_type: "image" }] : [];
 
-  const basePrice = product.sale_price ?? product.price;
-  const options = product.options ?? [];
+  const basePrice = product ? (product.sale_price ?? product.price) : 0;
+  const options = product?.options ?? [];
 
   const isGroupComplete = (opt: ProductOption) => {
     const p = selParent[opt.id];
@@ -158,6 +128,7 @@ export default function ProductDetailPage() {
   const allComplete = options.length === 0 || options.every(isGroupComplete);
 
   const computeTotalPrice = (): number => {
+    if (!product) return 0;
     if (options.length === 0) return basePrice;
     if (!allComplete) return basePrice;
     let sum = 0;
@@ -172,7 +143,7 @@ export default function ProductDetailPage() {
 
   const totalPrice = computeTotalPrice();
 
-  let effectiveStock = product.stock_quantity;
+  let effectiveStock = product?.stock_quantity ?? 0;
   if (options.length > 0 && allComplete) {
     const stocks: number[] = [];
     options.forEach(opt => {
@@ -186,7 +157,7 @@ export default function ProductDetailPage() {
   }
 
   const attrGroups: Record<string, string[]> = {};
-  product.attributes.forEach(({ attribute_name, attribute_value }) => {
+  product?.attributes.forEach(({ attribute_name, attribute_value }) => {
     if (!attrGroups[attribute_name]) attrGroups[attribute_name] = [];
     if (!attrGroups[attribute_name].includes(attribute_value))
       attrGroups[attribute_name].push(attribute_value);
@@ -194,13 +165,11 @@ export default function ProductDetailPage() {
 
   const handleSelectParent = (optionId: number, value: OptionValue, optionIdx: number) => {
     const oldParent = selParent[optionId];
-
     setSelParent(prev => {
       const next = { ...prev, [optionId]: value };
       options.slice(optionIdx + 1).forEach(o => delete next[o.id]);
       return next;
     });
-
     setSelSub(prev => {
       const next = { ...prev };
       if (oldParent && oldParent.id !== value.id) delete next[oldParent.id];
@@ -218,25 +187,32 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    if (!token) { router.push("/login?redirect=/products/" + slug); return; }
+    if (!product || !token) { 
+      if (!token) router.push("/login?redirect=/products/" + slug); 
+      return; 
+    }
     if (!allComplete) return;
 
     const combinedAttrs: Record<string, string> = { ...selAttrs };
+    const variantIds: number[] = [];
     options.forEach(opt => {
       const p = selParent[opt.id];
       if (p) {
         const sub = selSub[p.id];
+        variantIds.push(sub ? sub.id : p.id);
         combinedAttrs[opt.option_name] = sub ? `${p.option_value} / ${sub.option_value}` : p.option_value;
       }
     });
 
     addItem({
       id: product.id, productId: product.id, slug: product.slug,
-      title: product.title, image: images[activeImg].full_url,
+      title: product.title, image: images[activeImg]?.full_url || "",
       price: totalPrice,
       salePrice: null,
       sellerId: product.seller.id, sellerName: product.seller.name,
-      attributes: combinedAttrs, quantity: qty,
+      attributes: combinedAttrs, 
+      variantIds,
+      quantity: qty,
     });
     setAddedMsg(true);
     setTimeout(() => setAddedMsg(false), 2000);
@@ -244,6 +220,17 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: (loading || !product) ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {product && (
+          <>
       {/* Breadcrumb - Hidden on mobile */}
       <div className="hidden md:flex px-10 py-4 bg-muted/30 border-b border-border items-center gap-2 text-sm text-muted-foreground">
         <button onClick={() => router.back()} className="flex items-center gap-1 hover:text-foreground transition-colors">
@@ -603,15 +590,18 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
+
+    </>
+  )}
+</motion.div>
+</div>
+);
 }
 
 function ProductDetailImage({ src, alt }: { src: string, alt: string }) {
   const [loaded, setLoaded] = useState(false);
   return (
     <>
-      {!loaded && <Skeleton className="absolute inset-0 z-10 rounded-none" />}
       <img
         src={src}
         alt={alt}

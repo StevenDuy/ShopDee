@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { Plus, Trash2, Edit2, ShieldAlert, Image as ImageIcon, Save, X, ExternalLink, Package, Search } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import FullPageLoader from "@/components/FullPageLoader";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -245,7 +247,17 @@ export default function AdminBannersPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6 max-w-7xl mx-auto"
+      >
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
            <h1 className="text-3xl font-bold tracking-tight">{t("admin.banners.title")}</h1>
@@ -535,6 +547,7 @@ export default function AdminBannersPage() {
             </div>
          </div>
       )}
+      </motion.div>
     </div>
   );
 }

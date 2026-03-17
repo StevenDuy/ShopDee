@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { Plus, Search, Edit, Trash2, Image as ImageIcon } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { EditProductModal } from "@/components/seller/EditProductModal";
 import { useTranslation } from "react-i18next";
+import FullPageLoader from "@/components/FullPageLoader";
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 type Product = {
   id: number;
@@ -68,19 +70,29 @@ export default function SellerProductsPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("seller.products")}</h1>
-          <p className="text-muted-foreground mt-1">{t("seller.products_manage.desc")}</p>
-        </div>
-        <Link href="/seller/products/new" className="bg-primary text-primary-foreground flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium hover:opacity-90 transition-opacity whitespace-nowrap">
-          <Plus size={18} />
-          {t("seller.products_manage.add_product")}
-        </Link>
-      </div>
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
 
-      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="p-6 md:p-8 max-w-7xl mx-auto space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t("seller.products")}</h1>
+            <p className="text-muted-foreground mt-1">{t("seller.products_manage.desc")}</p>
+          </div>
+          <Link href="/seller/products/new" className="bg-primary text-primary-foreground flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium hover:opacity-90 transition-opacity whitespace-nowrap">
+            <Plus size={18} />
+            {t("seller.products_manage.add_product")}
+          </Link>
+        </div>
+
+        <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
@@ -182,13 +194,14 @@ export default function SellerProductsPage() {
         )}
       </div>
       
-      {editingId && (
+      {editingId !== null && (
         <EditProductModal 
           productId={editingId} 
           onClose={() => setEditingId(null)} 
           onSuccess={() => { setEditingId(null); fetchProducts(); }} 
         />
       )}
-    </div>
+    </motion.div>
+  </div>
   );
 }

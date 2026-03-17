@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { User, Package, MapPin, Lock, CheckCircle, Truck, Clock, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import FullPageLoader from "@/components/FullPageLoader";
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -20,7 +21,7 @@ interface Order {
   items: { id: number; quantity: number; unit_price: number; product: { title: string; media: { url: string }[] } }[];
 }
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
   paid: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -64,15 +65,26 @@ export default function ProfilePage() {
   const [pwMsg, setPwMsg] = useState("");
 
   const [isAddrModalOpen, setIsAddrModalOpen] = useState(false);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
   const authHeaders = { Authorization: `Bearer ${token}` };
 
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     if (!token) { router.replace("/login"); return; }
-    axios.get(`${API}/profile`, { headers: authHeaders }).then((r) => {
-      setProfile(r.data); setName(r.data.name); setPhone(r.data.profile?.phone ?? ""); setBio(r.data.profile?.bio ?? "");
-    });
+    setLoading(true);
+    axios.get(`${API}/profile`, { headers: authHeaders })
+      .then((r) => {
+        setProfile(r.data);
+        setName(r.data.name);
+        setPhone(r.data.profile?.phone ?? "");
+        setBio(r.data.profile?.bio ?? "");
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
     fetchAddresses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
@@ -109,10 +121,19 @@ export default function ProfilePage() {
     setAddresses(a => a.filter(addr => addr.id !== id));
   };
 
-  if (!profile) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" /></div>;
-
   return (
-    <div className="min-h-screen px-6 md:px-10 py-8 max-w-5xl mx-auto">
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {profile && (
+          <div className="px-6 md:px-10 py-8 max-w-5xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
         <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary text-2xl font-black">
           {profile.name.charAt(0)}
@@ -236,6 +257,8 @@ export default function ProfilePage() {
         token={token}
       />
     </div>
-
+        )}
+      </motion.div>
+    </div>
   );
 }

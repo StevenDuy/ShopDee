@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         // First run roles if we have RoleSeeder (assuming roles exist), but let's just make sure UserSeeder creates users.
         $this->call([
             UserSeeder::class,
+            SystemSettingSeeder::class,
         ]);
     }
 }

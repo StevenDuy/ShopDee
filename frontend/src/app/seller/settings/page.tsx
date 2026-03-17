@@ -6,6 +6,8 @@ import { Store, MapPin, Phone, Mail, User, Save, Upload, Trash2, Plus, Edit2 } f
 import { useAuthStore } from "@/store/useAuthStore";
 import AddressModal from "@/components/profile/AddressModal";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
+import FullPageLoader from "@/components/FullPageLoader";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -89,150 +91,153 @@ export default function SellerSettingsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 max-w-4xl mx-auto p-4 md:p-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t("seller.settings.title")}</h1>
-        <p className="text-muted-foreground mt-1">{t("seller.settings.desc")}</p>
-      </div>
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {loading && <FullPageLoader key="loader" />}
+      </AnimatePresence>
 
-      {message.text && (
-        <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
-          {message.text}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-6 max-w-4xl mx-auto p-4 md:p-8"
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t("seller.settings.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("seller.settings.desc")}</p>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Settings Form */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-border bg-muted/20 flex items-center gap-3">
-              <Store className="text-primary" size={20} />
-              <h2 className="text-lg font-bold">{t("seller.settings.store_details")}</h2>
+        {message.text && (
+          <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
+            {message.text}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Profile Settings Form */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-border bg-muted/20 flex items-center gap-3">
+                <Store className="text-primary" size={20} />
+                <h2 className="text-lg font-bold">{t("seller.settings.store_details")}</h2>
+              </div>
+              <form onSubmit={handleProfileSubmit} className="p-6 space-y-5">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">{t("seller.settings.store_name")} <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <input 
+                      type="text" 
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder={t("seller.settings.store_name")}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">{t("seller.settings.service_phone")}</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <input 
+                      type="text" 
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="+1234567890"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">{t("seller.settings.store_bio")}</label>
+                  <textarea 
+                    value={formData.bio}
+                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                    className="w-full px-4 py-3 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] resize-y"
+                    placeholder={t("seller.settings.store_bio_placeholder")}
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button 
+                    type="submit" 
+                    disabled={saving}
+                    className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    <Save size={18} />
+                    {saving ? t("seller.settings.saving") : t("seller.settings.save_changes")}
+                  </button>
+                </div>
+              </form>
             </div>
-            <form onSubmit={handleProfileSubmit} className="p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">{t("seller.settings.store_name")} <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                  <input 
-                    type="text" 
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder={t("seller.settings.store_name")}
-                    required
-                  />
+          </div>
+
+          {/* Addresses Sidebar */}
+          <div className="space-y-6">
+            <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+              <div className="p-5 border-b border-border bg-muted/20 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="text-primary" size={20} />
+                  <h2 className="text-lg font-bold">{t("seller.settings.addresses")}</h2>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5">{t("seller.settings.service_phone")}</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                  <input 
-                    type="text" 
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="+1234567890"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5">{t("seller.settings.store_bio")}</label>
-                <textarea 
-                  value={formData.bio}
-                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                  className="w-full px-4 py-3 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] resize-y"
-                  placeholder={t("seller.settings.store_bio_placeholder")}
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end">
                 <button 
-                  type="submit" 
-                  disabled={saving}
-                  className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  onClick={() => openAddressModal()}
+                  className="p-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-colors"
+                  title={t("seller.settings.add_address")}
                 >
-                  <Save size={18} />
-                  {saving ? t("seller.settings.saving") : t("seller.settings.save_changes")}
+                  <Plus size={18} />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-
-        {/* Addresses Sidebar */}
-        <div className="space-y-6">
-          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
-            <div className="p-5 border-b border-border bg-muted/20 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="text-primary" size={20} />
-                <h2 className="text-lg font-bold">{t("seller.settings.addresses")}</h2>
-              </div>
-              <button 
-                onClick={() => openAddressModal()}
-                className="p-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-colors"
-                title={t("seller.settings.add_address")}
-              >
-                <Plus size={18} />
-              </button>
-            </div>
-            
-            <div className="p-4 flex-1 overflow-y-auto space-y-3">
-              {addresses.length === 0 ? (
-                <div className="text-center p-6 text-muted-foreground">
-                  <MapPin size={32} className="mx-auto mb-3 opacity-20" />
-                  <p className="text-sm">{t("seller.settings.no_addresses")}</p>
-                </div>
-              ) : (
-                addresses.map((addr) => (
-                  <div key={addr.id} className="relative p-4 border border-border rounded-xl hover:border-primary/50 transition-colors group">
-                    <div className="flex justify-between items-start mb-2">
-                       <span className="inline-block px-2 py-0.5 bg-accent text-xs font-semibold rounded-md uppercase tracking-wider text-muted-foreground">
-                         {addr.type}
-                       </span>
-                       {addr.is_default ? (
-                         <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t("profile_page.default")}</span>
-                       ) : null}
-                    </div>
-                    <p className="text-sm font-medium mt-2">{addr.address_line_1}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{addr.city}, {addr.country}</p>
-                    
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                      <button onClick={() => openAddressModal(addr)} className="p-1.5 bg-background shadow-sm border border-border rounded-md text-muted-foreground hover:text-primary">
-                        <Edit2 size={14} />
-                      </button>
-                      <button onClick={() => handleDeleteAddress(addr.id)} className="p-1.5 bg-background shadow-sm border border-border rounded-md text-muted-foreground hover:text-destructive">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+              
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {addresses.length === 0 ? (
+                  <div className="text-center p-6 text-muted-foreground">
+                    <MapPin size={32} className="mx-auto mb-3 opacity-20" />
+                    <p className="text-sm">{t("seller.settings.no_addresses")}</p>
                   </div>
-                ))
-              )}
+                ) : (
+                  addresses.map((addr) => (
+                    <div key={addr.id} className="relative p-4 border border-border rounded-xl hover:border-primary/50 transition-colors group">
+                      <div className="flex justify-between items-start mb-2">
+                         <span className="inline-block px-2 py-0.5 bg-accent text-xs font-semibold rounded-md uppercase tracking-wider text-muted-foreground">
+                           {addr.type}
+                         </span>
+                         {addr.is_default ? (
+                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t("profile_page.default")}</span>
+                         ) : null}
+                      </div>
+                      <p className="text-sm font-medium mt-2">{addr.address_line_1}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{addr.city}, {addr.country}</p>
+                      
+                      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <button onClick={() => openAddressModal(addr)} className="p-1.5 bg-background shadow-sm border border-border rounded-md text-muted-foreground hover:text-primary">
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDeleteAddress(addr.id)} className="p-1.5 bg-background shadow-sm border border-border rounded-md text-muted-foreground hover:text-destructive">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Address Modal */}
-      <AddressModal 
-        isOpen={isAddressModalOpen}
-        onClose={() => setIsAddressModalOpen(false)}
-        onSuccess={() => fetchData()}
-        token={token}
-        address={editingAddress}
-      />
+        {/* Address Modal */}
+        <AddressModal 
+          isOpen={isAddressModalOpen}
+          onClose={() => setIsAddressModalOpen(false)}
+          onSuccess={() => fetchData()}
+          token={token}
+          address={editingAddress}
+        />
+      </motion.div>
     </div>
   );
 }

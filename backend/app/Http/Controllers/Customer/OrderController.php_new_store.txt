@@ -1,16 +1,3 @@
-<?php
-
-namespace App\Http\Controllers\Customer;
-
-use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\OrderItem;
-use Illuminate\Http\Request;
-
-use Illuminate\Support\Facades\Log;
-
-class OrderController extends Controller
-{
     public function store(Request $request)
     {
         $request->validate([
@@ -21,6 +8,7 @@ class OrderController extends Controller
             'items.*.product_id'  => 'required|integer',
             'items.*.quantity'    => 'required|integer|min:1',
             'items.*.variant_ids' => 'nullable|array',
+            'items.*.variant_ids.*' => 'integer',
         ]);
 
         try {
@@ -42,13 +30,13 @@ class OrderController extends Controller
 
                 $totalAmount = 0;
                 $orderItemsToCreate = [];
-                $stockUpdates = []; 
+                $stockUpdates = []; // To track what to decrement
 
                 foreach ($itemDataList as $item) {
                     $product = $products->get($item['product_id']);
                     if (!$product) throw new \Exception("Sản phẩm không tồn tại (ID: {$item['product_id']})");
 
-                    // Base price from DB - FIXES SECURITY FLAW
+                    // Base price from DB
                     $unitPrice = $product->sale_price ?? $product->price;
                     
                     // Add adjustments from variants
@@ -58,7 +46,7 @@ class OrderController extends Controller
                         if ($vVal) {
                             $unitPrice += $vVal->price_adjustment;
                             
-                            // Check variant stock
+                            // Track variant stock update
                             if ($vVal->stock_quantity < $item['quantity']) {
                                 throw new \Exception("Phân loại '{$vVal->option_value}' của '{$product->title}' không đủ hàng.");
                             }
@@ -83,10 +71,10 @@ class OrderController extends Controller
                         'unit_price' => $unitPrice,
                         'selected_options' => $item['selected_options'] ?? null,
                         'subtotal' => $subtotal,
-                        'variant_ids' => $itemVariantIds,
                     ];
                 }
 
+                // Create Order
                 $order = Order::create([
                     'customer_id'        => $request->user()->id,
                     'seller_id'          => $request->seller_id,
@@ -97,12 +85,13 @@ class OrderController extends Controller
                     'notes'              => $request->notes,
                 ]);
 
+                // Create OrderItems
                 foreach ($orderItemsToCreate as $oi) {
                     $oi['order_id'] = $order->id;
                     OrderItem::create($oi);
                 }
 
-                // OPTIMIZED: Update stock in bulk-like mapping
+                // Execute stock updates
                 foreach ($stockUpdates as $update) {
                     if ($update['type'] === 'variant') {
                         \App\Models\ProductOptionValue::where('id', $update['id'])->decrement('stock_quantity', $update['qty']);
@@ -111,6 +100,7 @@ class OrderController extends Controller
                     }
                 }
 
+                // Finance record
                 \App\Models\SellerFinance::create([
                     'seller_id'   => $request->seller_id,
                     'order_id'    => $order->id,
@@ -126,87 +116,3 @@ class OrderController extends Controller
             return response()->json(['message' => $e->getMessage()], 400);
         }
     }
-
-    public function myOrders(Request $request)
-    {
-        $orders = Order::with(['items.product.media', 'items.review', 'seller'])
-            ->where('customer_id', $request->user()->id)
-            ->latest()
-            ->paginate(10);
-        return response()->json($orders);
-    }
-
-    public function show(Request $request, int $id)
-    {
-        $order = Order::with(['items.product.media', 'items.review', 'seller', 'shippingAddress'])
-            ->where('customer_id', $request->user()->id)
-            ->findOrFail($id);
-        return response()->json($order);
-    }
-
-    public function cancel(Request $request, $id)
-    {
-        try {
-            return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id) {
-                $order = Order::with('items')->where('customer_id', $request->user()->id)
-                    ->lockForUpdate()
-                    ->findOrFail($id);
-
-                if (!in_array($order->status, ['pending', 'processing'])) {
-                    return response()->json(['message' => 'Không thể hủy đơn hàng ở trạng thái này'], 400);
-                }
-
-                $order->update(['status' => 'cancelled']);
-
-                // Optimized Stock Restoration
-                foreach ($order->items as $item) {
-                    // Update main product if it was direct purchase OR if we want to keep sum stock
-                    // Based on user advice: "Chỉ tính tồn kho trực tiếp trên các mã SKU (Option Values)"
-                    // However, we must restore where we decremented.
-                    
-                    if (!empty($item->variant_ids)) {
-                        foreach ($item->variant_ids as $vId) {
-                            \App\Models\ProductOptionValue::where('id', $vId)->increment('stock_quantity', $item->quantity);
-                        }
-                    } else {
-                        \App\Models\Product::where('id', $item->product_id)->increment('stock_quantity', $item->quantity);
-                    }
-                }
-
-                // Handle finance: delete pending credit
-                \App\Models\SellerFinance::where('order_id', $order->id)
-                    ->where('status', 'pending')
-                    ->delete();
-
-                return response()->json(['message' => 'Đã hủy đơn hàng thành công', 'order' => $order]);
-            });
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Lỗi khi hủy đơn hàng: " . $e->getMessage());
-            return response()->json(['message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function confirmReceived(Request $request, $id)
-    {
-        try {
-            $order = Order::where('customer_id', $request->user()->id)
-                ->findOrFail($id);
-
-            if ($order->status !== 'delivered') {
-                return response()->json(['message' => 'Bạn chỉ có thể xác nhận đã nhận khi đơn hàng đã giao'], 400);
-            }
-
-            $order->update(['status' => 'completed']);
-
-            // Complete finance record
-            \App\Models\SellerFinance::where('order_id', $order->id)
-                ->where('type', 'credit')
-                ->update(['status' => 'completed']);
-
-            return response()->json(['message' => 'Xác nhận đã nhận hàng thành công', 'order' => $order]);
-        } catch (\Exception $e) {
-            Log::error("Lỗi khi xác nhận nhận hàng: " . $e->getMessage());
-            return response()->json(['message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
-        }
-    }
-}
