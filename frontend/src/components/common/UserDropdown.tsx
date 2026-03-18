@@ -10,6 +10,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
+import { useThemeTransition } from "@/hooks/useThemeTransition";
+
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 interface UserDropdownProps {
   collapsed?: boolean;
@@ -23,6 +26,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { theme, setTheme } = useTheme();
+  const { toggleTheme, resolvedTheme } = useThemeTransition();
   const { t, i18n } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [currency, setCurrency] = useState("VND");
@@ -114,9 +118,12 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
             className="absolute z-[100] bg-card border border-border rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-2 overflow-hidden"
           >
             {/* Header Mini Info */}
-            <div className="px-3 py-2 mb-2 bg-muted/20 rounded-xl border border-border/50">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1 opacity-60">{t("logged_in_as")}</p>
-              <p className="text-xs font-semibold truncate text-foreground">{user.email}</p>
+            <div className="px-3 py-2 mb-2 bg-muted/20 rounded-xl border border-border/50 flex items-center justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1 opacity-60">{t("logged_in_as")}</p>
+                <p className="text-xs font-semibold truncate text-foreground">{user.email}</p>
+              </div>
+              <AnimatedThemeToggler className="h-8 w-8 rounded-lg shrink-0 ml-2" />
             </div>
 
             <div className="space-y-0.5">
@@ -133,27 +140,6 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
 
 
               <div className="h-px bg-border/50 my-1 mx-2" />
-
-              {/* Theme Toggle Item */}
-              <button 
-                type="button"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
-                    theme === 'dark' ? 'bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white' : 'bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white'
-                  }`}>
-                    {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-                  </div>
-                  <span className="font-medium">{t("theme")}</span>
-                </div>
-                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded uppercase ${
-                  theme === 'dark' ? 'bg-amber-500/10 text-amber-600' : 'bg-indigo-500/10 text-indigo-600'
-                }`}>
-                  {theme === "dark" ? t("light_mode") : t("dark_mode")}
-                </span>
-              </button>
 
               {/* Language Item */}
               <button 
