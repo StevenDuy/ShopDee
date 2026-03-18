@@ -279,7 +279,7 @@ export function UnifiedInbox() {
       <div className={`w-full md:w-[380px] border-r border-border/50 flex flex-col bg-card shrink-0 transition-all ${ (activeConv || selectedNotif) ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 md:p-6 border-b border-border/50">
            <div className="flex items-center justify-between mb-4 md:mb-6">
-             <h2 className="text-xl md:text-2xl font-black tracking-tighter uppercase">{activeTab === "chat" ? t("inbox.title_chat") : t("inbox.title_updates")}</h2>
+             <h2 className="hidden md:block text-xl md:text-2xl font-black tracking-tighter uppercase">{activeTab === "chat" ? t("inbox.title_chat") : t("inbox.title_updates")}</h2>
              {activeTab === "notifications" && isAdmin && (
                <button onClick={() => setShowCreateModal(true)} className="w-8 h-8 md:w-10 md:h-10 bg-primary text-primary-foreground rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 transition-all">
                  <Plus size={18} />

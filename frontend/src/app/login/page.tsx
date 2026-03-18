@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { Eye, EyeOff, LogIn, ShoppingBag } from "lucide-react";
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -37,99 +36,97 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message ?? "Login failed. Please try again.");
+      setError(e.response?.data?.message || "Đăng nhập thất bại.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
-      >
+    <div className="min-h-screen bg-background border-[10px] border-primary flex items-center justify-center p-6">
+      <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center">
-              <ShoppingBag size={24} className="text-primary-foreground" />
+            <div className="w-16 h-16 bg-primary flex items-center justify-center border-4 border-black">
+              <ShoppingBag size={32} className="text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-black text-foreground">ShopDee</h1>
-          <p className="text-muted-foreground mt-1">Sign in to your account</p>
+          <h1 className="text-4xl font-black text-foreground uppercase tracking-tighter">ShopDee 2D</h1>
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-xs mt-2">Hệ thống Thương mại điện tử</p>
         </div>
 
         {/* Card */}
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-xl">
-          <form onSubmit={handleLogin} className="space-y-5">
+        <div className="bg-card border-4 border-black p-8">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Email</label>
+              <label className="block text-xs font-black uppercase tracking-widest text-foreground mb-2">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                className="w-full px-4 py-3 bg-muted border-2 border-border font-bold text-sm focus:outline-none focus:border-primary"
                 placeholder="you@shopdee.com"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Password</label>
+              <label className="block text-xs font-black uppercase tracking-widest text-foreground mb-2">Mật khẩu</label>
               <div className="relative">
                 <input
                   type={showPw ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-11 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                  className="w-full px-4 py-3 pr-11 bg-muted border-2 border-border font-bold text-sm focus:outline-none focus:border-primary"
                   placeholder="••••••••"
                   required
                 />
                 <button type="button" onClick={() => setShowPw(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-widest text-white bg-destructive px-4 py-3 border-2 border-black">
                 {error}
-              </motion.p>
+              </div>
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50 transition-all">
+              className="w-full py-4 bg-primary text-primary-foreground border-4 border-black font-black uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
               {loading ? (
-                <span className="animate-spin w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent animate-spin" />
               ) : (
-                <><LogIn size={18} /> Sign In</>
+                <><LogIn size={20} /> ĐĂNG NHẬP</>
               )}
             </button>
           </form>
 
-          {/* Demo accounts */}
-          <div className="mt-6 pt-6 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center mb-3">Demo accounts (password: password)</p>
+          {/* Quick Login */}
+          <div className="mt-8 pt-8 border-t-2 border-black">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center mb-4">Tài khoản mẫu</p>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "Customer", email: "customer@shopdee.com" },
+                { label: "Guest", email: "customer@shopdee.com" },
                 { label: "Seller",   email: "seller@shopdee.com" },
                 { label: "Admin",    email: "admin@shopdee.com" },
               ].map((acc) => (
                 <button key={acc.email} onClick={() => { setEmail(acc.email); setPassword("password"); }}
-                  className="py-2 text-xs bg-muted rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors font-medium">
+                  className="py-2 text-[10px] font-black uppercase bg-muted border border-border hover:bg-primary hover:text-white hover:border-black">
                   {acc.label}
                 </button>
               ))}
             </div>
           </div>
         </div>
-      </motion.div>
+        
+        <p className="mt-8 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-30">
+          Powered by Antigravity Flat-Engine
+        </p>
+      </div>
     </div>
   );
 }

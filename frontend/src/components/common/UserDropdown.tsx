@@ -1,22 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
-  User, Settings, LogOut, ChevronUp, ChevronDown, 
-  Moon, Sun, Globe, DollarSign, LogIn, MessageCircle
+  User, LogOut, ChevronUp, ChevronDown, 
+  Globe, DollarSign, LogIn, Moon, Sun
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
-import { useThemeTransition } from "@/hooks/useThemeTransition";
-
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { useTheme } from "next-themes";
 
 interface UserDropdownProps {
   collapsed?: boolean;
-  align?: "top" | "bottom"; // Hướng mở menu
+  align?: "top" | "bottom";
 }
 
 export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdownProps) {
@@ -25,9 +21,8 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  const { theme, setTheme } = useTheme();
-  const { toggleTheme, resolvedTheme } = useThemeTransition();
   const { t, i18n } = useTranslation();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [currency, setCurrency] = useState("VND");
 
@@ -50,17 +45,10 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
       <button
         type="button"
         onClick={() => router.push("/login")}
-        className="w-full flex items-center gap-3 p-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl transition-all border border-primary/20 group shadow-sm"
+        className="w-full flex items-center gap-3 p-2 bg-primary text-primary-foreground border border-primary font-bold"
       >
-        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shrink-0 shadow-sm group-hover:scale-110 transition-transform">
-          <LogIn size={14} />
-        </div>
-        {!collapsed && (
-          <div className="flex-1 text-left">
-            <p className="text-sm font-bold leading-none mb-1">{t("login")}</p>
-            <p className="text-[10px] opacity-70 uppercase font-black">{t("roles.guest")}</p>
-          </div>
-        )}
+        <LogIn size={16} />
+        {!collapsed && <span>{t("login")}</span>}
       </button>
     );
   }
@@ -72,6 +60,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
 
   const toggleLang = () => i18n.changeLanguage(i18n.language === "vi" ? "en" : "vi");
   const toggleCurrency = () => setCurrency(currency === "VND" ? "USD" : "VND");
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -79,11 +68,11 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all hover:bg-accent/80 border ${
-          isOpen ? 'border-primary/40 bg-accent shadow-sm' : 'border-transparent'
+        className={`w-full flex items-center gap-3 p-2 border ${
+          isOpen ? 'border-primary bg-muted' : 'border-transparent'
         }`}
       >
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0">
+        <div className="w-8 h-8 bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0">
           {user.name.charAt(0).toUpperCase()}
         </div>
         
@@ -97,98 +86,83 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
         )}
         
         {!collapsed && (
-          <div className="text-muted-foreground/50 shrink-0">
+          <div className="text-muted-foreground shrink-0">
             {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </div>
         )}
       </button>
 
       {/* Dropdown Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: align === "top" ? 10 : -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: align === "top" ? 10 : -10 }}
-            style={{ 
-              [align === "top" ? "top" : "bottom"]: "calc(100% + 8px)",
-              left: collapsed ? "12px" : "0",
-              width: "260px"
-            }}
-            className="absolute z-[100] bg-card border border-border rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-2 overflow-hidden"
-          >
-            {/* Header Mini Info */}
-            <div className="px-3 py-2 mb-2 bg-muted/20 rounded-xl border border-border/50 flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1 opacity-60">{t("logged_in_as")}</p>
-                <p className="text-xs font-semibold truncate text-foreground">{user.email}</p>
+      {isOpen && (
+        <div
+          style={{ 
+            [align === "top" ? "top" : "bottom"]: "calc(100% + 4px)",
+            left: "0",
+            width: "200px"
+          }}
+          className="absolute z-[100] bg-card border border-border p-1"
+        >
+          <div className="space-y-1">
+            <button 
+              onClick={() => { router.push("/profile"); setIsOpen(false); }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border"
+            >
+              <User size={14} />
+              <span>{t("profile")}</span>
+            </button>
+
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border"
+            >
+              <div className="flex items-center gap-3">
+                {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+                <span>{theme === "dark" ? "Sáng" : "Tối"}</span>
               </div>
-              <AnimatedThemeToggler className="h-8 w-8 rounded-lg shrink-0 ml-2" />
-            </div>
+              <span className="text-[10px] font-bold border border-border px-1">
+                {theme === "dark" ? "LIGHT" : "DARK"}
+              </span>
+            </button>
 
-            <div className="space-y-0.5">
-              <button 
-                onClick={() => { router.push("/profile"); setIsOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors group text-foreground"
-              >
-                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                  <User size={14} />
-                </div>
-                <span className="font-medium">{t("profile")}</span>
-              </button>
+            <button 
+              onClick={toggleLang}
+              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border"
+            >
+              <div className="flex items-center gap-3">
+                <Globe size={14} />
+                <span>{t("language")}</span>
+              </div>
+              <span className="text-[10px] font-bold border border-border px-1">
+                {i18n.language === "vi" ? "VIE" : "ENG"}
+              </span>
+            </button>
 
+            <button 
+              onClick={toggleCurrency}
+              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border"
+            >
+              <div className="flex items-center gap-3">
+                <DollarSign size={14} />
+                <span>{t("currency")}</span>
+              </div>
+              <span className="text-[10px] font-bold border border-border px-1">
+                {currency}
+              </span>
+            </button>
 
+            <div className="h-px bg-border my-1" />
 
-              <div className="h-px bg-border/50 my-1 mx-2" />
-
-              {/* Language Item */}
-              <button 
-                onClick={toggleLang}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                    <Globe size={14} />
-                  </div>
-                  <span className="font-medium">{t("language")}</span>
-                </div>
-                <span className="text-[10px] font-black bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-                  {i18n.language === "vi" ? "VIE" : "ENG"}
-                </span>
-              </button>
-
-              {/* Currency Item */}
-              <button 
-                onClick={toggleCurrency}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                    <DollarSign size={14} />
-                  </div>
-                  <span className="font-medium">{t("currency")}</span>
-                </div>
-                <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded">
-                  {currency}
-                </span>
-              </button>
-
-              <div className="h-px bg-border/50 my-1 mx-2" />
-
-              {/* Logout */}
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-destructive/10 text-destructive transition-colors text-left group"
-              >
-                <div className="w-6 h-6 rounded-md bg-destructive/10 flex items-center justify-center group-hover:bg-destructive group-hover:text-white transition-colors">
-                  <LogOut size={14} />
-                </div>
-                <span className="font-bold">{t("logout")}</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-destructive hover:bg-destructive hover:text-white border border-transparent hover:border-destructive"
+            >
+              <LogOut size={14} />
+              <span>{t("logout")}</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

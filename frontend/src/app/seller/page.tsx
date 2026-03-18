@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { DollarSign, Package, ShoppingCart, ArrowUpRight, ArrowDownRight, Clock, Eye } from "lucide-react";
+import { DollarSign, Package, ShoppingCart, ArrowUpRight, Clock } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -40,62 +39,49 @@ export default function SellerDashboard() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  return (
-    <div className="min-h-screen">
-      <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
-      </AnimatePresence>
+  if (loading) return <FullPageLoader />;
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: loading ? 0 : 1 }}
-        transition={{ duration: 0.5 }}
-        className="p-6 md:p-8 max-w-7xl mx-auto space-y-8"
-      >
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("seller.dashboard")}</h1>
-          <p className="text-muted-foreground mt-1">{t("seller.overview_desc")}</p>
-        </div>
+  const formatPrice = (val: number) => 
+    new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(val);
+
+  return (
+    <div className="p-6 md:p-8 space-y-8 bg-background">
+      <div className="border-l-4 border-primary pl-4">
+        <h1 className="text-3xl font-black uppercase tracking-tighter">{t("seller.dashboard")}</h1>
+        <p className="text-muted-foreground font-bold text-sm uppercase opacity-60 tracking-widest">{t("seller.overview_desc")}</p>
+      </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">{t("seller.total_revenue")}</p>
-            <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-600">
-              <DollarSign size={20} />
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-card p-6 border-2 border-border">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-black uppercase text-muted-foreground tracking-widest">{t("seller.total_revenue")}</p>
+            <DollarSign size={20} className="text-primary" />
           </div>
-          <p className="text-3xl font-bold mt-4">
-             {new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(stats?.total_revenue || 0)}
-          </p>
-          <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
-              <span className="flex items-center text-green-600"><ArrowUpRight size={16}/> 12.5%</span> {t("seller.from_last_month")}
+          <p className="text-3xl font-black">{formatPrice(stats?.total_revenue || 0)}</p>
+          <div className="mt-4 pt-4 border-t border-border flex items-center gap-1 text-[10px] font-bold uppercase">
+             <span className="flex items-center text-primary"><ArrowUpRight size={14}/> 12.5%</span> {t("seller.from_last_month")}
           </div>
         </div>
 
-        <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">{t("seller.total_orders")}</p>
-            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600">
-              <ShoppingCart size={20} />
-            </div>
+        <div className="bg-card p-6 border-2 border-border">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-black uppercase text-muted-foreground tracking-widest">{t("seller.total_orders")}</p>
+            <ShoppingCart size={20} className="text-primary" />
           </div>
-          <p className="text-3xl font-bold mt-4">{stats?.total_orders || 0}</p>
-          <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
-             <span className="flex items-center text-green-600"><ArrowUpRight size={16}/> 4.1%</span> {t("seller.from_last_month")}
+          <p className="text-3xl font-black">{stats?.total_orders || 0}</p>
+          <div className="mt-4 pt-4 border-t border-border flex items-center gap-1 text-[10px] font-bold uppercase">
+             <span className="flex items-center text-primary"><ArrowUpRight size={14}/> 4.1%</span> {t("seller.from_last_month")}
           </div>
         </div>
 
-        <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">{t("seller.total_products")}</p>
-            <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-600">
-              <Package size={20} />
-            </div>
+        <div className="bg-card p-6 border-2 border-border">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-black uppercase text-muted-foreground tracking-widest">{t("seller.total_products")}</p>
+            <Package size={20} className="text-primary" />
           </div>
-          <p className="text-3xl font-bold mt-4">{stats?.total_products || 0}</p>
-          <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
+          <p className="text-3xl font-black">{stats?.total_products || 0}</p>
+          <div className="mt-4 pt-4 border-t border-border text-[10px] font-bold uppercase">
              {t("seller.manage_inventory")}
           </div>
         </div>
@@ -103,31 +89,37 @@ export default function SellerDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold">{t("seller.recent_orders")}</h2>
-            <Link href="/seller/orders" className="text-sm text-primary font-medium hover:underline">{t("view_all")}</Link>
+        <div className="bg-card border-2 border-border p-6">
+          <div className="flex items-center justify-between mb-6 pb-2 border-b border-border">
+            <h2 className="text-lg font-black uppercase tracking-tight">{t("seller.recent_orders")}</h2>
+            <Link href="/seller/orders" className="text-xs font-bold uppercase border-2 border-primary px-3 py-1 hover:bg-primary hover:text-white">{t("view_all")}</Link>
           </div>
           
           {stats?.recent_orders && stats.recent_orders.length > 0 ? (
-             <div className="flex-1 -mx-6 mb-[-24px]">
-               <table className="w-full text-left text-sm whitespace-nowrap">
+             <div className="overflow-x-auto">
+               <table className="w-full text-left text-xs uppercase font-bold">
+                  <thead className="bg-muted text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-2 border border-border">KHÁCH HÀNG</th>
+                      <th className="px-4 py-2 border border-border text-right">TỔNG TIỀN</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-border">
                      {stats.recent_orders.map(order => (
-                        <tr key={order.id} className="hover:bg-muted/30 transition-colors">
-                           <td className="px-6 py-3">
-                              <span className="font-medium text-foreground">
+                        <tr key={order.id} className="hover:bg-muted">
+                           <td className="px-4 py-3 border border-border">
+                              <span className="text-foreground">
                                  {order.customer.name || order.customer.email}
                               </span>
-                              <span className="block text-xs text-muted-foreground">
+                              <span className="block text-[10px] text-muted-foreground mt-1">
                                  {formatDistanceToNow(new Date(order.created_at), { 
                                    addSuffix: true,
-                                   locale: t("locale") === "vi-VN" ? vi : enUS
+                                   locale: t("locale").includes("vi") ? vi : enUS
                                  })}
                               </span>
                            </td>
-                           <td className="px-6 py-3 font-medium text-right">
-                              {new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(order.total_amount)}
+                           <td className="px-4 py-3 border border-border text-right font-black text-primary">
+                              {formatPrice(order.total_amount)}
                            </td>
                         </tr>
                      ))}
@@ -135,25 +127,20 @@ export default function SellerDashboard() {
                </table>
              </div>
           ) : (
-             <div className="flex flex-col items-center justify-center py-10 my-auto text-muted-foreground">
-               <Clock size={48} className="opacity-20 mb-4" />
-               <p>{t("seller.no_orders")}</p>
+             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+               <Clock size={40} className="opacity-20 mb-2" />
+               <p className="text-xs font-bold uppercase">{t("seller.no_orders")}</p>
              </div>
           )}
         </div>
 
         {/* Low Stock Alerts */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold">{t("seller.low_stock_alerts")}</h2>
-          </div>
-          <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
-            <Package size={48} className="opacity-20 mb-4" />
-            <p>{t("seller.stock_sufficient")}</p>
-          </div>
+        <div className="bg-card border-2 border-border p-6 flex flex-col items-center justify-center text-center">
+            <h2 className="text-lg font-black uppercase tracking-tight mb-6 self-start border-b border-border w-full text-left pb-2">{t("seller.low_stock_alerts")}</h2>
+            <Package size={48} className="opacity-10 mb-4" />
+            <p className="text-xs font-bold uppercase text-muted-foreground">{t("seller.stock_sufficient")}</p>
         </div>
       </div>
-    </motion.div>
-  </div>
+    </div>
   );
 }

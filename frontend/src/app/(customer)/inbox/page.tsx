@@ -1,42 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { UnifiedInbox } from "@/components/communication/UnifiedInbox";
-import FullPageLoader from "@/components/FullPageLoader";
+import { useTranslation } from "react-i18next";
 
 export default function CustomerInboxPage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
+    const timer = setTimeout(() => setLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <div className="flex flex-col h-screen overflow-hidden bg-muted/20">
-      <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
-      </AnimatePresence>
+  if (loading) return null;
 
-      <motion.div 
-        className="flex-1 overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: loading ? 0 : 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="h-full w-full overflow-hidden p-0 md:p-6">
-          <div className="h-full w-full overflow-hidden rounded-none md:rounded-[48px] shadow-2xl relative z-10 border border-border/50">
+  return (
+    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground animate-in fade-in duration-500">
+      {/* Mobile Sticky Header - Synchronized with Menu Button */}
+      <div className="lg:hidden sticky top-0 z-[100] bg-background border-b-2 border-primary flex h-[74px] items-stretch shrink-0">
+        <div className="w-14 shrink-0" />
+        <div className="flex-1 flex items-center justify-center font-black text-sm uppercase tracking-[0.2em]">
+          {t("messages")}
+        </div>
+        <div className="w-14 shrink-0" />
+      </div>
+
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full w-full overflow-hidden p-0 md:p-6 container-2d">
+          <div className="h-full w-full overflow-hidden border-2 border-border bg-card">
             <UnifiedInbox />
           </div>
         </div>
-      </motion.div>
+      </div>
 
       <style jsx global>{`
-        /* Ẩn footer chỉ trên trang inbox của customer */
+        /* Hide footer on inbox page */
         footer {
           display: none !important;
         }
-        /* Đảm bảo Main của CustomerLayout không có padding lạ */
+        /* Fix Layout padding */
         main {
           padding: 0 !important;
           overflow: hidden !important;

@@ -41,11 +41,17 @@ class ProductController extends Controller
             case 'best_sellers':
                 $query->orderBy('review_count', 'desc');
                 break;
+            case 'worst_sellers':
+                $query->orderBy('review_count', 'asc');
+                break;
             case 'price_asc':
                 $query->orderBy('price', 'asc');
                 break;
             case 'price_desc':
                 $query->orderBy('price', 'desc');
+                break;
+            case 'oldest':
+                $query->oldest();
                 break;
             default: // newest
                 $query->latest();
