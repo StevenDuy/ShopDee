@@ -15,6 +15,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
 
 import { UserDropdown } from "@/components/common/UserDropdown";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 const navItems = [
   { href: "/",          icon: Home,          labelKey: "home" },

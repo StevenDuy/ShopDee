@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useState } from "react";
 
 import { UserDropdown } from "@/components/common/UserDropdown";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { useTranslation } from "react-i18next";
 
 export function AdminSidebar() {
