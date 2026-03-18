@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import AddressModal from "@/components/profile/AddressModal";
 
 
-interface Profile { id: number; name: string; email: string; profile?: { phone?: string; bio?: string } }
+interface Profile { id: number; name: string; email: string; profile?: { phone?: string } }
 interface Address { id: number; type: string; address_line_1: string; city: string; country: string; is_default: boolean }
 interface Order {
   id: number; total_amount: number; status: string; payment_method: string; created_at: string;
@@ -57,7 +57,6 @@ export default function ProfilePage() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
 
@@ -80,7 +79,6 @@ export default function ProfilePage() {
         setProfile(r.data);
         setName(r.data.name);
         setPhone(r.data.profile?.phone ?? "");
-        setBio(r.data.profile?.bio ?? "");
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -98,7 +96,7 @@ export default function ProfilePage() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API}/profile`, { name, phone, bio }, { headers: authHeaders });
+      await axios.put(`${API}/profile`, { name, phone }, { headers: authHeaders });
       setSaveMsg(t("profile_page.update_success"));
     } catch { setSaveMsg(t("profile_page.update_failed")); }
     finally { setSaving(false); setTimeout(() => setSaveMsg(""), 3000); }
@@ -166,8 +164,6 @@ export default function ProfilePage() {
             <div><label className="block text-sm font-medium mb-2">{t("profile_page.phone")}</label>
               <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" /></div>
           </div>
-          <div><label className="block text-sm font-medium mb-2">{t("profile_page.bio")}</label>
-            <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3} className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50" /></div>
           {saveMsg && <p className={`text-sm ${saveMsg.includes("!") ? "text-green-600" : "text-destructive"}`}>{saveMsg}</p>}
           <button onClick={handleSaveProfile} disabled={saving}
             className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:opacity-90 disabled:opacity-50 transition-opacity">

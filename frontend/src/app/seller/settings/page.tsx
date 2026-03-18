@@ -21,7 +21,6 @@ export default function SellerSettingsPage() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    bio: "",
   });
 
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -41,7 +40,6 @@ export default function SellerSettingsPage() {
       setFormData({
         name: data.name || "",
         phone: data.profile?.phone || "",
-        bio: data.profile?.bio || "",
       });
       setAddresses(data.addresses || []);
     } catch (err) {
@@ -150,16 +148,6 @@ export default function SellerSettingsPage() {
                       placeholder="+1234567890"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">{t("seller.settings.store_bio")}</label>
-                  <textarea 
-                    value={formData.bio}
-                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                    className="w-full px-4 py-3 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] resize-y"
-                    placeholder={t("seller.settings.store_bio_placeholder")}
-                  />
                 </div>
 
                 <div className="pt-2 flex justify-end">

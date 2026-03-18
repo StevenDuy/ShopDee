@@ -46,27 +46,13 @@ export function AnimatedThemeToggler({
       )}
       {...props}
     >
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={isDark ? "dark" : "light"}
-          initial={{ y: 20, opacity: 0, rotate: -45 }}
-          animate={{ y: 0, opacity: 1, rotate: 0 }}
-          exit={{ y: -20, opacity: 0, rotate: 45 }}
-          transition={{ 
-            duration: 0.3,
-            type: "spring",
-            stiffness: 260,
-            damping: 20
-          }}
-          className="flex items-center justify-center"
-        >
-          {isDark ? (
-            <Sun className="h-[1.2rem] w-[1.2rem] text-amber-500 fill-amber-500/20" />
-          ) : (
-            <Moon className="h-[1.2rem] w-[1.2rem] text-indigo-600 fill-indigo-600/10" />
-          )}
-        </motion.div>
-      </AnimatePresence>
+      <div className="flex items-center justify-center">
+        {isDark ? (
+          <Sun className="h-[1.2rem] w-[1.2rem] text-amber-500 fill-amber-500/20" />
+        ) : (
+          <Moon className="h-[1.2rem] w-[1.2rem] text-indigo-600 fill-indigo-600/10" />
+        )}
+      </div>
       <span className="sr-only">Toggle theme</span>
     </button>
   );
