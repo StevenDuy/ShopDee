@@ -11,6 +11,7 @@ import {
   MoreVertical, User, ShieldAlert
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import echo from "@/lib/echo";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -39,6 +40,8 @@ export function UnifiedInbox() {
   const [activeTab, setActiveTab] = useState<"chat" | "notifications">("chat");
   const isAdmin = user?.role_id === 1;
   
+  const { unreadCount, hasUnreadMessages, hasUnreadNotifications, fetchUnreadCounts } = useNotificationStore();
+  
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
   
@@ -64,6 +67,15 @@ export function UnifiedInbox() {
   const [form, setForm] = useState({ title: "", message: "", link: "", files: [] as File[] });
 
   useEffect(() => {
+    if (activeConv || selectedNotif) {
+      document.body.classList.add("hide-mobile-menu");
+    } else {
+      document.body.classList.remove("hide-mobile-menu");
+    }
+    return () => document.body.classList.remove("hide-mobile-menu");
+  }, [activeConv, selectedNotif]);
+
+  useEffect(() => {
     if (!token) return;
     refreshData().then(() => {
       if (targetUserId && activeTab === "chat") {
@@ -73,7 +85,9 @@ export function UnifiedInbox() {
   }, [token, activeTab, targetUserId]);
 
   useEffect(() => {
-    if (activeConv && token) fetchMessages(activeConv.id, 1);
+    if (activeConv && token) {
+      fetchMessages(activeConv.id, 1).then(() => fetchUnreadCounts(token));
+    }
   }, [activeConv, token]);
 
   useEffect(() => {
@@ -94,22 +108,27 @@ export function UnifiedInbox() {
     };
   }, [activeConv, token]);
 
-
-
   const refreshData = async () => {
+    if (!token) return;
     setLoading(true);
     try {
-      if (activeTab === "chat") {
-        const res = await axios.get(`${API}/chat/conversations`, { headers: { Authorization: `Bearer ${token}` } });
-        setConversations(res.data || []);
-      } else {
-        const res = await axios.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } });
-        setNotifications(res.data.data || res.data || []);
-      }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+      // Always fetch both for consistent indicator dots
+      const [convRes, notifRes] = await Promise.all([
+        axios.get(`${API}/chat/conversations`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      
+      setConversations(convRes.data || []);
+      setNotifications(notifRes.data.data || notifRes.data || []);
+      
+      // Update global store
+      await fetchUnreadCounts(token);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
-
 
   const fetchMessages = async (id: number, page = 1) => {
     if (page === 1) setLoading(true);
@@ -143,8 +162,41 @@ export function UnifiedInbox() {
     }
   };
 
+  const handleMarkAsRead = async (id: number) => {
+    if (!token) return;
+    try {
+      await axios.put(`${API}/notifications/${id}/read`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      setNotifications(n => n.map(x => x.id === id ? { ...x, is_read: true } : x));
+      fetchUnreadCounts(token);
+    } catch {}
+  };
+
+  const handleSearchUsers = async (q: string) => {
+    setSearchQuery(q);
+    if(q.length < 2) { setIsSearching(false); setSearchResults([]); return; }
+    setIsSearching(true);
+    try {
+      const res = await axios.get(`${API}/chat/users?search=${q}`, { headers: { Authorization: `Bearer ${token}` } });
+      setSearchResults(res.data);
+    } catch(e) { console.error(e); }
+  };
+
+  const handleStartChat = async (tid: number) => {
+    try {
+      const res = await axios.post(`${API}/chat/start`, { target_user_id: tid }, { headers: { Authorization: `Bearer ${token}` } });
+      setActiveConv(res.data);
+      setIsSearching(false);
+      setSearchQuery("");
+      refreshData();
+    } catch(e) { console.error(e); }
+  };
+
   const handleCompressAndUpload = async (file: File) => {
     try {
+      if (!storage) {
+        console.error("Firebase Storage is not initialized.");
+        return null;
+      }
       setUploading(true);
       const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: true };
       const compressedFile = await imageCompression(file, options);
@@ -221,34 +273,8 @@ export function UnifiedInbox() {
       await axios.delete(`${API}/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setNotifications(prev => prev.filter(n => n.id !== id));
       if (selectedNotif?.id === id) setSelectedNotif(null);
+      fetchUnreadCounts(token!);
     } catch (e) { console.error(e); }
-  };
-
-  const handleMarkAsRead = async (id: number) => {
-    try {
-      await axios.put(`${API}/notifications/${id}/read`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setNotifications(n => n.map(x => x.id === id ? { ...x, is_read: true } : x));
-    } catch {}
-  };
-
-  const handleSearchUsers = async (q: string) => {
-    setSearchQuery(q);
-    if(q.length < 2) { setIsSearching(false); setSearchResults([]); return; }
-    setIsSearching(true);
-    try {
-      const res = await axios.get(`${API}/chat/users?search=${q}`, { headers: { Authorization: `Bearer ${token}` } });
-      setSearchResults(res.data);
-    } catch(e) { console.error(e); }
-  };
-
-  const handleStartChat = async (tid: number) => {
-    try {
-      const res = await axios.post(`${API}/chat/start`, { target_user_id: tid }, { headers: { Authorization: `Bearer ${token}` } });
-      setActiveConv(res.data);
-      setIsSearching(false);
-      setSearchQuery("");
-      refreshData();
-    } catch(e) { console.error(e); }
   };
 
   if (!user) return null;
@@ -263,6 +289,7 @@ export function UnifiedInbox() {
           className={`p-4 rounded-[22px] transition-all duration-300 relative group ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-xl shadow-primary/30" : "text-muted-foreground hover:bg-muted"}`}
         >
           <MessageCircle size={24} />
+          {hasUnreadMessages && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
           <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">{t("inbox.messages")}</div>
         </button>
         <button 
@@ -270,7 +297,7 @@ export function UnifiedInbox() {
           className={`p-4 rounded-[22px] transition-all duration-300 relative group ${activeTab === "notifications" ? "bg-primary text-primary-foreground shadow-xl shadow-primary/30" : "text-muted-foreground hover:bg-muted"}`}
         >
           <Bell size={24} />
-          {notifications.some(n => !n.is_read) && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
+          {hasUnreadNotifications && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
           <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">{t("inbox.notifications")}</div>
         </button>
       </div>
@@ -326,6 +353,7 @@ export function UnifiedInbox() {
                        <span className="text-[9px] text-muted-foreground">{conv.last_message ? new Date(conv.last_message.created_at).toLocaleDateString() : ""}</span>
                      </div>
                      <p className="text-[11px] md:text-xs text-muted-foreground truncate">{conv.last_message?.message_text || t("inbox.say_something")}</p>
+                     {conv.unread_count > 0 && <div className="mt-1 w-2 h-2 rounded-full bg-primary" />}
                    </div>
                  </button>
                ))}
@@ -349,13 +377,16 @@ export function UnifiedInbox() {
         {/* 2.1 Bottom Tab Control (Mobile Only) */}
         <div className="md:hidden flex border-t border-border/50 bg-card p-2 gap-2">
            <button onClick={() => { setActiveTab("chat"); setSelectedNotif(null); setActiveConv(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-             <MessageCircle size={20} />
+             <div className="relative">
+                <MessageCircle size={20} />
+                {hasUnreadMessages && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
+             </div>
              <span className="text-[10px] font-bold uppercase">{t("inbox.messages")}</span>
            </button>
            <button onClick={() => { setActiveTab("notifications"); setActiveConv(null); setSelectedNotif(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "notifications" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
              <div className="relative">
                 <Bell size={20} />
-                {notifications.some(n => !n.is_read) && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
+                {hasUnreadNotifications && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
              </div>
              <span className="text-[10px] font-bold uppercase">{t("inbox.notifications")}</span>
            </button>
@@ -366,7 +397,7 @@ export function UnifiedInbox() {
       <div className={`flex-1 bg-muted/10 relative flex flex-col min-w-0 ${ (activeConv || selectedNotif) ? "flex" : "hidden md:flex"}`}>
         <AnimatePresence mode="wait">
           {activeConv ? (
-             <motion.div key="chat" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="flex flex-col h-full bg-background absolute inset-0 md:relative z-20">
+             <motion.div key="chat" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="flex flex-col h-full bg-background fixed md:absolute inset-0 md:relative z-[310] md:z-20">
                 <div className="p-4 md:p-5 border-b border-border/50 bg-card flex items-center justify-between">
                    <div className="flex items-center gap-3">
                       <button onClick={() => setActiveConv(null)} className="p-2 -ml-2"><ChevronLeft size={24} /></button>
@@ -428,7 +459,7 @@ export function UnifiedInbox() {
                  </form>
              </motion.div>
           ) : selectedNotif ? (
-             <motion.div key="notif" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="flex flex-col h-full bg-card overflow-y-auto absolute inset-0 md:relative z-20 p-6 md:p-20">
+             <motion.div key="notif" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="flex flex-col h-full bg-card overflow-y-auto fixed md:absolute inset-0 md:relative z-[310] md:z-20 p-6 md:p-20">
                 <button onClick={() => setSelectedNotif(null)} className="absolute top-4 md:top-8 left-4 md:left-8 p-2 md:p-3 hover:bg-muted rounded-full transition-all"><ChevronLeft size={24} /></button>
                 
                 <div className="max-w-2xl mx-auto w-full pt-10 md:pt-0">
@@ -514,9 +545,9 @@ export function UnifiedInbox() {
                    </div>
                    <div className="pt-4 flex gap-3 md:gap-4">
                       <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3.5 md:py-4 font-bold border rounded-xl md:rounded-2xl hover:bg-muted text-xs uppercase transition-all">{t("inbox.cancel")}</button>
-                      <button disabled={loading || !form.title || !form.message} className="flex-[2] bg-primary text-primary-foreground py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold shadow-lg text-xs uppercase tracking-widest transition-all">
+                       <button disabled={loading || !form.title || !form.message} className="flex-[2] bg-primary text-primary-foreground py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold shadow-lg text-xs uppercase tracking-widest transition-all">
                         {loading ? t("inbox.sending") : t("inbox.broadcast")}
-                      </button>
+                       </button>
                    </div>
                 </form>
              </motion.div>
@@ -527,6 +558,7 @@ export function UnifiedInbox() {
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        body.hide-mobile-menu #mobile-hamburger { display: none !important; }
       `}</style>
     </div>
   );

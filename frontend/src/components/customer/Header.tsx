@@ -10,13 +10,14 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import { UserDropdown } from "@/components/common/UserDropdown";
 
 const navItems = [
   { href: "/",          icon: Home,          labelKey: "home" },
   { href: "/products",  icon: ShoppingBag,   labelKey: "products" },
   { href: "/cart",      icon: ShoppingCart,  labelKey: "cart",    badge: true },
-  { href: "/inbox",     icon: MessageCircle, labelKey: "messages" },
+  { href: "/inbox",     icon: MessageCircle, labelKey: "messages", notificationBadge: true },
   { href: "/orders", icon: Package, labelKey: "my_orders" },
 ];
 
@@ -25,7 +26,14 @@ export function CustomerHeader() {
   const { t } = useTranslation();
   const { token } = useAuthStore();
   const totalItems = useCartStore((s) => s.totalItems());
+  const { unreadCount, fetchUnreadCounts } = useNotificationStore();
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      fetchUnreadCounts(token);
+    }
+  }, [token]);
 
   // We wait until hydration to avoid text mismatch
   const [mounted, setMounted] = useState(false);
@@ -35,10 +43,16 @@ export function CustomerHeader() {
     <>
       {!isOpen && (
         <button 
+          id="mobile-hamburger"
           className="lg:hidden fixed top-0 left-0 z-[200] w-14 h-[74px] flex items-center justify-center text-primary group"
           onClick={() => setIsOpen(true)}
         >
-          <Menu size={28} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
+          <div className="relative">
+            <Menu size={28} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
+            {unreadCount > 0 && mounted && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />
+            )}
+          </div>
         </button>
       )}
 
@@ -74,7 +88,7 @@ export function CustomerHeader() {
               }
               return true;
             })
-            .map(({ href, icon: Icon, labelKey, badge }) => {
+            .map(({ href, icon: Icon, labelKey, badge, notificationBadge }: any) => {
               const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
               return (
                 <Link key={href} href={href}
@@ -89,6 +103,9 @@ export function CustomerHeader() {
                       <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center px-1 border border-white">
                         {totalItems > 99 ? "99+" : totalItems}
                       </span>
+                    )}
+                    {notificationBadge && unreadCount > 0 && mounted && (
+                      <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-card" />
                     )}
                   </span>
                   <span>

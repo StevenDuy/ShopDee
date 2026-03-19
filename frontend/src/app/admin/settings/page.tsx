@@ -90,7 +90,7 @@ export default function AdminSettingsPage() {
         transition={{ duration: 0.5 }}
         className="space-y-6 max-w-4xl mx-auto"
       >
-      <div>
+      <div className="flex flex-col items-center text-center md:items-start md:text-left">
         <h1 className="text-3xl font-bold tracking-tight">{t("admin.system_config.title")}</h1>
         <p className="text-muted-foreground mt-1">{t("admin.system_config.desc")}</p>
       </div>

@@ -417,20 +417,20 @@ export default function AdminBannersPage() {
                      <div className="space-y-1 relative">
                         <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.product_link_label")}</label>
                         {selectedProduct ? (
-                           <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl">
-                              <div className="flex items-center gap-3">
-                                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                           <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl overflow-hidden">
+                              <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
                                     <Package size={20} />
                                  </div>
-                                 <div className="min-w-0">
-                                    <p className="text-sm font-bold truncate">{selectedProduct.title}</p>
+                                 <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-bold truncate" title={selectedProduct.title}>{selectedProduct.title}</p>
                                     <p className="text-[10px] text-muted-foreground">ID: {selectedProduct.id}</p>
                                  </div>
                               </div>
                               <button 
                                 type="button"
                                 onClick={() => { setSelectedProduct(null); setFormData({...formData, product_id: null}); }}
-                                className="p-1.5 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors"
+                                className="p-1.5 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors shrink-0"
                               >
                                  <Trash2 size={16} />
                               </button>

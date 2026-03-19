@@ -68,6 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chat/{id}', [ChatController::class, 'sendMessage']);
 
     // Notifications
+    Route::get('/notifications/unread-counts', [NotificationController::class, 'unreadCounts']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'store']);
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy']);

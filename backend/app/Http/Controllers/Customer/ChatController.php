@@ -30,6 +30,13 @@ class ChatController extends Controller
                 $conv->last_message = ChatMessage::where('conversation_id', $conv->id)
                     ->orderBy('created_at', 'desc')
                     ->first();
+                
+                // Add unread count
+                $conv->unread_count = ChatMessage::where('conversation_id', $conv->id)
+                    ->where('sender_id', '!=', $userId)
+                    ->where('is_read', false)
+                    ->count();
+
                 return $conv;
             });
 
@@ -44,6 +51,12 @@ class ChatController extends Controller
         $conversation = ChatConversation::where(function ($query) use ($userId) {
             $query->where('user1_id', $userId)->orWhere('user2_id', $userId);
         })->findOrFail($id);
+
+        // Mark incoming messages as read
+        ChatMessage::where('conversation_id', $conversation->id)
+            ->where('sender_id', '!=', $userId)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
 
         $messages = ChatMessage::where('conversation_id', $conversation->id)
             ->orderBy('created_at', 'desc')

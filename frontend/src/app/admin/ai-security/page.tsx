@@ -161,8 +161,8 @@ export default function AISecurityPage() {
         className="p-6 md:p-8 max-w-7xl mx-auto space-y-8"
       >
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
-          <div className="space-y-2">
+        <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-6 pb-2 text-center md:text-left">
+          <div className="space-y-2 flex flex-col items-center md:items-start">
             <div className="flex items-center gap-3">
                <div className="p-2 bg-primary/10 rounded-xl">
                  <Brain className="text-primary" size={28} />

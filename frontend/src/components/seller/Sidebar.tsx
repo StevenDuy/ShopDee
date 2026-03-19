@@ -3,20 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingCart, DollarSign, Settings, Store, Menu, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserDropdown } from "@/components/common/UserDropdown";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 
 export function SellerSidebar() {
   const { t } = useTranslation();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { token } = useAuthStore();
+  const { unreadCount, fetchUnreadCounts } = useNotificationStore();
+
+  useEffect(() => {
+    if (token) {
+      fetchUnreadCounts(token);
+    }
+  }, [token]);
 
   const menuItems = [
     { href: "/seller", icon: LayoutDashboard, label: t("seller.dashboard") },
     { href: "/seller/products", icon: Package, label: t("seller.products") },
     { href: "/seller/orders", icon: ShoppingCart, label: t("seller.orders_nav") },
-    { href: "/seller/inbox", icon: MessageCircle, label: t("seller.inbox_nav") },
+    { href: "/seller/inbox", icon: MessageCircle, label: t("seller.inbox_nav"), hasBadge: true },
     { href: "/seller/finance", icon: DollarSign, label: t("seller.finance_nav") },
     { href: "/seller/settings", icon: Settings, label: t("seller.settings_nav") },
   ];
@@ -25,10 +35,14 @@ export function SellerSidebar() {
     <>
       {!isOpen && (
         <button
+          id="mobile-hamburger"
           className="md:hidden fixed top-0 left-0 z-50 w-14 h-[74px] flex items-center justify-center text-primary"
           onClick={() => setIsOpen(true)}
         >
-          <Menu size={24} />
+          <div className="relative">
+            <Menu size={24} />
+            {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />}
+          </div>
         </button>
       )}
 
@@ -55,7 +69,12 @@ export function SellerSidebar() {
                 className={`flex items-center gap-3 px-4 py-3 text-sm font-medium border border-transparent ${active ? "bg-primary text-primary-foreground border-primary" : "text-foreground hover:bg-muted"
                   }`}
               >
-                <item.icon size={20} />
+                <div className="relative shrink-0">
+                  <item.icon size={20} />
+                  {item.hasBadge && unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-card" />
+                  )}
+                </div>
                 {item.label}
               </Link>
             )

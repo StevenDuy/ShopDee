@@ -3,21 +3,31 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, ShieldAlert, Settings, Menu, MessageCircle, Image as ImageIcon, Brain } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserDropdown } from "@/components/common/UserDropdown";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 
 export function AdminSidebar() {
   const { t } = useTranslation();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { token } = useAuthStore();
+  const { unreadCount, fetchUnreadCounts } = useNotificationStore();
+
+  useEffect(() => {
+    if (token) {
+      fetchUnreadCounts(token);
+    }
+  }, [token]);
 
   const menuItems = [
     { href: "/admin", icon: LayoutDashboard, label: t("admin.dashboard") },
     { href: "/admin/users", icon: Users, label: t("admin.users_nav") },
     { href: "/admin/banners", icon: ImageIcon, label: t("admin.banners_nav") },
     { href: "/admin/moderation", icon: ShieldAlert, label: t("admin.moderation_nav") },
-    { href: "/admin/inbox", icon: MessageCircle, label: t("admin.inbox_nav") },
+    { href: "/admin/inbox", icon: MessageCircle, label: t("admin.inbox_nav"), hasBadge: true },
     { href: "/admin/ai-security", icon: Brain, label: t("admin.ai_security_nav") },
     { href: "/admin/settings", icon: Settings, label: t("admin.settings_nav") },
   ];
@@ -26,10 +36,14 @@ export function AdminSidebar() {
     <>
       {!isOpen && (
         <button
+          id="mobile-hamburger"
           className="md:hidden fixed top-0 left-0 z-50 w-14 h-[74px] flex items-center justify-center text-primary"
           onClick={() => setIsOpen(true)}
         >
-          <Menu size={24} />
+          <div className="relative">
+            <Menu size={24} />
+            {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />}
+          </div>
         </button>
       )}
 
@@ -56,7 +70,12 @@ export function AdminSidebar() {
                 className={`flex items-center gap-3 px-4 py-3 text-sm font-medium border border-transparent ${active ? "bg-primary text-primary-foreground border-primary" : "text-foreground hover:bg-muted"
                   }`}
               >
-                <item.icon size={20} />
+                <div className="relative shrink-0">
+                  <item.icon size={20} />
+                  {item.hasBadge && unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-card" />
+                  )}
+                </div>
                 {item.label}
               </Link>
             )
