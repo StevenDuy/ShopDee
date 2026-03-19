@@ -23,7 +23,7 @@ export function SellerSidebar() {
 
   return (
     <>
-      <button 
+      <button
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-card border border-border"
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -46,13 +46,12 @@ export function SellerSidebar() {
           {menuItems.map((item) => {
             const active = item.href === "/seller" ? pathname === "/seller" : pathname.startsWith(item.href);
             return (
-              <Link 
-                key={item.href} 
+              <Link
+                key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium border border-transparent ${
-                  active ? "bg-primary text-primary-foreground border-primary" : "text-foreground hover:bg-muted"
-                }`}
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium border border-transparent ${active ? "bg-primary text-primary-foreground border-primary" : "text-foreground hover:bg-muted"
+                  }`}
               >
                 <item.icon size={20} />
                 {item.label}
@@ -69,7 +68,7 @@ export function SellerSidebar() {
       </div>
 
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setIsOpen(false)}
         />

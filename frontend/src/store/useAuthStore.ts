@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "shopdee-auth",
-      partialize: (state: AuthState) => ({ token: state.token }),
+      partialize: (state: AuthState) => ({ token: state.token, user: state.user }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated();
       },

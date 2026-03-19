@@ -41,7 +41,7 @@ export default function SellerDashboard() {
 
   if (loading) return <FullPageLoader />;
 
-  const formatPrice = (val: number) => 
+  const formatPrice = (val: number) =>
     new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(val);
 
   return (
@@ -60,7 +60,7 @@ export default function SellerDashboard() {
           </div>
           <p className="text-3xl font-black">{formatPrice(stats?.total_revenue || 0)}</p>
           <div className="mt-4 pt-4 border-t border-border flex items-center gap-1 text-[10px] font-bold uppercase">
-             <span className="flex items-center text-primary"><ArrowUpRight size={14}/> 12.5%</span> {t("seller.from_last_month")}
+            <span className="flex items-center text-primary"><ArrowUpRight size={14} /> 12.5%</span> {t("seller.from_last_month")}
           </div>
         </div>
 
@@ -71,7 +71,7 @@ export default function SellerDashboard() {
           </div>
           <p className="text-3xl font-black">{stats?.total_orders || 0}</p>
           <div className="mt-4 pt-4 border-t border-border flex items-center gap-1 text-[10px] font-bold uppercase">
-             <span className="flex items-center text-primary"><ArrowUpRight size={14}/> 4.1%</span> {t("seller.from_last_month")}
+            <span className="flex items-center text-primary"><ArrowUpRight size={14} /> 4.1%</span> {t("seller.from_last_month")}
           </div>
         </div>
 
@@ -82,7 +82,7 @@ export default function SellerDashboard() {
           </div>
           <p className="text-3xl font-black">{stats?.total_products || 0}</p>
           <div className="mt-4 pt-4 border-t border-border text-[10px] font-bold uppercase">
-             {t("seller.manage_inventory")}
+            {t("seller.manage_inventory")}
           </div>
         </div>
       </div>
@@ -94,51 +94,51 @@ export default function SellerDashboard() {
             <h2 className="text-lg font-black uppercase tracking-tight">{t("seller.recent_orders")}</h2>
             <Link href="/seller/orders" className="text-xs font-bold uppercase border-2 border-primary px-3 py-1 hover:bg-primary hover:text-white">{t("view_all")}</Link>
           </div>
-          
+
           {stats?.recent_orders && stats.recent_orders.length > 0 ? (
-             <div className="overflow-x-auto">
-               <table className="w-full text-left text-xs uppercase font-bold">
-                  <thead className="bg-muted text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-2 border border-border">KHÁCH HÀNG</th>
-                      <th className="px-4 py-2 border border-border text-right">TỔNG TIỀN</th>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs uppercase font-bold">
+                <thead className="bg-muted text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 border border-border">KHÁCH HÀNG</th>
+                    <th className="px-4 py-2 border border-border text-right">TỔNG TIỀN</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {stats.recent_orders.map(order => (
+                    <tr key={order.id} className="hover:bg-muted">
+                      <td className="px-4 py-3 border border-border">
+                        <span className="text-foreground">
+                          {order.customer.name || order.customer.email}
+                        </span>
+                        <span className="block text-[10px] text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(order.created_at), {
+                            addSuffix: true,
+                            locale: t("locale").includes("vi") ? vi : enUS
+                          })}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 border border-border text-right font-black text-primary">
+                        {formatPrice(order.total_amount)}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                     {stats.recent_orders.map(order => (
-                        <tr key={order.id} className="hover:bg-muted">
-                           <td className="px-4 py-3 border border-border">
-                              <span className="text-foreground">
-                                 {order.customer.name || order.customer.email}
-                              </span>
-                              <span className="block text-[10px] text-muted-foreground mt-1">
-                                 {formatDistanceToNow(new Date(order.created_at), { 
-                                   addSuffix: true,
-                                   locale: t("locale").includes("vi") ? vi : enUS
-                                 })}
-                              </span>
-                           </td>
-                           <td className="px-4 py-3 border border-border text-right font-black text-primary">
-                              {formatPrice(order.total_amount)}
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-             </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
-             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
-               <Clock size={40} className="opacity-20 mb-2" />
-               <p className="text-xs font-bold uppercase">{t("seller.no_orders")}</p>
-             </div>
+            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+              <Clock size={40} className="opacity-20 mb-2" />
+              <p className="text-xs font-bold uppercase">{t("seller.no_orders")}</p>
+            </div>
           )}
         </div>
 
         {/* Low Stock Alerts */}
         <div className="bg-card border-2 border-border p-6 flex flex-col items-center justify-center text-center">
-            <h2 className="text-lg font-black uppercase tracking-tight mb-6 self-start border-b border-border w-full text-left pb-2">{t("seller.low_stock_alerts")}</h2>
-            <Package size={48} className="opacity-10 mb-4" />
-            <p className="text-xs font-bold uppercase text-muted-foreground">{t("seller.stock_sufficient")}</p>
+          <h2 className="text-lg font-black uppercase tracking-tight mb-6 self-start border-b border-border w-full text-left pb-2">{t("seller.low_stock_alerts")}</h2>
+          <Package size={48} className="opacity-10 mb-4" />
+          <p className="text-xs font-bold uppercase text-muted-foreground">{t("seller.stock_sufficient")}</p>
         </div>
       </div>
     </div>

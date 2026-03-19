@@ -125,10 +125,10 @@ export default function SellerSettingsPage() {
                   <label className="block text-sm font-medium mb-1.5">{t("seller.settings.store_name")} <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder={t("seller.settings.store_name")}
                       required
@@ -140,10 +140,10 @@ export default function SellerSettingsPage() {
                   <label className="block text-sm font-medium mb-1.5">{t("seller.settings.service_phone")}</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full pl-10 pr-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="+1234567890"
                     />
@@ -151,8 +151,8 @@ export default function SellerSettingsPage() {
                 </div>
 
                 <div className="pt-2 flex justify-end">
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={saving}
                     className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
@@ -172,7 +172,7 @@ export default function SellerSettingsPage() {
                   <MapPin className="text-primary" size={20} />
                   <h2 className="text-lg font-bold">{t("seller.settings.addresses")}</h2>
                 </div>
-                <button 
+                <button
                   onClick={() => openAddressModal()}
                   className="p-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-colors"
                   title={t("seller.settings.add_address")}
@@ -180,7 +180,7 @@ export default function SellerSettingsPage() {
                   <Plus size={18} />
                 </button>
               </div>
-              
+
               <div className="p-4 flex-1 overflow-y-auto space-y-3">
                 {addresses.length === 0 ? (
                   <div className="text-center p-6 text-muted-foreground">
@@ -191,16 +191,16 @@ export default function SellerSettingsPage() {
                   addresses.map((addr) => (
                     <div key={addr.id} className="relative p-4 border border-border rounded-xl hover:border-primary/50 transition-colors group">
                       <div className="flex justify-between items-start mb-2">
-                         <span className="inline-block px-2 py-0.5 bg-accent text-xs font-semibold rounded-md uppercase tracking-wider text-muted-foreground">
-                           {addr.type}
-                         </span>
-                         {addr.is_default ? (
-                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t("profile_page.default")}</span>
-                         ) : null}
+                        <span className="inline-block px-2 py-0.5 bg-accent text-xs font-semibold rounded-md uppercase tracking-wider text-muted-foreground">
+                          {addr.type}
+                        </span>
+                        {addr.is_default ? (
+                          <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t("profile_page.default")}</span>
+                        ) : null}
                       </div>
                       <p className="text-sm font-medium mt-2">{addr.address_line_1}</p>
                       <p className="text-xs text-muted-foreground mt-1">{addr.city}, {addr.country}</p>
-                      
+
                       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                         <button onClick={() => openAddressModal(addr)} className="p-1.5 bg-background shadow-sm border border-border rounded-md text-muted-foreground hover:text-primary">
                           <Edit2 size={14} />
@@ -218,7 +218,7 @@ export default function SellerSettingsPage() {
         </div>
 
         {/* Address Modal */}
-        <AddressModal 
+        <AddressModal
           isOpen={isAddressModalOpen}
           onClose={() => setIsAddressModalOpen(false)}
           onSuccess={() => fetchData()}
