@@ -104,7 +104,7 @@ export default function SellerOrdersPage() {
         transition={{ duration: 0.5 }}
         className="p-6 md:p-8 max-w-7xl mx-auto space-y-6"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4 text-center sm:text-left">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t("seller.orders.title")}</h1>
             <p className="text-muted-foreground mt-1">{t("seller.orders.desc")}</p>

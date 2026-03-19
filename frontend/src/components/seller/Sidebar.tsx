@@ -23,12 +23,14 @@ export function SellerSidebar() {
 
   return (
     <>
-      <button
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-card border border-border"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <Menu size={24} />
-      </button>
+      {!isOpen && (
+        <button
+          className="md:hidden fixed top-0 left-0 z-50 w-14 h-[74px] flex items-center justify-center text-primary"
+          onClick={() => setIsOpen(true)}
+        >
+          <Menu size={24} />
+        </button>
+      )}
 
       <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"} md:static md:flex md:flex-col shrink-0`}>
         <div className="p-6 border-b border-border flex items-center gap-3">

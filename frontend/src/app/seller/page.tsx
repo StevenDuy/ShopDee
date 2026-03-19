@@ -46,7 +46,7 @@ export default function SellerDashboard() {
 
   return (
     <div className="p-6 md:p-8 space-y-8 bg-background">
-      <div className="border-l-4 border-primary pl-4">
+      <div className="flex flex-col items-center text-center md:items-start md:text-left border-b-4 md:border-b-0 md:border-l-4 border-primary pb-4 md:pb-0 md:pl-4">
         <h1 className="text-3xl font-black uppercase tracking-tighter">{t("seller.dashboard")}</h1>
         <p className="text-muted-foreground font-bold text-sm uppercase opacity-60 tracking-widest">{t("seller.overview_desc")}</p>
       </div>

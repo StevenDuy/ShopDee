@@ -48,7 +48,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="p-6 md:p-8 space-y-8 bg-background">
-      <div className="border-l-8 border-primary pl-4 bg-muted/50 py-2">
+      <div className="flex flex-col items-center text-center md:items-start md:text-left border-b-8 md:border-b-0 md:border-l-8 border-primary py-4 md:py-2 md:pl-4 bg-muted/50">
         <h1 className="text-3xl font-black uppercase tracking-tighter">{t("admin.system_overview")}</h1>
         <p className="text-muted-foreground font-bold text-sm uppercase opacity-60 tracking-widest">{t("admin.system_desc")}</p>
       </div>

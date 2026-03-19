@@ -91,13 +91,13 @@ export default function AdminUsersPage() {
         transition={{ duration: 0.5 }}
         className="space-y-6 max-w-7xl mx-auto"
       >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 text-center md:text-left">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t("admin.users")}</h1>
           <p className="text-muted-foreground mt-1">{t("admin.users_manage.desc")}</p>
         </div>
         
-        <div className="flex bg-primary/10 text-primary px-4 py-2 rounded-xl text-sm font-bold items-center gap-2">
+        <div className="flex bg-primary/10 text-primary px-4 py-2 rounded-xl text-sm font-bold items-center gap-2 justify-center sm:justify-start">
            <Users size={16} />
            {t("admin.users_manage.total_users")}: {pagination.total}
         </div>

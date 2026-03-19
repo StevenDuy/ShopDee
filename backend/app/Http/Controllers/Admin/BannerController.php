@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use App\Models\Banner;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Facades\Log;
 
 class BannerController extends Controller
 {
@@ -56,8 +58,19 @@ class BannerController extends Controller
         $data = $request->only(['title', 'subtitle', 'product_id', 'active', 'order']);
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('banners', 'public');
-            $data['image_path'] = Storage::url($path);
+            try {
+                $file = $request->file('image');
+                $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
+                    'folder' => 'banners',
+                    'resource_type' => 'image'
+                ]);
+                
+                $data['image_path'] = $result['secure_url'];
+                $data['public_id'] = $result['public_id'];
+            } catch (\Exception $e) {
+                Log::error('Banner upload error: ' . $e->getMessage());
+                return response()->json(['message' => 'Lỗi khi tải ảnh lên Cloudinary: ' . $e->getMessage()], 500);
+            }
         }
 
         $banner = Banner::create($data);
@@ -93,16 +106,34 @@ class BannerController extends Controller
         $data = $request->only(['title', 'subtitle', 'product_id', 'active', 'order']);
 
         if ($request->hasFile('image')) {
-            // Delete old image
-            if ($banner->image_path) {
+            // Delete old image from Cloudinary if it exists
+            if ($banner->public_id) {
+                try {
+                    Cloudinary::uploadApi()->destroy($banner->public_id);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to delete old banner from Cloudinary: ' . $e->getMessage());
+                }
+            } else if ($banner->image_path && str_contains($banner->image_path, '/storage/')) {
+                // Cleanup old local files if any
                 $oldPath = str_replace('/storage/', '', $banner->image_path);
                 if (Storage::disk('public')->exists($oldPath)) {
                     Storage::disk('public')->delete($oldPath);
                 }
             }
 
-            $path = $request->file('image')->store('banners', 'public');
-            $data['image_path'] = Storage::url($path);
+            try {
+                $file = $request->file('image');
+                $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
+                    'folder' => 'banners',
+                    'resource_type' => 'image'
+                ]);
+                
+                $data['image_path'] = $result['secure_url'];
+                $data['public_id'] = $result['public_id'];
+            } catch (\Exception $e) {
+                Log::error('Banner upload update error: ' . $e->getMessage());
+                return response()->json(['message' => 'Lỗi khi cập nhật ảnh lên Cloudinary: ' . $e->getMessage()], 500);
+            }
         }
 
         $banner->update($data);
@@ -117,7 +148,13 @@ class BannerController extends Controller
     {
         $banner = Banner::findOrFail($id);
         
-        if ($banner->image_path) {
+        if ($banner->public_id) {
+            try {
+                Cloudinary::uploadApi()->destroy($banner->public_id);
+            } catch (\Exception $e) {
+                Log::warning('Failed to delete banner from Cloudinary: ' . $e->getMessage());
+            }
+        } else if ($banner->image_path && str_contains($banner->image_path, '/storage/')) {
             $oldPath = str_replace('/storage/', '', $banner->image_path);
             if (Storage::disk('public')->exists($oldPath)) {
                 Storage::disk('public')->delete($oldPath);

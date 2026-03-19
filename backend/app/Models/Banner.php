@@ -13,7 +13,8 @@ class Banner extends Model
         'link_url',
         'active',
         'order',
-        'product_id'
+        'product_id',
+        'public_id'
     ];
 
     public function product()

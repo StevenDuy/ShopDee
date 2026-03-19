@@ -124,7 +124,7 @@ export default function SellerFinancePage() {
         transition={{ duration: 0.5 }}
         className="space-y-6 max-w-6xl mx-auto p-4 md:p-8"
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-center md:items-center justify-between gap-4 text-center md:text-left">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t("seller.finance.title")}</h1>
             <p className="text-muted-foreground mt-1">{t("seller.finance.desc")}</p>

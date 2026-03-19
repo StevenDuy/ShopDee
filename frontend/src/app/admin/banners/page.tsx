@@ -258,7 +258,7 @@ export default function AdminBannersPage() {
         transition={{ duration: 0.5 }}
         className="space-y-6 max-w-7xl mx-auto"
       >
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-4 text-center md:text-left">
         <div>
            <h1 className="text-3xl font-bold tracking-tight">{t("admin.banners.title")}</h1>
            <p className="text-muted-foreground mt-1">{t("admin.banners.desc")}</p>
