@@ -19,6 +19,8 @@ export function SellerSidebar() {
   useEffect(() => {
     if (token) {
       fetchUnreadCounts(token);
+      const interval = setInterval(() => fetchUnreadCounts(token), 30000);
+      return () => clearInterval(interval);
     }
   }, [token]);
 
@@ -36,12 +38,12 @@ export function SellerSidebar() {
       {!isOpen && (
         <button
           id="mobile-hamburger"
-          className="md:hidden fixed top-0 left-0 z-50 w-14 h-[74px] flex items-center justify-center text-primary"
+          className="md:hidden fixed top-4 left-4 z-30 w-12 h-12 flex items-center justify-center text-primary bg-transparent border-none"
           onClick={() => setIsOpen(true)}
         >
-          <div className="relative">
+          <div className="relative p-2 hover:bg-muted/50 rounded-xl transition-colors">
             <Menu size={24} />
-            {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />}
+            {unreadCount > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />}
           </div>
         </button>
       )}

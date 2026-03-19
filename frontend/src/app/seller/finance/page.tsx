@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import FullPageLoader from "@/components/FullPageLoader";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -32,6 +33,7 @@ interface Transaction {
 export default function SellerFinancePage() {
   const { t } = useTranslation();
   const { token, user } = useAuthStore();
+  const { formatPrice } = useCurrencyStore();
   const [overview, setOverview] = useState<FinanceOverview | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,14 +106,6 @@ export default function SellerFinancePage() {
     }
   };
 
-  const formatCurrency = (val: number) => {
-    const currency = (user as any)?.currency || 'USD';
-    return new Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(val);
-  };
-
   return (
     <div className="min-h-screen">
       <AnimatePresence>
@@ -149,7 +143,7 @@ export default function SellerFinancePage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("seller.finance.available_balance")}</p>
-                  <h3 className="text-2xl font-bold mt-1 text-green-500">{formatCurrency(overview.available_balance)}</h3>
+                  <h3 className="text-2xl font-bold mt-1 text-green-500">{formatPrice(overview.available_balance)}</h3>
                 </div>
               </div>
             </div>
@@ -161,7 +155,7 @@ export default function SellerFinancePage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("seller.finance.pending_clearance")}</p>
-                  <h3 className="text-2xl font-bold mt-1">{formatCurrency(overview.pending_clearance)}</h3>
+                  <h3 className="text-2xl font-bold mt-1">{formatPrice(overview.pending_clearance)}</h3>
                 </div>
               </div>
             </div>
@@ -173,7 +167,7 @@ export default function SellerFinancePage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("seller.finance.total_revenue")}</p>
-                  <h3 className="text-2xl font-bold mt-1">{formatCurrency(overview.total_revenue)}</h3>
+                  <h3 className="text-2xl font-bold mt-1">{formatPrice(overview.total_revenue)}</h3>
                 </div>
               </div>
             </div>
@@ -185,13 +179,13 @@ export default function SellerFinancePage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("seller.finance.total_withdrawn")}</p>
-                  <h3 className="text-2xl font-bold mt-1">{formatCurrency(overview.total_withdrawn)}</h3>
+                  <h3 className="text-2xl font-bold mt-1">{formatPrice(overview.total_withdrawn)}</h3>
                 </div>
               </div>
               {overview.pending_withdrawal > 0 && (
                 <p className="text-xs text-amber-500 mt-3 font-medium flex items-center gap-1">
                   <Clock size={12} />
-                  +{formatCurrency(overview.pending_withdrawal)} {t("seller.finance.status_pending")}
+                  +{formatPrice(overview.pending_withdrawal)} {t("seller.finance.status_pending")}
                 </p>
               )}
             </div>
@@ -255,7 +249,7 @@ export default function SellerFinancePage() {
                         </span>
                       </td>
                       <td className={`px-6 py-4 text-right font-bold ${tx.type === 'credit' ? 'text-green-500' : 'text-foreground'}`}>
-                        {tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount)}
+                        {tx.type === 'credit' ? '+' : '-'}{formatPrice(tx.amount)}
                       </td>
                     </tr>
                   ))}
@@ -287,7 +281,7 @@ export default function SellerFinancePage() {
                 <div>
                   <label className="block text-sm font-medium mb-1.5 text-muted-foreground">{t("seller.finance.available_balance")}</label>
                   <div className="p-3 bg-muted rounded-xl text-lg font-bold text-green-500">
-                    {formatCurrency(overview?.available_balance || 0)}
+                    {formatPrice(overview?.available_balance || 0)}
                   </div>
                 </div>
 

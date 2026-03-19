@@ -137,4 +137,13 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  .hide-mobile-menu #mobile-hamburger {
+    display: none !important;
+  }
+
+  #mobile-hamburger {
+    background: transparent !important;
+    border: none !important;
+  }
 }

@@ -18,6 +18,7 @@ type Product = {
   price: number;
   stock_quantity: number;
   status: string;
+  ban_reason?: string;
   category?: { name: string };
   media?: { url: string; full_url: string }[];
 };
@@ -81,16 +82,16 @@ export default function SellerProductsPage() {
         transition={{ duration: 0.5 }}
         className="p-6 md:p-8 max-w-7xl mx-auto space-y-6"
       >
-        <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4 text-center sm:text-left">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("seller.products")}</h1>
-            <p className="text-muted-foreground mt-1">{t("seller.products_manage.desc")}</p>
-          </div>
-          <Link href="/seller/products/new" className="bg-primary text-primary-foreground flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium hover:opacity-90 transition-opacity whitespace-nowrap">
-            <Plus size={18} />
-            {t("seller.products_manage.add_product")}
-          </Link>
+      <div className="flex flex-col items-center justify-center text-center border-b-8 border-primary pb-8 gap-6 mb-12">
+        <div className="space-y-4">
+          <h1 className="text-5xl font-black uppercase tracking-tighter leading-none">{t("seller.products")}</h1>
+          <p className="text-muted-foreground font-bold text-xs uppercase opacity-60 tracking-[0.2em]">{t("seller.products_manage.desc")}</p>
         </div>
+        <Link href="/seller/products/new" className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95 shadow-[0_8px_0_0_rgba(0,0,0,0.1)] hover:shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:translate-y-1">
+          <Plus size={20} strokeWidth={3} />
+          {t("seller.products_manage.add_product")}
+        </Link>
+      </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
           <div className="p-4 border-b border-border flex items-center justify-between">
@@ -164,12 +165,21 @@ export default function SellerProductsPage() {
                           <span className="text-destructive font-medium">{t("seller.products_manage.out_of_stock")}</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {p.status === 'active' ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{t("seller.products_manage.active")}</span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-muted text-muted-foreground border border-border capitalize">{p.status}</span>
-                        )}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                          {p.status === 'active' ? (
+                            <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{t("seller.products_manage.active")}</span>
+                          ) : p.status === 'banned' ? (
+                            <>
+                              <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-500/10 text-red-600 border border-red-500/20">{t("admin_products.product_banned", { defaultValue: "BỊ CẤM" })}</span>
+                              {p.ban_reason && (
+                                <p className="text-[10px] text-red-500 font-medium italic truncate max-w-[150px]" title={p.ban_reason}>{p.ban_reason}</p>
+                              )}
+                            </>
+                          ) : (
+                            <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-muted text-muted-foreground border border-border capitalize">{p.status}</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

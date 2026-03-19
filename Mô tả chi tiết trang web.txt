@@ -129,7 +129,7 @@ Mô tả chi tiết trang web:
 3.5.2. Backend:
 - thêm sửa xóa được thông tin.
 - có thể thêm nhiều địa chỉ chi nhánh.
-4.6. "Thông báo":
+3.6. "Thông báo":
 - tương tự với customer nhưng xử lí logic với phù hợp với seller,...
 4. Role Admin Header:
 4.1. "Home":

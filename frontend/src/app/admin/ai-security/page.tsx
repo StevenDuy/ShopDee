@@ -26,6 +26,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import FullPageLoader from "@/components/FullPageLoader";
+import { useTranslation } from "react-i18next";
 
 // --- Types ---
 interface ModelMetric {
@@ -107,6 +108,7 @@ const SCENARIOS: AttackScenario[] = [
 ];
 
 export default function AISecurityPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"dashboard" | "simulator" | "monitor">("dashboard");
   const [loading, setLoading] = useState(true);
   const [selectedScenario, setSelectedScenario] = useState<AttackScenario | null>(null);
@@ -141,9 +143,9 @@ export default function AISecurityPage() {
       });
       
       if (rf_risk > 0.9) {
-        toast.error("Hệ thống tự động: Đã tạm khóa tài khoản do rủi ro Critical!");
+        toast.error(t("admin.ai_security.auto_block") || "Hệ thống tự động: Đã tạm khóa tài khoản do rủi ro Critical!");
       } else {
-        toast.warning("Cảnh báo: Phát hiện hành vi nghi vấn. Đã gửi yêu cầu xác thực 2 lớp.");
+        toast.warning(t("admin.ai_security.suspicious_warning") || "Cảnh báo: Phát hiện hành vi nghi vấn. Đã gửi yêu cầu xác thực 2 lớp.");
       }
     }, 1500);
   };
@@ -169,7 +171,7 @@ export default function AISecurityPage() {
                </div>
                <h1 className="text-3xl font-bold tracking-tight">AI Fraud Research</h1>
             </div>
-            <p className="text-muted-foreground">Nghiên cứu so sánh Random Forest & SVM trong phát hiện gian lận hành vi.</p>
+            <p className="text-muted-foreground">{t("admin.ai_security.research_desc") || "Nghiên cứu so sánh Random Forest & SVM trong phát hiện gian lận hành vi."}</p>
           </div>
           
           <div className="flex bg-muted p-1 rounded-xl">
@@ -295,7 +297,7 @@ export default function AISecurityPage() {
                <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-4">
                   <ShieldCheck size={48} className="mx-auto text-emerald-500 opacity-50" />
                   <h3 className="font-bold">Cybersecurity Importance</h3>
-                  <p className="text-xs text-muted-foreground">Phát hiện gian lận hành vi không chỉ là bảo vệ tiền bạc, mà là bảo vệ lòng tin của khách hàng vào hệ thống số hóa.</p>
+                  <p className="text-xs text-muted-foreground">{t("admin.ai_security.cybersecurity_desc") || "Phát hiện gian lận hành vi không chỉ là bảo vệ tiền bạc, mà là bảo vệ lòng tin của khách hàng vào hệ thống số hóa."}</p>
                </div>
             </div>
           </motion.div>
@@ -309,7 +311,7 @@ export default function AISecurityPage() {
           >
             {/* Scenarios List */}
             <div className="lg:col-span-1 space-y-4">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Play size={20} className="text-primary" /> Chọn Kịch bản Tấn công</h2>
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Play size={20} className="text-primary" /> {t("admin.ai_security.choose_scenario") || "Chọn Kịch bản Tấn công"}</h2>
               {SCENARIOS.map((s) => (
                 <button 
                   key={s.id} 
@@ -436,7 +438,7 @@ export default function AISecurityPage() {
           >
              <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                  <History className="text-primary" size={24} /> Bảng Tổng hợp Hành vi Đáng ngờ
+                  <History className="text-primary" size={24} /> {t("admin.ai_security.suspicious_overview") || "Bảng Tổng hợp Hành vi Đáng ngờ"}
                 </h2>
                 <div className="flex gap-2">
                   <button className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-colors uppercase tracking-widest shadow-lg shadow-red-500/20">Auto-Action: ON</button>

@@ -3,13 +3,14 @@ import { persist } from 'zustand/middleware';
 
 type CurrencyType = 'VND' | 'USD';
 
+export const EXCHANGE_RATE_USD_TO_VND = 25000;
+
 interface CurrencyState {
   currency: CurrencyType;
   setCurrency: (currency: CurrencyType) => void;
   formatPrice: (amount: number) => string;
+  compactPrice: (amount: number) => string;
 }
-
-const EXCHANGE_RATE_USD_TO_VND = 25000;
 
 export const useCurrencyStore = create<CurrencyState>()(
   persist(
@@ -18,10 +19,7 @@ export const useCurrencyStore = create<CurrencyState>()(
       setCurrency: (currency) => set({ currency }),
       formatPrice: (amount) => {
         const { currency } = get();
-        
         let finalAmount = amount;
-        
-        // Assuming base prices in DB are stored in VND (can be adjusted later)
         if (currency === 'USD') {
           finalAmount = amount / EXCHANGE_RATE_USD_TO_VND;
         }
@@ -32,6 +30,21 @@ export const useCurrencyStore = create<CurrencyState>()(
           maximumFractionDigits: currency === 'VND' ? 0 : 2,
         }).format(finalAmount);
       },
+      compactPrice: (amount) => {
+        const { currency } = get();
+        let finalAmount = amount;
+        if (currency === 'USD') {
+          finalAmount = amount / EXCHANGE_RATE_USD_TO_VND;
+        }
+
+        const formatter = new Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
+            notation: 'compact',
+            compactDisplay: 'short',
+            maximumFractionDigits: 1,
+        });
+
+        return formatter.format(finalAmount) + " " + currency;
+      }
     }),
     {
       name: 'currency-storage',

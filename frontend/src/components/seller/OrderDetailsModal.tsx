@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 const API = "http://localhost:8000/api";
 
@@ -53,6 +54,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
   const { t } = useTranslation();
   const router = useRouter();
   const { token } = useAuthStore();
+  const { formatPrice } = useCurrencyStore();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -90,13 +92,6 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
       case 'returned': return 'bg-gray-500/10 text-gray-600';
       default: return 'bg-muted text-muted-foreground';
     }
-  };
-
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat(t("locale"), { 
-      style: "currency", 
-      currency: t("currency_code") 
-    }).format(val);
   };
 
   return (
@@ -184,11 +179,11 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                         <span className="truncate max-w-[200px]">{item.product.title}</span>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {formatCurrency(item.unit_price)}
+                        {formatPrice(item.unit_price)}
                       </td>
                       <td className="px-4 py-3 font-medium">x{item.quantity}</td>
                       <td className="px-4 py-3 text-right font-medium text-primary">
-                        {formatCurrency(item.unit_price * item.quantity)}
+                        {formatPrice(item.unit_price * item.quantity)}
                       </td>
                     </tr>
                   ))}
@@ -200,7 +195,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
               <div className="w-full max-w-xs space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t("seller.finance.amount")}</span>
-                  <span className="font-medium">{formatCurrency(order.total_amount)}</span>
+                  <span className="font-medium">{formatPrice(order.total_amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t("seller.orders.shipping_cost")}</span>
@@ -208,7 +203,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                 </div>
                 <div className="pt-2 border-t border-border flex justify-between">
                   <span className="font-bold">{t("seller.orders.total")}</span>
-                  <span className="font-bold text-lg text-primary">{formatCurrency(order.total_amount)}</span>
+                  <span className="font-bold text-lg text-primary">{formatPrice(order.total_amount)}</span>
                 </div>
               </div>
             </div>

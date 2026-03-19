@@ -5,13 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'seller_id', 'category_id', 'title', 'slug', 'description',
-        'price', 'sale_price', 'stock_quantity', 'sku', 'status',
+        'price', 'sale_price', 'stock_quantity', 'sku', 'status', 'ban_reason',
     ];
 
     protected $casts = [

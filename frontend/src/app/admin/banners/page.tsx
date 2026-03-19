@@ -258,16 +258,16 @@ export default function AdminBannersPage() {
         transition={{ duration: 0.5 }}
         className="space-y-6 max-w-7xl mx-auto"
       >
-      <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-4 text-center md:text-left">
-        <div>
-           <h1 className="text-3xl font-bold tracking-tight">{t("admin.banners.title")}</h1>
-           <p className="text-muted-foreground mt-1">{t("admin.banners.desc")}</p>
+      <div className="flex flex-col items-center justify-center text-center border-b-8 border-primary pb-8 gap-6 mb-12">
+        <div className="space-y-2">
+           <h1 className="text-5xl font-black uppercase tracking-tighter leading-none">{t("admin.banners.title")}</h1>
+           <p className="text-muted-foreground font-bold text-xs uppercase opacity-60 tracking-[0.2em]">{t("admin.banners.desc")}</p>
         </div>
         <button 
            onClick={handleOpenAdd}
-           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-bold transition-all hover:shadow-lg hover:shadow-primary/20 active:scale-95"
+           className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95 shadow-[0_8px_0_0_rgba(0,0,0,0.1)] hover:shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:translate-y-1"
         >
-           <Plus size={20} />
+           <Plus size={20} strokeWidth={3} />
            {t("admin.banners.add")}
         </button>
       </div>

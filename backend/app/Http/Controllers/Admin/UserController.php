@@ -36,7 +36,10 @@ class UserController extends Controller
         // Filter by ban status (Assuming we have an is_banned column, or we'll fake it for now if it doesn't exist)
         // Let's check if the column exists soon, or just implement it. 
         // For now, let's just paginate
-        $users = $query->latest()->paginate(15);
+        // Order by role first, then newest
+        $users = $query->orderBy('role_id', 'ASC')
+            ->orderBy('created_at', 'DESC')
+            ->paginate(15);
 
         return response()->json($users);
     }

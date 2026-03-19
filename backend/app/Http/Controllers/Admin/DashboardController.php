@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ModerationReport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -19,35 +22,66 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // 1. Total Revenue (all completed orders)
+        // 1. Overview Totals
         $totalRevenue = Order::whereIn('status', ['delivered', 'completed'])->sum('total_amount');
-
-        // 2. Platform Fee Estimation (assuming 5% fee on valid orders as platform income)
-        $platformFee = $totalRevenue * 0.05;
-
-        // 3. User Counts
+        $platformEarnings = $totalRevenue * 0.05; // 5% commission
         $totalCustomers = User::where('role_id', 3)->count();
         $totalSellers = User::where('role_id', 2)->count();
-
-        // 4. Products Count
         $totalProducts = Product::count();
-        $pendingProducts = Product::where('status', 'draft')->count(); // Treat draft as pending review for now
+        $pendingReports = ModerationReport::where('status', 'pending')->count();
 
-        // 5. Recent Activity (Recent Users & Orders)
-        $recentUsers = User::with('role')->latest()->take(5)->get();
-        $recentOrders = Order::with(['customer', 'seller'])->latest()->take(5)->get();
+        // 2. Revenue & Profit Trends (Last 7 Days)
+        $sevenDaysAgo = Carbon::now()->subDays(6)->startOfDay();
+        $dailyTrends = Order::whereIn('status', ['delivered', 'completed', 'paid'])
+            ->where('created_at', '>=', $sevenDaysAgo)
+            ->select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('SUM(total_amount) as total_revenue'),
+                DB::raw('SUM(total_amount) * 0.05 as total_earnings')
+            )
+            ->groupBy('date')
+            ->orderBy('date', 'ASC')
+            ->get();
+
+        // 3. Risk Alert Trend (Last 7 Days)
+        $riskTrends = ModerationReport::where('created_at', '>=', $sevenDaysAgo)
+            ->select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('COUNT(*) as report_count')
+            )
+            ->groupBy('date')
+            ->orderBy('date', 'ASC')
+            ->get();
+
+        // 4. Recent Abnormal Alerts (Moderation Reports)
+        $recentAlerts = ModerationReport::with(['reporter', 'reportedUser', 'reportedProduct'])
+            ->latest()
+            ->take(5)
+            ->get();
+
+        // 5. User Distribution
+        $userDistribution = [
+            ['label' => 'Customers', 'value' => $totalCustomers],
+            ['label' => 'Sellers', 'value' => $totalSellers],
+        ];
 
         return response()->json([
             'overview' => [
                 'total_revenue' => $totalRevenue,
-                'platform_earnings' => $platformFee,
+                'platform_earnings' => $platformEarnings,
                 'total_customers' => $totalCustomers,
                 'total_sellers' => $totalSellers,
                 'total_products' => $totalProducts,
-                'pending_approvals' => $pendingProducts,
+                'pending_reports' => $pendingReports,
             ],
-            'recent_users' => $recentUsers,
-            'recent_orders' => $recentOrders,
+            'trends' => [
+                'daily' => $dailyTrends,
+                'risk' => $riskTrends,
+            ],
+            'recent_alerts' => $recentAlerts,
+            'user_distribution' => $userDistribution,
+            'recent_users' => User::with('role')->latest()->take(5)->get(),
+            'recent_orders' => Order::with(['customer', 'seller'])->latest()->take(5)->get(),
         ]);
     }
 }

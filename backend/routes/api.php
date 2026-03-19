@@ -118,11 +118,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'show']);
         Route::delete('/users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'destroy']);
 
-        // Moderation
-        Route::get('/moderation/products', [\App\Http\Controllers\Admin\ModerationController::class, 'products']);
-        Route::put('/moderation/products/{id}/status', [\App\Http\Controllers\Admin\ModerationController::class, 'updateProductStatus']);
-        Route::delete('/moderation/products/{id}', [\App\Http\Controllers\Admin\ModerationController::class, 'deleteProduct']);
-        
+        // Products (Global Management)
+        Route::get('/products', [\App\Http\Controllers\Admin\ProductController::class, 'index']);
+        Route::get('/products/{id}', [\App\Http\Controllers\Admin\ProductController::class, 'show']);
+        Route::put('/products/{id}/ban', [\App\Http\Controllers\Admin\ProductController::class, 'ban']);
+        Route::delete('/products/{id}', [\App\Http\Controllers\Admin\ProductController::class, 'destroy']);
+
+        // Reports (Keep moderation reports)
         Route::get('/moderation/reports', [\App\Http\Controllers\Admin\ModerationController::class, 'reports']);
         Route::put('/moderation/reports/{id}', [\App\Http\Controllers\Admin\ModerationController::class, 'updateReportStatus']);
 

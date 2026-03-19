@@ -13,7 +13,7 @@ class ProductController extends Controller
     {
         $query = Product::with(['category', 'media', 'seller'])
             ->select('id', 'seller_id', 'category_id', 'title', 'slug', 'price', 'sale_price', 'stock_quantity', 'status', 'created_at')
-            ->where('status', $request->get('status', 'active'));
+            ->where('status', 'active');
 
         // Search
         if ($search = $request->get('search')) {

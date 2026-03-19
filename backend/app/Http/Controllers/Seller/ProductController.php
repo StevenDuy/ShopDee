@@ -21,7 +21,7 @@ class ProductController extends Controller
         }
 
         $query = Product::where('seller_id', $request->user()->id)
-            ->select('id', 'seller_id', 'category_id', 'title', 'slug', 'price', 'sale_price', 'stock_quantity', 'status', 'created_at')
+            ->select('id', 'seller_id', 'category_id', 'title', 'slug', 'price', 'sale_price', 'stock_quantity', 'status', 'ban_reason', 'created_at')
             ->with(['category', 'media']);
 
         if ($request->has('search')) {
@@ -89,9 +89,9 @@ class ProductController extends Controller
                     }
                 }
             }
-            \DB::commit();
+            DB::commit();
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             Log::error("Failed to save attributes: " . $e->getMessage());
         }
 
@@ -167,9 +167,9 @@ class ProductController extends Controller
                     }
                 }
             }
-            \DB::commit();
+            DB::commit();
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             Log::error("Failed to update attributes: " . $e->getMessage());
         }
 

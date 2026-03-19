@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, ShieldAlert, Settings, Menu, MessageCircle, Image as ImageIcon, Brain } from "lucide-react";
+import { LayoutDashboard, Users, ShieldAlert, Settings, Menu, MessageCircle, Image as ImageIcon, Brain, Package } from "lucide-react";
 import { useState, useEffect } from "react";
 import { UserDropdown } from "@/components/common/UserDropdown";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,8 @@ export function AdminSidebar() {
   useEffect(() => {
     if (token) {
       fetchUnreadCounts(token);
+      const interval = setInterval(() => fetchUnreadCounts(token), 30000);
+      return () => clearInterval(interval);
     }
   }, [token]);
 
@@ -26,7 +28,7 @@ export function AdminSidebar() {
     { href: "/admin", icon: LayoutDashboard, label: t("admin.dashboard") },
     { href: "/admin/users", icon: Users, label: t("admin.users_nav") },
     { href: "/admin/banners", icon: ImageIcon, label: t("admin.banners_nav") },
-    { href: "/admin/moderation", icon: ShieldAlert, label: t("admin.moderation_nav") },
+    { href: "/admin/products", icon: Package, label: t("admin.products_view") || "Quản lý sản phẩm" },
     { href: "/admin/inbox", icon: MessageCircle, label: t("admin.inbox_nav"), hasBadge: true },
     { href: "/admin/ai-security", icon: Brain, label: t("admin.ai_security_nav") },
     { href: "/admin/settings", icon: Settings, label: t("admin.settings_nav") },
@@ -37,12 +39,12 @@ export function AdminSidebar() {
       {!isOpen && (
         <button
           id="mobile-hamburger"
-          className="md:hidden fixed top-0 left-0 z-50 w-14 h-[74px] flex items-center justify-center text-primary"
+          className="md:hidden fixed top-4 left-4 z-30 w-12 h-12 flex items-center justify-center text-primary bg-transparent border-none"
           onClick={() => setIsOpen(true)}
         >
-          <div className="relative">
+          <div className="relative p-2 hover:bg-muted/50 rounded-xl transition-colors">
             <Menu size={24} />
-            {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />}
+            {unreadCount > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />}
           </div>
         </button>
       )}
@@ -56,7 +58,7 @@ export function AdminSidebar() {
         </div>
 
         <div className="p-4 border-b border-border">
-          <UserDropdown align="top" />
+          <UserDropdown align="bottom" />
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">

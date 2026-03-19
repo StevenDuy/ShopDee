@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "next-themes";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 interface UserDropdownProps {
   collapsed?: boolean;
@@ -23,8 +24,8 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
   
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const { currency, setCurrency } = useCurrencyStore();
   const [mounted, setMounted] = useState(false);
-  const [currency, setCurrency] = useState("VND");
 
   useEffect(() => setMounted(true), []);
 
@@ -96,15 +97,19 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
       {isOpen && (
         <div
           style={{ 
-            [align === "top" ? "top" : "bottom"]: "calc(100% + 4px)",
+            [align === "bottom" ? "top" : "bottom"]: "calc(100% + 4px)",
             left: "0",
             width: "200px"
           }}
           className="absolute z-[100] bg-card border border-border p-1"
         >
           <div className="space-y-1">
-            <button 
-              onClick={() => { router.push("/profile"); setIsOpen(false); }}
+             <button 
+              onClick={() => { 
+                const path = (user.role?.slug === 'admin' || user.role_id === 1) ? "/admin/profile" : "/profile";
+                router.push(path); 
+                setIsOpen(false); 
+              }}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border"
             >
               <User size={14} />
@@ -118,10 +123,10 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
             >
               <div className="flex items-center gap-3">
                 {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-                <span>{theme === "dark" ? "Sáng" : "Tối"}</span>
+                <span>{theme === "dark" ? t("theme_light") || "Sáng" : t("theme_dark") || "Tối"}</span>
               </div>
               <span className="text-[10px] font-bold border border-border px-1">
-                {theme === "dark" ? "LIGHT" : "DARK"}
+                {theme === "dark" ? t("theme_light") || "LIGHT" : t("theme_dark") || "DARK"}
               </span>
             </button>
 
@@ -134,7 +139,7 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
                 <span>{t("language")}</span>
               </div>
               <span className="text-[10px] font-bold border border-border px-1">
-                {i18n.language === "vi" ? "VIE" : "ENG"}
+                {i18n.language === "vi" ? t("language_vi") || "VIE" : t("language_en") || "ENG"}
               </span>
             </button>
 
