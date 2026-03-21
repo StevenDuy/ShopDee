@@ -1,20 +1,65 @@
-# Frontend
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/build/
-frontend/.env*
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/.vercel
+# ==========================================
+# 1. PHỔ BIẾN / CĂN BẢN (GLOBAL & OS)
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+*$py.class
+*.swp
+*.swo
 
-# Backend
+# ==========================================
+# 2. BẢO MẬT & API KEYS (QUAN TRỌNG)
+# ==========================================
+# Chặn TẤT CẢ các file môi trường (.env) ở mọi cấp độ
+.env
+.env.*
+!.env.example
+*.env
+*.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Chặn các file Credentials/Keys (Firebase, Google, AWS, etc.)
+*.json
+!package.json
+!composer.json
+!tsconfig.json
+!components.json
+!theme.json
+!package-lock.json
+!composer.lock
+!jsconfig.json
+!next.config.js
+!next.config.ts
+!postcss.config.js
+!tailwind.config.js
+!admin-lint*.json
+!cors.json
+
+# Cấm các file chứa mã bí mật cụ thể
+*firebase-credentials.json
+*google-services.json
+*service-account*.json
+*.pem
+*.key
+*.pub
+*.cert
+*.crt
+*.p12
+
+# ==========================================
+# 3. BACKEND (Laravel / PHP)
+# ==========================================
 backend/vendor/
-backend/.env
-backend/.env.backup
-backend/.env.production
-backend/.env.*
+backend/node_modules/
 backend/storage/*.key
 backend/storage/framework/cache/data/*
 backend/storage/framework/sessions/*
@@ -24,39 +69,50 @@ backend/bootstrap/cache/*
 backend/public/storage
 backend/public/hot
 backend/.phpunit.result.cache
+backend/.phpactor.json
+backend/.fleet/
+backend/.idea/
+backend/.vscode/
+backend/storage/pail/*
 
-# Python / ML Engine
+# Chặn file cụ thể trong storage
+backend/storage/firebase-credentials.json
+backend/storage/certs/*.pem
+
+# ==========================================
+# 4. FRONTEND (Next.js / React)
+# ==========================================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnp
+frontend/.pnp.js
+frontend/.vercel
+frontend/lint-output.txt
+frontend/*.txt
+
+# ==========================================
+# 5. ML ENGINE (Python)
+# ==========================================
 ml-engine/__pycache__/
 ml-engine/*.py[cod]
-ml-engine/*$py.class
 ml-engine/.venv/
 ml-engine/venv/
 ml-engine/ENV/
 ml-engine/*.pkl
 ml-engine/*.ipynb_checkpoints/
-ml-engine/.env*
 
-# Databases
+# ==========================================
+# 6. DATABASES & LOGS
+# ==========================================
 *.sqlite
 *.sql
-
-# IDEs & Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-.project
-.settings/
-.classpath
-
-# Global / OS
-.env
-.env.*
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-config.php
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+auth.json

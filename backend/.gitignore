@@ -1,25 +1,61 @@
+# ==========================================
+# 1. LOGS & EXPORTERS
+# ==========================================
 *.log
 .DS_Store
+Thumbs.db
+
+# ==========================================
+# 2. CONFIG & ENVIRONMENT (QUAN TRỌNG)
+# ==========================================
 .env
+.env.*
+!.env.example
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
-/node_modules
-/public/build
+auth.json
+
+# ==========================================
+# 3. SECRET FILES AND KEYS (Firebase / SSL / TiDB CA)
+# ==========================================
+# Quan trọng: Chặn file Credentials/Secrets của Firebase và TiDB CA
+/storage/firebase-credentials.json
+/storage/certs/*.pem
+/storage/*.json
+/storage/*.key
+/storage/*.cert
+/storage/*.p12
+*.json
+!composer.json
+!package.json
+!package-lock.json
+!composer.lock
+!phpunit.xml
+!pint.json
+
+# ==========================================
+# 4. STORAGE & CACHE
+# ==========================================
+/bootstrap/cache/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/storage/pail/*
 /public/hot
 /public/storage
-/storage/*.key
-/storage/pail
-/vendor
+/public/build
+
+# ==========================================
+# 5. IDE & VENDOR
+# ==========================================
+/vendor/
+/node_modules/
+/.fleet/
+/.idea/
+/.vscode/
+/.zed/
+/.phpunit.cache
+/.phpunit.result.cache
 Homestead.json
 Homestead.yaml
-Thumbs.db
-storage/firebase-credentials.json
