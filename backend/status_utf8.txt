@@ -1,0 +1,44 @@
+
+  Migration name ................................................ Batch / Status  
+  0001_01_01_000000_create_users_table ................................. [1] Ran  
+  0001_01_01_000001_create_cache_table ................................. [1] Ran  
+  0001_01_01_000002_create_jobs_table .................................. [1] Ran  
+  2026_03_11_173157_create_personal_access_tokens_table ................ [1] Ran  
+  2026_03_11_173213_create_roles_table ................................. [1] Ran  
+  2026_03_11_173215_add_role_id_to_users_table ......................... [1] Ran  
+  2026_03_11_181504_create_user_profiles_table ......................... [1] Ran  
+  2026_03_11_181505_create_addresses_table ............................. [1] Ran  
+  2026_03_11_181649_create_categories_table ............................ [1] Ran  
+  2026_03_11_181650_create_products_table .............................. [1] Ran  
+  2026_03_11_181651_create_product_attributes_table .................... [1] Ran  
+  2026_03_11_181651_create_product_media_table ......................... [1] Ran  
+  2026_03_11_181652_create_orders_table ................................ [1] Ran  
+  2026_03_11_181653_create_order_items_table ........................... [1] Ran  
+  2026_03_11_181654_create_reviews_table ............................... [1] Ran  
+  2026_03_11_181655_create_chat_conversations_table .................... [1] Ran  
+  2026_03_11_181656_create_chat_messages_table ......................... [3] Ran  
+  2026_03_11_181657_create_notifications_table ......................... [1] Ran  
+  2026_03_11_181658_create_seller_finances_table ....................... [1] Ran  
+  2026_03_11_181659_create_moderation_reports_table .................... [1] Ran  
+  2026_03_12_165404_create_system_settings_table ....................... [1] Ran  
+  2026_03_13_201158_create_product_options_table ....................... [2] Ran  
+  2026_03_13_201205_create_product_option_values_table ................. [2] Ran  
+  2026_03_13_205336_add_parent_id_to_product_option_values ............. [8] Ran  
+  2026_03_15_082942_update_order_status_enum .......................... [11] Ran  
+  2026_03_15_123952_add_media_to_reviews_table ........................ [13] Ran  
+  2026_03_15_130846_add_selected_options_to_order_items_table ......... [14] Ran  
+  2026_03_15_135500_update_address_type_to_string ...................... [9] Ran  
+  2026_03_16_080312_add_review_and_message_to_moderation_reports_table  [15] Ran  
+  2026_03_16_161522_create_banners_table .............................. [16] Ran  
+  2026_03_16_174813_add_product_id_to_banners_table ................... [18] Ran  
+  2026_03_17_084002_optimize_database_indexes ......................... [18] Ran  
+  2026_03_17_105710_add_rating_cache_to_products_table ................ [18] Ran  
+  2026_03_17_110007_add_variant_ids_to_order_items_table .............. [18] Ran  
+  2026_03_18_161129_remove_bio_from_user_profiles_table ............... [18] Ran  
+  2026_03_19_055302_add_cloudinary_fields_to_banners_table ............ [18] Ran  
+  2026_03_19_070750_add_ban_fields_to_products_table .................. [18] Ran  
+  2026_03_19_071051_add_soft_deletes_to_products_table ................ [18] Ran  
+  2026_03_21_111710_add_ban_fields_to_users_table ...................... Pending  
+  2026_03_22_171904_add_google_id_to_users_table ....................... Pending  
+  2026_03_22_174033_create_otp_verifications_table ..................... Pending  
+

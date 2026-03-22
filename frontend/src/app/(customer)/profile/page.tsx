@@ -12,6 +12,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
 import AddressModal from "@/components/profile/AddressModal";
+import EmailUpdateModal from "@/components/profile/EmailUpdateModal";
+import { Edit2 } from "lucide-react";
 
 
 interface Profile { id: number; name: string; email: string; profile?: { phone?: string } }
@@ -33,7 +35,7 @@ const STATUS_COLORS: Record<string, string> = {
 const TABS = [
   { id: "info", label: "Profile Info", icon: User },
   { id: "addresses", label: "Addresses", icon: MapPin },
-  { id: "password", label: "Password", icon: Lock },
+  { id: "password", label: "Password", icon: Lock, hiddenForGoogle: true },
 ];
 
 export default function ProfilePage() {
@@ -64,6 +66,7 @@ export default function ProfilePage() {
   const [pwMsg, setPwMsg] = useState("");
 
   const [isAddrModalOpen, setIsAddrModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
   const authHeaders = { Authorization: `Bearer ${token}` };
@@ -144,7 +147,7 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-muted p-1 rounded-xl mb-8 overflow-x-auto">
-        {TABS.map(({ id, icon: Icon }) => (
+        {TABS.filter(tab => !(tab.id === 'password' && authUser?.google_id)).map(({ id, icon: Icon }) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${activeTab === id ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             <Icon size={16} /> {t(`profile_page.tabs.${id}`)}
@@ -160,7 +163,17 @@ export default function ProfilePage() {
             <div><label className="block text-sm font-medium mb-2">{t("profile_page.name")}</label>
               <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" /></div>
             <div><label className="block text-sm font-medium mb-2">{t("profile_page.email")}</label>
-              <input value={profile.email} disabled className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-sm opacity-60 cursor-not-allowed" /></div>
+              <div className="relative">
+                <input value={profile.email} disabled className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-sm opacity-60 cursor-not-allowed" />
+                <button 
+                  onClick={() => setIsEmailModalOpen(true)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-background rounded-lg text-primary transition-colors"
+                  title="Đổi Email"
+                >
+                  <Edit2 size={16} />
+                </button>
+              </div>
+            </div>
             <div><label className="block text-sm font-medium mb-2">{t("profile_page.phone")}</label>
               <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" /></div>
           </div>
@@ -245,12 +258,24 @@ export default function ProfilePage() {
           </form>
         </motion.div>
       )}
-      {/* Address Modal */}
+      {/* Modals */}
       <AddressModal
         isOpen={isAddrModalOpen}
         onClose={() => setIsAddrModalOpen(false)}
         onSuccess={fetchAddresses}
         token={token}
+      />
+      
+      <EmailUpdateModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        currentEmail={profile.email}
+        token={token}
+        onSuccess={(newEmail) => {
+          setProfile({ ...profile, email: newEmail });
+          setSaveMsg(t("profile_page.email_update_success") || "Cập nhật email thành công!");
+          setTimeout(() => setSaveMsg(""), 3000);
+        }}
       />
     </div>
         )}

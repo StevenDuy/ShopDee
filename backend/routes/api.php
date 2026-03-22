@@ -7,7 +7,19 @@ use App\Http\Controllers\DBTestController;
 use App\Http\Controllers\Customer\ProductController as CustomerProductController;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 Route::post('/test-broadcast', [AuthController::class, 'testBroadcast']);
+
+// --- OTP & PASSWORD RECOVERY ---
+use App\Http\Controllers\Auth\OtpController;
+Route::post('/auth/otp/send', [OtpController::class, 'sendOtp']);
+Route::post('/auth/otp/verify', [OtpController::class, 'verifyOtp']);
+Route::post('/auth/password/reset', [OtpController::class, 'resetPassword']);
+
+// --- SOCIAL AUTH ROUTES ---
+Route::get('/auth/google', [\App\Http\Controllers\Auth\SocialController::class, 'redirectToGoogle']);
+Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\SocialController::class, 'handleGoogleCallback']);
+Route::post('/auth/google/register', [\App\Http\Controllers\Auth\SocialController::class, 'completeGoogleRegistration']);
 
 // Phase 3: Database Relationship Testing Endpoints
 Route::post('/db-test/seed', [DBTestController::class, 'seed']);
@@ -53,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword']);
+    Route::post('/profile/change-email', [AuthController::class, 'changeEmail']);
 
     // Addresses
     Route::get('/profile/addresses', [ProfileController::class, 'addresses']);
@@ -116,12 +129,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // Users
         Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index']);
         Route::get('/users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'show']);
+        Route::put('/users/{id}/ban', [\App\Http\Controllers\Admin\UserController::class, 'ban']);
+        Route::put('/users/{id}/unban', [\App\Http\Controllers\Admin\UserController::class, 'unban']);
         Route::delete('/users/{id}', [\App\Http\Controllers\Admin\UserController::class, 'destroy']);
 
         // Products (Global Management)
         Route::get('/products', [\App\Http\Controllers\Admin\ProductController::class, 'index']);
         Route::get('/products/{id}', [\App\Http\Controllers\Admin\ProductController::class, 'show']);
         Route::put('/products/{id}/ban', [\App\Http\Controllers\Admin\ProductController::class, 'ban']);
+        Route::put('/products/{id}/unban', [\App\Http\Controllers\Admin\ProductController::class, 'unban']);
         Route::delete('/products/{id}', [\App\Http\Controllers\Admin\ProductController::class, 'destroy']);
 
         // Reports (Keep moderation reports)

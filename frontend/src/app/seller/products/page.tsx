@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { Plus, Search, Edit, Trash2, Image as ImageIcon } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Image as ImageIcon, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { EditProductModal } from "@/components/seller/EditProductModal";
@@ -67,6 +67,20 @@ export default function SellerProductsPage() {
     } catch (err) {
       console.error("Failed to delete product", err);
       alert("Failed to delete product. It might be linked to existing orders.");
+    }
+  };
+
+  const handleToggleStatus = async (id: number, newStatus: string) => {
+    if (!token) return;
+    try {
+      await axios.put(`${API}/seller/products/${id}`, 
+        { status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setProducts(products.map(p => p.id === id ? { ...p, status: newStatus } : p));
+    } catch (err) {
+      console.error("Failed to update status", err);
+      alert("Lỗi khi cập nhật trạng thái.");
     }
   };
 
@@ -169,6 +183,10 @@ export default function SellerProductsPage() {
                         <div className="flex flex-col gap-1">
                           {p.status === 'active' ? (
                             <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{t("seller.products_manage.active")}</span>
+                          ) : p.status === 'hide' ? (
+                            <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-500/10 text-amber-600 border border-amber-500/20">{t("seller.products_manage.hide")}</span>
+                          ) : p.status === 'out_of_stock' ? (
+                            <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-500/10 text-slate-600 border border-slate-500/20">{t("seller.products_manage.out_of_stock")}</span>
                           ) : p.status === 'banned' ? (
                             <>
                               <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-500/10 text-red-600 border border-red-500/20">{t("admin_products.product_banned", { defaultValue: "BỊ CẤM" })}</span>

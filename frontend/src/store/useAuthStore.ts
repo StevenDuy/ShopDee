@@ -9,6 +9,8 @@ export interface AuthUser {
   name: string;
   email: string;
   role_id: number;
+  google_id?: string;
+  google_token?: string;
   role?: { id: number; name: string; slug: Role };
 }
 

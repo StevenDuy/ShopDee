@@ -76,7 +76,7 @@ export function CustomerHeader() {
 
         {/* User Profile Area */}
         <div className="px-3 py-4 border-b border-border">
-          <UserDropdown collapsed={false} align="top" />
+          <UserDropdown collapsed={false} align="bottom" />
         </div>
 
         {/* Navigation */}

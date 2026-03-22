@@ -57,7 +57,7 @@ export function SellerSidebar() {
         </div>
 
         <div className="p-4 border-b border-border">
-          <UserDropdown align="top" />
+          <UserDropdown align="bottom" />
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-1">

@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { X, Save, Upload, Trash2, Plus, ChevronDown, AlertTriangle } from "lucide-react";
+import { X, Save, Upload, Trash2, Plus, ChevronDown, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 type Category = { id: number; name: string; children: Category[] };
 type ProductMedia = { id: number; url: string; full_url: string; is_primary: boolean };
@@ -25,6 +25,7 @@ type Product = {
   id: number; title: string; price: string | number;
   stock_quantity: string | number; status: string;
   category_id: number; description: string; media: ProductMedia[];
+  ban_reason?: string | null;
 };
 
 interface Props { productId: number; onClose: () => void; onSuccess: () => void; }
@@ -294,10 +295,20 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
           <button onClick={onClose} className="p-2 hover:bg-muted text-muted-foreground rounded-full transition-colors"><X size={20} /></button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
+          {formData.status === 'banned' && (
+            <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center gap-3 mb-6">
+              <AlertTriangle className="text-red-600" size={20} />
+              <div>
+                <p className="text-xs font-black uppercase text-red-600">{t("seller.products_manage.banned")}</p>
+                {formData.ban_reason && <p className="text-[11px] text-red-500/70 font-bold italic">{formData.ban_reason}</p>}
+                <p className="text-[10px] text-muted-foreground mt-1">{t("seller.products_manage.banned_readonly_hint") || "Sản phẩm này đang bị cấm. Bạn chỉ có thể xem chi tiết."}</p>
+              </div>
+            </div>
+          )}
           <form id="edit-product-form" onSubmit={handleSave} className="space-y-6">
-            {error && <div className="p-4 bg-destructive/10 text-destructive text-sm rounded-xl border border-destructive/20">{error}</div>}
+            <fieldset disabled={formData.status === 'banned'} className="space-y-6 contents">
+              {error && <div className="p-4 bg-destructive/10 text-destructive text-sm rounded-xl border border-destructive/20">{error}</div>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
@@ -332,10 +343,17 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
               <div>
                 <label className="block text-sm font-medium mb-1">{t("seller.orders.status")}</label>
                 <select name="status" value={formData.status} onChange={handleChange}
-                  className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                  <option value="active">{t("seller.orders.status_processing")}</option>
-                  <option value="inactive">Draft</option>
-                  <option value="archived">Archived</option>
+                  disabled={formData.status === 'banned'}
+                  className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50">
+                  {formData.status === 'banned' ? (
+                    <option value="banned">{t("seller.products_manage.banned")}</option>
+                  ) : (
+                    <>
+                      <option value="active">{t("seller.products_manage.active")}</option>
+                      <option value="hide">{t("seller.products_manage.hide")}</option>
+                      <option value="out_of_stock">{t("seller.products_manage.out_of_stock")}</option>
+                    </>
+                  )}
                 </select>
               </div>
               <div>
@@ -345,16 +363,18 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                     <span className="text-muted-foreground">{t("seller.products_manage.cheapest_price")}: </span>
                     <span className="text-primary">
                       {(() => {
-                        let min = Infinity;
+                        let minAdj = Infinity;
                         options.forEach(o => o.values.forEach(v => {
                           const hasSubs = v.sub_values.some(s => s.option_value.trim() !== '');
                           if (hasSubs) {
-                            v.sub_values.forEach(s => { if (s.option_value.trim() && s.price_adjustment < min) min = s.price_adjustment; });
+                            v.sub_values.forEach(s => { if (s.option_value.trim() && s.price_adjustment < minAdj) minAdj = s.price_adjustment; });
                           } else {
-                            if (v.option_value.trim() && v.price_adjustment < min) min = v.price_adjustment;
+                            if (v.option_value.trim() && v.price_adjustment < minAdj) minAdj = v.price_adjustment;
                           }
                         }));
-                        return min === Infinity ? `0 ${t("currency_code")}` : new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(min);
+                        const base = Number(formData.price) || 0;
+                        const finalMin = minAdj === Infinity ? base : base + minAdj;
+                        return new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(finalMin);
                       })()}
                       </span>
                   </div>
@@ -587,15 +607,16 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                 ))}
               </div>
             </div>
-          </form>
+              </fieldset>
+            </form>
         </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-border bg-muted/20 flex flex-wrap items-center justify-between gap-3 shrink-0">
           {!confirmDelete ? (
-            <button type="button" onClick={() => { setError(null); setConfirmDelete(true); }} disabled={saving || deleting}
+            <button type="button" onClick={() => { setError(null); setConfirmDelete(true); }} disabled={saving || deleting || formData.status === 'banned'}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50">
-              <Trash2 size={16} /> Delete Product
+              <Trash2 size={16} /> {t("seller.products_manage.delete_product") || "Xóa sản phẩm"}
             </button>
           ) : (
             <div className="flex items-center gap-2 bg-destructive/10 border border-border rounded-xl px-3 py-2">
@@ -614,7 +635,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
           <div className="flex items-center gap-3">
             <button type="button" onClick={onClose} disabled={saving || deleting}
               className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50">{t("inbox.cancel")}</button>
-            <button type="submit" form="edit-product-form" disabled={saving || deleting}
+            <button type="submit" form="edit-product-form" disabled={saving || deleting || formData.status === 'banned'}
               className="bg-primary text-primary-foreground flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity">
               {saving ? <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> : <Save size={16} />}
               {t("seller.products_manage.save")}

@@ -105,6 +105,8 @@ ml-engine/venv/
 ml-engine/ENV/
 ml-engine/*.pkl
 ml-engine/*.ipynb_checkpoints/
+model/
+model/*.pkl
 
 # ==========================================
 # 6. DATABASES & LOGS

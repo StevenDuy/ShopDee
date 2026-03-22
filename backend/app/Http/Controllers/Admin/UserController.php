@@ -59,6 +59,50 @@ class UserController extends Controller
     }
 
     /**
+     * Ban a user
+     */
+    public function ban(Request $request, $id)
+    {
+        if ($request->user()->role_id !== 1) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'reason' => 'required|string|max:500'
+        ]);
+
+        $user = User::findOrFail($id);
+        
+        // Cannot ban yourself or other admins
+        if ($user->id === $request->user()->id || $user->role_id === 1) {
+            return response()->json(['message' => 'Cannot ban admin accounts.'], 400);
+        }
+
+        $user->status = 'banned';
+        $user->ban_reason = $request->reason;
+        $user->save();
+
+        return response()->json(['message' => 'User banned successfully.', 'user' => $user]);
+    }
+
+    /**
+     * Unban a user
+     */
+    public function unban(Request $request, $id)
+    {
+        if ($request->user()->role_id !== 1) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $user = User::findOrFail($id);
+        $user->status = 'active';
+        $user->ban_reason = null;
+        $user->save();
+
+        return response()->json(['message' => 'User unbanned successfully.', 'user' => $user]);
+    }
+
+    /**
      * Delete a generic user (or ban)
      */
     public function destroy(Request $request, $id)
@@ -70,7 +114,7 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         
         // Prevent deleting yourself or other admins easily
-        if ($request->user()->id === $request->user()->id || $user->role_id === 1) {
+        if ($user->id === $request->user()->id || $user->role_id === 1) {
             return response()->json(['message' => 'Cannot delete this admin account.'], 400);
         }
 

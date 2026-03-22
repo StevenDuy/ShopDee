@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductMedia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProductMediaController extends Controller
@@ -37,7 +38,7 @@ class ProductMediaController extends Controller
 
         // Store file on Cloudinary using the SDK v2 method
         try {
-            \Log::info('Attempting Cloudinary upload', ['file' => $file->getClientOriginalName()]);
+            Log::info('Attempting Cloudinary upload', ['file' => $file->getClientOriginalName()]);
             // Use uploadApi()->upload() for SDK v2
             $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
                 'folder' => 'products',
@@ -45,15 +46,15 @@ class ProductMediaController extends Controller
             ]);
             
             if (!$result || !isset($result['secure_url'])) {
-                \Log::error('Cloudinary upload returned invalid result', ['result' => $result]);
+                Log::error('Cloudinary upload returned invalid result', ['result' => $result]);
                 return response()->json(['message' => 'Cloudinary upload failed (invalid result)'], 500);
             }
             
             $url = $result['secure_url'];
             $publicId = $result['public_id'];
-            \Log::info('Cloudinary upload success', ['url' => $url, 'public_id' => $publicId]);
+            Log::info('Cloudinary upload success', ['url' => $url, 'public_id' => $publicId]);
         } catch (\Exception $e) {
-            \Log::error('Cloudinary upload error: ' . $e->getMessage(), [
+            Log::error('Cloudinary upload error: ' . $e->getMessage(), [
                 'exception' => get_class($e),
                 'trace' => substr($e->getTraceAsString(), 0, 500)
             ]);
@@ -101,7 +102,15 @@ class ProductMediaController extends Controller
         $media = ProductMedia::where('product_id', $product->id)->findOrFail($mediaId);
 
         if ($media->public_id) {
-            Cloudinary::destroy($media->public_id);
+            try {
+                // In Cloudinary SDK v2, destroy is called via uploadApi()
+                // Must specify resource_type for videos
+                $resourceType = ($media->media_type === 'video') ? 'video' : 'image';
+                Cloudinary::uploadApi()->destroy($media->public_id, ['resource_type' => $resourceType]);
+            } catch (\Exception $e) {
+                // Log error but continue to delete from database
+                Log::warning("Cloudinary media deletion failed for ID: {$media->public_id}. Error: " . $e->getMessage());
+            }
         }
 
         $wasPrimary = $media->is_primary;

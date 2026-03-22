@@ -92,6 +92,26 @@ class ProductController extends Controller
     }
 
     /**
+     * Unban a product
+     */
+    public function unban(Request $request, $id)
+    {
+        if ($request->user()->role_id !== 1) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $product = Product::findOrFail($id);
+        $product->status = 'active';
+        $product->ban_reason = null;
+        $product->save();
+
+        return response()->json([
+            'message' => 'Product has been unbanned successfully.',
+            'product' => $product
+        ]);
+    }
+
+    /**
      * Delete/Restore or permanent delete?
      * Admin can also delete products.
      */

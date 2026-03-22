@@ -25,6 +25,7 @@ interface Order {
     unit_price: number;
     product: {
       title: string;
+      status: string;
       media: { url: string; full_url: string }[];
     };
     selected_options?: Record<string, string> | null;
@@ -173,7 +174,7 @@ export default function MyOrdersPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     key={order.id}
-                    className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    className={`bg-card border ${order.items.some(i => i.product?.status === 'banned') && order.status !== 'cancelled' ? 'border-red-500/50 shadow-red-500/5' : 'border-border'} rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow`}
                   >
                     {/* Header */}
                     <div className="p-5 border-b border-border/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -181,11 +182,17 @@ export default function MyOrdersPage() {
                         <div className="p-2.5 bg-muted rounded-xl">
                           <Package size={22} className="text-primary" />
                         </div>
-                        <div>
+                         <div>
                           <p className="font-bold text-lg">{t("seller.orders.order_id")} #{order.id}</p>
                           <p className="text-sm text-muted-foreground">
                             {t("seller.orders.date")}: {new Date(order.created_at).toLocaleDateString(t("locale"))}
                           </p>
+                          {order.items.some(i => i.product?.status === 'banned') && order.status !== 'cancelled' && (
+                            <div className="flex items-center gap-1.5 text-red-500 mt-1 animate-pulse">
+                              <AlertCircle size={14} />
+                              <span className="text-[10px] font-black uppercase tracking-widest">{t("customer_orders.banned_item_warning") || "Có sản phẩm đang bị cấm kinh doanh"}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -209,6 +216,12 @@ export default function MyOrdersPage() {
                           <div key={item.id} className="flex items-center gap-3 bg-card border border-border/50 rounded-xl p-3 hover:border-primary/20 transition-colors">
                             <div className="w-20 h-20 rounded-2xl overflow-hidden border border-border bg-muted shrink-0 relative">
                               <OrderImageItem src={item.product?.media?.[0]?.full_url} alt={item.product?.title} />
+                              {item.product?.status === 'banned' && (
+                                <div className="absolute inset-0 bg-red-600/80 flex flex-col items-center justify-center p-1 text-center backdrop-blur-[2px]">
+                                  <AlertCircle size={16} className="text-white mb-0.5" />
+                                  <span className="text-[8px] font-black text-white uppercase leading-none">{t("common.banned") || "BỊ CẤM"}</span>
+                                </div>
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold line-clamp-1">

@@ -13,6 +13,7 @@ Chào mừng bạn đến với **ShopDee**! Dự án này là một hệ thốn
 | **Database** | TiDB Cloud (Cơ sở dữ liệu phân tán) | Lưu trữ dữ liệu an toàn, hiệu năng cao, chứng chỉ SSL |
 | **Realtime** | Pusher / Laravel Echo | Chat trực tiếp giữa người mua và người bán, Thông báo |
 | **Lưu trữ** | Cloudinary | Tối ưu hóa và lưu trữ hình ảnh/video sản phẩm |
+| **Authentication** | Google OAuth 2.0 (Socialite) | Cho phép đăng nhập nhanh bằng tài khoản Google |
 | **Firebase** | Service Account (Admin SDK) | Quản lý xác thực nâng cao và dữ liệu Chat đồng bộ |
 | **UI/UX** | Tailwind CSS + Lucide Icons + Framer Motion | Thiết kế hiện đại, mượt mà và trực quan |
 | **Charts** | Recharts | Trình diễn dữ liệu thống kê doanh thu và rủi ro trực quan |
@@ -49,7 +50,17 @@ Vào thư mục con: `cd backend`
     *   Tải file Private Key JSON từ: *Firebase Console -> Project Settings -> Service Accounts*.
     *   Đổi tên file thành `firebase-credentials.json`.
     *   Đưa vào thư mục: `backend/storage/firebase-credentials.json`.
-5.  **Khởi động Backend:**
+5.  **Cấu hình Google Login (OAuth 2.0):**
+    *   Truy cập [Google Cloud Console](https://console.cloud.google.com/).
+    *   Tạo dự án mới và vào **APIs & Services -> Credentials**.
+    *   Tạo **OAuth 2.0 Client ID** (Web application).
+    *   Thêm **Authorized redirect URIs**: `http://localhost:8000/api/auth/google/callback`.
+    *   Copy `Client ID` và `Client Secret` vào `.env`:
+        *   `GOOGLE_CLIENT_ID=...`
+        *   `GOOGLE_CLIENT_SECRET=...`
+        *   `GOOGLE_REDIRECT_URL=http://localhost:8000/api/auth/google/callback`
+        *   `FRONTEND_URL=http://localhost:3000`
+6.  **Khởi động Backend:**
     ```bash
     php artisan key:generate
     php artisan migrate:fresh --seed
@@ -109,6 +120,12 @@ Dự án đã được cấu hình `.gitignore` cực kỳ nghiêm ngặt để 
 
 ### 4. Lỗi: `CORS Error` khi gọi API
 *   **Cách sửa:** Kiểm tra file `backend/config/cors.php`. Đảm bảo `allowed_origins` chứa đúng URL của Frontend (`http://localhost:3000`).
+
+### 5. Lỗi: `Socialite Google: 403 Forbidden / Redirect URI mismatch`
+*   **Cách sửa:** 
+    *   Kiểm tra `GOOGLE_REDIRECT_URL` trong `.env` phải khớp chính xác với URL đã khai báo trong Google Cloud Console.
+    *   Đảm bảo bạn đã bật **Google People API** trong thư viện API của Google Cloud Project.
+    *   Kiểm tra `FRONTEND_URL` để đảm bảo hệ thống quay về đúng trang web sau khi đăng nhập.
 
 ---
 

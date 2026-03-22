@@ -8,7 +8,7 @@ import { vi, enUS } from "date-fns/locale";
 import { 
   Users, Search, Filter, ShieldAlert, MoreVertical, 
   Trash2, Eye, MessageCircle, X, Store, Mail, Phone, 
-  Calendar, CheckCircle2, AlertCircle, Ban, ArrowUpRight
+  Calendar, CheckCircle2, AlertCircle, Ban, ArrowUpRight, UserCheck
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
@@ -105,6 +105,43 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleBanUser = async (u: any) => {
+    if (!token) return;
+    if (u.id === loggedInUser?.id) return;
+    
+    const reason = prompt(t("admin_products.ban_reason_placeholder") || "Reason for ban?");
+    if (!reason) return;
+
+    try {
+      await axios.put(`${API_URL}/admin/users/${u.id}/ban`, { reason }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchUsers(pagination.current_page);
+      if (showDetail) {
+         viewUserDetails(u.id);
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to ban user");
+    }
+  };
+
+  const handleUnbanUser = async (u: any) => {
+    if (!token) return;
+    if (!confirm("Are you sure you want to unban this user?")) return;
+
+    try {
+      await axios.put(`${API_URL}/admin/users/${u.id}/unban`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchUsers(pagination.current_page);
+      if (showDetail) {
+         viewUserDetails(u.id);
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to unban user");
+    }
+  };
+
   const getRoleBadge = (roleId: number) => {
     switch (roleId) {
         case 1: return "bg-red-500/10 text-red-500 border-red-500/20";
@@ -170,6 +207,7 @@ export default function AdminUsersPage() {
                     <tr>
                         <th className="px-4 md:px-6 py-4 font-semibold uppercase tracking-wider text-[10px] md:text-[11px]">{t("admin.users_manage.user_email")}</th>
                         <th className="px-4 md:px-6 py-4 font-semibold uppercase tracking-wider text-[10px] md:text-[11px]">{t("admin.users_manage.user_role")}</th>
+                        <th className="px-4 md:px-6 py-4 font-semibold uppercase tracking-wider text-[10px] md:text-[11px]">{t("admin.users_manage.user_status")}</th>
                         <th className="hidden sm:table-cell px-6 py-4 font-semibold uppercase tracking-wider text-[11px]">{t("admin.users_manage.joined_date")}</th>
                     </tr>
                 </thead>
@@ -205,6 +243,14 @@ export default function AdminUsersPage() {
                               <span className={`px-2 md:px-3 py-1 border rounded-lg font-black text-[8px] md:text-[9px] tracking-widest uppercase transition-all ${getRoleBadge(u.role_id)}`}>
                                   {getRoleLabel(u.role?.slug)}
                               </span>
+                          </td>
+                          <td className="px-4 md:px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                 <span className={`px-2 py-0.5 border border-transparent rounded-sm font-black text-[8px] tracking-tighter uppercase ${u.status === 'banned' ? 'bg-red-500 text-white' : 'bg-green-500/10 text-green-600 border-green-500/20'}`}>
+                                     {u.status === 'banned' ? 'BANNED' : 'ACTIVE'}
+                                 </span>
+                                 {u.status === 'banned' && <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />}
+                              </div>
                           </td>
                           <td className="hidden sm:table-cell px-6 py-4">
                               <div className="flex flex-col">
@@ -302,15 +348,17 @@ export default function AdminUsersPage() {
                                     <p className="font-bold truncate">{selectedUser.email}</p>
                                  </div>
                               </div>
-                              <div className="flex items-center gap-4 group">
-                                 <div className="w-10 h-10 border-2 border-border bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors shrink-0">
-                                    <Phone size={18} />
-                                 </div>
-                                 <div className="min-w-0 flex-1">
-                                     <p className="text-[10px] font-black opacity-40 uppercase">{t("profile_page.phone")}</p>
-                                     <p className="font-bold">{selectedUser.profile?.phone || t("common.no_data")}</p>
-                                 </div>
-                              </div>
+                              {selectedUser.role_id !== 1 && (
+                                <div className="flex items-center gap-4 group">
+                                   <div className="w-10 h-10 border-2 border-border bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors shrink-0">
+                                      <Phone size={18} />
+                                   </div>
+                                   <div className="min-w-0 flex-1">
+                                       <p className="text-[10px] font-black opacity-40 uppercase">{t("profile_page.phone")}</p>
+                                       <p className="font-bold">{selectedUser.profile?.phone || t("common.no_data")}</p>
+                                   </div>
+                                </div>
+                              )}
                               <div className="flex items-center gap-4 group">
                                  <div className="w-10 h-10 border-2 border-border bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors shrink-0">
                                     <Calendar size={18} />
@@ -323,61 +371,56 @@ export default function AdminUsersPage() {
                            </div>
                         </div>
 
-                        {selectedUser.role_id === 2 && (
-                           <div>
-                              <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-4 flex items-center gap-2">
-                                <Store size={12} className="text-purple-500" />
-                                {t("admin.users_manage.seller_info")}
-                              </p>
-                              <div className="p-4 border-2 border-dashed border-purple-500/30 bg-purple-500/5 rounded-sm overflow-hidden">
-                                  <p className="text-xs font-bold opacity-70 uppercase leading-relaxed text-wrap">
-                                      {selectedUser.profile?.bio || t("common.no_data")}
-                                  </p>
-                              </div>
-                           </div>
-                        )}
+
                      </div>
 
                      {/* Addresses Column */}
-                     <div>
-                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-4 flex items-center gap-2">
-                          <AlertCircle size={12} className="text-blue-500" />
-                          {t("profile_page.my_addresses")}
-                        </p>
-                        <div className="space-y-3">
-                           {selectedUser.addresses?.length > 0 ? selectedUser.addresses.map((addr: any) => (
-                              <div key={addr.id} className="p-4 border-2 border-border bg-muted/20 relative group overflow-hidden text-wrap">
-                                 <div className="absolute top-0 right-0 p-1.5 bg-border text-[8px] font-black uppercase text-white tracking-widest">{addr.type}</div>
-                                 <p className="text-sm font-bold truncate pr-10">{addr.address_line_1}</p>
-                                 <p className="text-xs text-muted-foreground mt-1 truncate">{addr.city}, {addr.country}</p>
-                                 {addr.is_default && (
-                                   <div className="mt-2 inline-block px-2 py-0.5 border border-primary text-[8px] font-black uppercase text-primary tracking-tighter">{t("profile_page.default")}</div>
-                                 )}
-                              </div>
-                           )) : (
-                               <div className="p-10 border-2 border-dashed border-border text-center opacity-40">
-                                  <p className="text-xs font-black uppercase">{t("profile_page.no_addresses")}</p>
-                               </div>
-                           )}
+                     {selectedUser.role_id !== 1 && (
+                        <div>
+                           <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-4 flex items-center gap-2">
+                             <AlertCircle size={12} className="text-blue-500" />
+                             {t("profile_page.my_addresses")}
+                           </p>
+                           <div className="space-y-3">
+                              {selectedUser.addresses?.length > 0 ? selectedUser.addresses.map((addr: any) => (
+                                 <div key={addr.id} className="p-4 border-2 border-border bg-muted/20 relative group overflow-hidden text-wrap">
+                                    <div className="absolute top-0 right-0 p-1.5 bg-border text-[8px] font-black uppercase text-white tracking-widest">{addr.type}</div>
+                                    <p className="text-sm font-bold truncate pr-10">{addr.address_line_1}</p>
+                                    <p className="text-xs text-muted-foreground mt-1 truncate">{addr.city}, {addr.country}</p>
+                                    {addr.is_default && (
+                                      <div className="mt-2 inline-block px-2 py-0.5 border border-primary text-[8px] font-black uppercase text-primary tracking-tighter">{t("profile_page.default")}</div>
+                                    )}
+                                 </div>
+                              )) : (
+                                  <div className="p-10 border-2 border-dashed border-border text-center opacity-40">
+                                     <p className="text-xs font-black uppercase">{t("profile_page.no_addresses")}</p>
+                                  </div>
+                              )}
+                           </div>
                         </div>
-                     </div>
+                      )}
                   </div>
                </div>
 
                {/* Modal Footer Actions */}
                <div className="p-4 md:p-8 border-t-4 border-border bg-muted/10 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
                   <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                     <Link 
-                        href={`/admin/inbox?userId=${selectedUser.id}`}
-                        className="flex items-center justify-center gap-3 bg-blue-600 text-white px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
-                     >
-                        <MessageCircle size={18} />
-                        {t("admin.users_manage.chat_with_user")}
-                     </Link>
                      {selectedUser.id !== loggedInUser?.id && (
-                        <button className="flex items-center justify-center gap-3 bg-slate-900 text-white px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest shadow-[6px_6px_0px_0px_rgba(30,41,59,0.2)] active:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-                           <Ban size={18} />
-                           {t("admin.users_manage.ban_user")}
+                       <Link 
+                          href={`/admin/inbox?userId=${selectedUser.id}`}
+                          className="flex items-center justify-center gap-3 bg-blue-600 text-white px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                       >
+                          <MessageCircle size={18} />
+                          {t("admin.users_manage.chat_with_user")}
+                       </Link>
+                     )}
+                     {selectedUser.id !== loggedInUser?.id && (
+                        <button 
+                           onClick={() => selectedUser.status === 'banned' ? handleUnbanUser(selectedUser) : handleBanUser(selectedUser)}
+                           className={`flex items-center justify-center gap-3 ${selectedUser.status === 'banned' ? 'bg-green-600 shadow-[6px_6px_0px_0px_rgba(22,163,74,0.2)]' : 'bg-slate-900 shadow-[6px_6px_0px_0px_rgba(30,41,59,0.2)]'} text-white px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest active:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all`}
+                        >
+                           {selectedUser.status === 'banned' ? <UserCheck size={18} /> : <Ban size={18} />}
+                           {selectedUser.status === 'banned' ? t("admin.users_manage.unban_user") : t("admin.users_manage.ban_user")}
                         </button>
                       )}
                    </div>

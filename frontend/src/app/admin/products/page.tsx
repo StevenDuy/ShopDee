@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { vi, enUS } from "date-fns/locale";
 import { 
   Package, Search, Filter, Ban, Eye, MessageCircle, 
-  Trash2, X, Store, User as UserIcon, AlertTriangle, 
-  ShieldAlert, CheckCircle2, ShoppingBag, ArrowUpRight
+  Trash2, X, Store, User as UserIcon, AlertTriangle, Edit,
+  ShieldAlert, CheckCircle2, ShoppingBag, ArrowUpRight,
+  Mail, Phone, Calendar, AlertCircle, UserCheck
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
@@ -19,7 +20,7 @@ import { useCurrencyStore } from "@/store/useCurrencyStore";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function AdminProductsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useAuthStore();
   const { formatPrice } = useCurrencyStore();
   const [products, setProducts] = useState<any[]>([]);
@@ -118,6 +119,44 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleUnbanProduct = async () => {
+    if (!token || !selectedProduct) return;
+    try {
+        setIsBanning(true);
+        await axios.put(`${API}/admin/products/${selectedProduct.id}/unban`, 
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        fetchProducts(pagination.current_page);
+        setSelectedProduct({ ...selectedProduct, status: 'active', ban_reason: null });
+    } catch (err) {
+        console.error("Failed to unban product", err);
+        alert("Lỗi khi mở khóa sản phẩm.");
+    } finally {
+        setIsBanning(false);
+    }
+  };
+
+  const handleDeleteProduct = async (product: any) => {
+    if (!token) return;
+    const isTrashed = !!product.deleted_at;
+    const msg = isTrashed 
+        ? (t("admin_products.confirm_restore") || "Bạn có muốn khôi phục sản phẩm này?")
+        : (t("admin_products.confirm_delete") || "Bạn có chắc chắn muốn xóa sản phẩm này?");
+    
+    if (!confirm(msg)) return;
+    
+    try {
+        await axios.delete(`${API}/admin/products/${product.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchProducts(pagination.current_page);
+    } catch (err) {
+        console.error("Failed to toggle product deletion", err);
+        alert(t("admin_products.delete_error") || "Lỗi khi xử lý xóa/khôi phục sản phẩm.");
+    }
+  };
+
   const viewSellerDetails = async (id: number) => {
     try {
         setLoadingSeller(true);
@@ -130,6 +169,49 @@ export default function AdminProductsPage() {
         console.error("Failed to fetch seller details", err);
     } finally {
         setLoadingSeller(false);
+    }
+  };
+
+  const handleBanUser = async (u: any) => {
+    if (!token) return;
+    const reason = prompt(t("admin_products.ban_reason_placeholder") || "Lý do cấm người dùng này?");
+    if (!reason) return;
+    try {
+      await axios.put(`${API}/admin/users/${u.id}/ban`, { reason }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      viewSellerDetails(u.id);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Không thể cấm người dùng");
+    }
+  };
+
+  const handleUnbanUser = async (u: any) => {
+    if (!token) return;
+    if (!confirm("Bạn có chắc chắn muốn bỏ cấm người dùng này?")) return;
+    try {
+      await axios.put(`${API}/admin/users/${u.id}/unban`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      viewSellerDetails(u.id);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Không thể bỏ cấm người dùng");
+    }
+  };
+
+  const handleDeleteUser = async (u: any) => {
+    if (!token) return;
+    if (!confirm(t("admin.users_manage.confirm_delete", { name: u.name }) || `Bạn có chắc chắn muốn xóa người dùng ${u.name}?`)) {
+      return;
+    }
+    try {
+      await axios.delete(`${API}/admin/users/${u.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShowSellerModal(false);
+      fetchProducts(pagination.current_page);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Không thể xóa người dùng");
     }
   };
 
@@ -196,6 +278,8 @@ export default function AdminProductsPage() {
               >
                   <option value="all">{t("admin_products.all_status")}</option>
                   <option value="active">{t("seller.products_manage.active").toUpperCase()}</option>
+                  <option value="hide">{t("seller.products_manage.hide").toUpperCase()}</option>
+                  <option value="out_of_stock">{t("seller.products_manage.out_of_stock").toUpperCase()}</option>
                   <option value="banned">{t("admin_products.product_banned").toUpperCase()}</option>
               </select>
           </div>
@@ -268,6 +352,10 @@ export default function AdminProductsPage() {
                                         <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-500/10 text-red-600 border border-red-500/20 italic">{t("common.deleted")}</span>
                                     ) : p.status === 'active' ? (
                                         <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">{t("seller.products_manage.active")}</span>
+                                    ) : p.status === 'hide' ? (
+                                        <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-500/10 text-amber-600 border border-amber-500/20">{t("seller.products_manage.hide")}</span>
+                                    ) : p.status === 'out_of_stock' ? (
+                                        <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-gray-500/10 text-gray-600 border border-gray-500/20 uppercase tracking-widest">{t("seller.products_manage.out_of_stock")}</span>
                                     ) : p.status === 'banned' ? (
                                         <>
                                             <span className="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-500/10 text-red-600 border border-red-500/20">{t("admin_products.product_banned", { defaultValue: "BỊ CẤM" })}</span>
@@ -481,42 +569,62 @@ export default function AdminProductsPage() {
                </div>
 
                {/* Action Footer */}
-               <div className="p-4 md:p-8 border-t border-border bg-muted/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-6">
-                   <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                       {selectedProduct.status !== 'banned' ? (
-                           <button 
-                               onClick={() => setShowBanModal(true)}
-                               className="px-10 py-3.5 bg-red-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-                           >
-                               <Ban size={18} strokeWidth={3} />
-                               {t("admin_products.ban_product")}
-                           </button>
-                       ) : (
-                           <div className="px-10 py-3.5 bg-red-100 text-red-600 rounded-2xl font-black uppercase text-[11px] tracking-widest border-2 border-red-200 flex items-center justify-center gap-2 opacity-60">
-                               <ShieldAlert size={18} strokeWidth={3} />
-                               {t("admin_products.product_banned", { defaultValue: "BỊ CẤM" }).toUpperCase()}
-                           </div>
-                       )}
-
-                       {!selectedProduct.deleted_at && (
-                           <button 
-                               onClick={() => {
-                                   if (confirm(t("confirm_delete"))) {
-                                       axios.delete(`${API}/admin/products/${selectedProduct.id}`, {
-                                           headers: { Authorization: `Bearer ${token}` }
-                                       }).then(() => {
-                                           fetchProducts(pagination.current_page);
-                                           setShowDetail(false);
-                                       });
-                                   }
-                               }}
-                               className="px-8 py-3.5 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all flex items-center justify-center gap-2"
-                           >
-                               <Trash2 size={18} />
-                               {t("admin.delete")}
-                           </button>
-                       )}
-                   </div>
+                <div className="p-4 md:p-8 border-t border-border bg-muted/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 md:gap-6">
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                        {selectedProduct.status !== 'banned' ? (
+                            <button 
+                                onClick={() => setShowBanModal(true)}
+                                className="px-10 py-3.5 bg-red-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Ban size={18} strokeWidth={3} />
+                                {t("admin_products.ban_product")}
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleUnbanProduct}
+                                className="px-10 py-3.5 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle2 size={18} strokeWidth={3} />
+                                {t("admin_products.unban_product") || "UNBAN PRODUCT"}
+                            </button>
+                        )}
+ 
+                        {!selectedProduct.deleted_at ? (
+                            <button 
+                                onClick={() => {
+                                    if (confirm(t("confirm_delete"))) {
+                                        axios.delete(`${API}/admin/products/${selectedProduct.id}`, {
+                                            headers: { Authorization: `Bearer ${token}` }
+                                        }).then(() => {
+                                            fetchProducts(pagination.current_page);
+                                            setShowDetail(false);
+                                        });
+                                    }
+                                }}
+                                className="px-8 py-3.5 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all flex items-center justify-center gap-2"
+                            >
+                                <Trash2 size={18} />
+                                {t("admin.delete")}
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={() => {
+                                    if (confirm(t("admin_products.confirm_restore") || "Bạn có muốn khôi phục sản phẩm này?")) {
+                                        axios.delete(`${API}/admin/products/${selectedProduct.id}`, {
+                                            headers: { Authorization: `Bearer ${token}` }
+                                        }).then(() => {
+                                            fetchProducts(pagination.current_page);
+                                            setShowDetail(false);
+                                        });
+                                    }
+                                }}
+                                className="px-8 py-3.5 border-2 border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all flex items-center justify-center gap-2"
+                            >
+                                <ArrowUpRight size={18} />
+                                {t("admin_products.restore_product") || "KHÔI PHỤC"}
+                            </button>
+                        )}
+                    </div>
                    
                    <button 
                        onClick={() => setShowDetail(false)} 
@@ -530,77 +638,137 @@ export default function AdminProductsPage() {
         )}
       </AnimatePresence>
 
-      {/* Seller Info Modal */}
+      {/* Seller Info Modal (Admin User Modal Style) */}
       <AnimatePresence>
-        {showSellerModal && (
+        {showSellerModal && selectedSeller && (
             <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowSellerModal(false)} className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="relative w-full max-w-lg bg-card border-4 border-purple-500 shadow-[12px_12px_0px_0px_rgba(168,85,247,0.2)] overflow-hidden flex flex-col max-h-[90vh]">
-                    <div className="p-6 border-b-2 border-border bg-purple-500/5 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-3">
-                            <Store className="text-purple-500" />
-                            <h2 className="text-xl font-black uppercase tracking-tight">{t("admin.users_manage.seller_info")}</h2>
-                        </div>
-                        <button onClick={() => setShowSellerModal(false)} className="p-2 hover:bg-muted border border-border"><X size={20} /></button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                        {loadingSeller ? (
-                            <div className="py-20 text-center"><div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
-                        ) : selectedSeller ? (
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 border-2 border-purple-500 flex items-center justify-center font-black text-2xl text-purple-600 bg-purple-500/10">
-                                        {selectedSeller.name?.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-black uppercase">{selectedSeller.name}</h3>
-                                        <p className="text-xs font-bold text-muted-foreground">{selectedSeller.email}</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t("profile_page.bio")}</p>
-                                    <div className="p-4 bg-muted/30 border border-border italic text-sm font-medium leading-relaxed text-wrap">
-                                        {selectedSeller.profile?.bio || t("common.no_data")}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{t("profile_page.my_addresses")}</p>
-                                    {selectedSeller.addresses?.length > 0 ? selectedSeller.addresses.map((addr: any) => (
-                                        <div key={addr.id} className="p-4 border border-border bg-muted/20 space-y-1 text-wrap overflow-hidden">
-                                            <div className="flex justify-between">
-                                                <p className="text-xs font-black uppercase text-primary">{addr.type === 'home' ? t("profile_page.home") : addr.type === 'office' ? t("profile_page.office") : addr.type}</p>
-                                                {addr.is_default && <span className="text-[8px] font-black uppercase px-2 border border-primary text-primary">{t("profile_page.default")}</span>}
-                                            </div>
-                                            <p className="text-xs font-bold truncate">{addr.name}</p>
-                                            <p className="text-[11px] text-muted-foreground">{addr.address_line_1}, {addr.city}</p>
-                                        </div>
-                                    )) : (
-                                        <p className="text-xs font-bold opacity-30 italic">{t("profile_page.no_addresses")}</p>
-                                    )}
-                                </div>
-                                
-                                <div className="pt-4 flex flex-col gap-3">
-                                    <Link 
-                                        href={`/admin/inbox?userId=${selectedSeller.id}`}
-                                        className="w-full py-4 bg-blue-600 text-white font-black uppercase text-xs tracking-widest text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] hover:scale-[1.02] transition-all"
-                                    >
-                                        {t("seller.inbox.chat_now")}
-                                    </Link>
-                                    <button 
-                                        onClick={() => setShowSellerModal(false)}
-                                        className="w-full py-4 border-2 border-border font-black uppercase text-xs tracking-widest hover:bg-muted transition-all"
-                                    >
-                                        {t("profile_page.cancel")}
-                                    </button>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowSellerModal(false)} className="absolute inset-0 bg-background/80 backdrop-blur-sm shadow-[inset_0px_0px_100px_rgba(0,0,0,0.2)]" />
+                <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="relative w-full max-w-4xl bg-card border-4 border-border shadow-[16px_16px_0px_0px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col max-h-[90vh]">
+                    
+                    {/* Modal Header */}
+                    <div className="p-4 md:p-6 border-b-4 border-border bg-muted flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                            <div className="w-16 h-16 border-4 border-border bg-background flex items-center justify-center font-black text-2xl text-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                                {selectedSeller.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">{selectedSeller.name}</h2>
+                                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1">
+                                    <span className={`px-2 py-0.5 border-2 font-black text-[9px] tracking-widest uppercase bg-purple-500/10 text-purple-500 border-purple-500/20`}>
+                                        {t("roles.seller").toUpperCase()}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">UID: {selectedSeller.id}</span>
                                 </div>
                             </div>
+                        </div>
+                        <button onClick={() => setShowSellerModal(false)} className="self-end sm:self-auto p-2 md:p-3 border-2 border-border hover:bg-red-500 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none">
+                            <X size={20} className="md:w-6 md:h-6" />
+                        </button>
+                    </div>
+
+                    {/* Modal Content */}
+                    <div className="p-4 md:p-8 overflow-y-auto space-y-10 custom-scrollbar">
+                        {loadingSeller ? (
+                            <div className="py-20 text-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
                         ) : (
-                            <p className="text-center py-20 opacity-30">{t("common.no_data")}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                {/* Information Columns */}
+                                <div className="space-y-8">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-4 flex items-center gap-2">
+                                            <CheckCircle2 size={12} className="text-primary" />
+                                            {t("admin.users_manage.customer_info")}
+                                        </p>
+                                        <div className="space-y-4 text-wrap">
+                                            <div className="flex items-center gap-4 group">
+                                                <div className="w-10 h-10 border-2 border-border bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors shrink-0">
+                                                    <Mail size={18} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[10px] font-black opacity-40 uppercase">{t("profile_page.email")}</p>
+                                                    <p className="font-bold truncate">{selectedSeller.email}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4 group">
+                                                <div className="w-10 h-10 border-2 border-border bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors shrink-0">
+                                                    <Phone size={18} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[10px] font-black opacity-40 uppercase">{t("profile_page.phone")}</p>
+                                                    <p className="font-bold">{selectedSeller.profile?.phone || t("common.no_data")}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4 group">
+                                                <div className="w-10 h-10 border-2 border-border bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors shrink-0">
+                                                    <Calendar size={18} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[10px] font-black opacity-40 uppercase">{t("admin.joined")}</p>
+                                                    <p className="font-bold">
+                                                        {selectedSeller.created_at ? format(new Date(selectedSeller.created_at), "eeee, dd/MM/yyyy", { locale: i18n.language === 'vi' ? vi : undefined }) : t("common.no_data")}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Addresses Column */}
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-4 flex items-center gap-2">
+                                        <AlertCircle size={12} className="text-blue-500" />
+                                        {t("profile_page.my_addresses")}
+                                    </p>
+                                    <div className="space-y-3">
+                                        {selectedSeller.addresses?.length > 0 ? selectedSeller.addresses.map((addr: any) => (
+                                            <div key={addr.id} className="p-4 border-2 border-border bg-muted/20 relative group overflow-hidden text-wrap">
+                                                <div className="absolute top-0 right-0 p-1.5 bg-border text-[8px] font-black uppercase text-white tracking-widest">{addr.type}</div>
+                                                <p className="text-sm font-bold truncate pr-10">{addr.address_line_1}</p>
+                                                <p className="text-xs text-muted-foreground mt-1 truncate">{addr.city}, {addr.country}</p>
+                                                {addr.is_default && (
+                                                    <div className="mt-2 inline-block px-2 py-0.5 border border-primary text-[8px] font-black uppercase text-primary tracking-tighter">{t("profile_page.default")}</div>
+                                                )}
+                                            </div>
+                                        )) : (
+                                            <div className="p-10 border-2 border-dashed border-border text-center opacity-40">
+                                                <p className="text-xs font-black uppercase">{t("profile_page.no_addresses")}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
+
+                    {/* Modal Footer Actions */}
+                    {!loadingSeller && (
+                        <div className="p-4 md:p-8 border-t-4 border-border bg-muted/10 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+                            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                                <Link 
+                                    href={`/admin/inbox?userId=${selectedSeller.id}`}
+                                    className="flex items-center justify-center gap-3 bg-blue-600 text-white px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                                >
+                                    <MessageCircle size={18} />
+                                    {t("admin.users_manage.chat_with_user")}
+                                </Link>
+                                <button 
+                                    onClick={() => selectedSeller.status === 'banned' ? handleUnbanUser(selectedSeller) : handleBanUser(selectedSeller)}
+                                    className={`flex items-center justify-center gap-3 ${selectedSeller.status === 'banned' ? 'bg-green-600 shadow-[6px_6px_0px_0px_rgba(22,163,74,0.2)]' : 'bg-slate-900 shadow-[6px_6px_0px_0px_rgba(30,41,59,0.2)]'} text-white px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest active:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all`}
+                                >
+                                    {selectedSeller.status === 'banned' ? <UserCheck size={18} /> : <Ban size={18} />}
+                                    {selectedSeller.status === 'banned' ? t("admin.users_manage.unban_user") : t("admin.users_manage.ban_user")}
+                                </button>
+                            </div>
+                            
+                            <button 
+                                onClick={() => handleDeleteUser(selectedSeller)}
+                                className="flex items-center justify-center gap-3 border-2 border-red-500 text-red-500 px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-[6px_6px_0px_0px_rgba(239,68,68,0.1)]"
+                            >
+                                <Trash2 size={18} />
+                                {t("admin.users_manage.delete_user")}
+                            </button>
+                        </div>
+                    )}
                 </motion.div>
             </div>
         )}

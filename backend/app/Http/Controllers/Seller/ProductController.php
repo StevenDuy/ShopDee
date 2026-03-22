@@ -118,6 +118,10 @@ class ProductController extends Controller
         }
 
         $product = Product::where('seller_id', $request->user()->id)->findOrFail($id);
+ 
+        if ($product->status === 'banned') {
+            return response()->json(['message' => 'Cannot modify a banned product'], 403);
+        }
 
         $request->validate([
             'category_id' => 'sometimes|exists:categories,id',
@@ -125,7 +129,7 @@ class ProductController extends Controller
             'description' => 'sometimes|string',
             'price' => 'sometimes|numeric|min:0',
             'stock_quantity' => 'sometimes|integer|min:0',
-            'status' => 'sometimes|in:active,inactive,archived',
+            'status' => 'sometimes|in:active,hide,out_of_stock',
             'attributes' => 'sometimes|array',
             'attributes.*.attribute_name' => 'required|string|max:255',
             'attributes.*.attribute_value' => 'required|string|max:255',
@@ -183,6 +187,10 @@ class ProductController extends Controller
         }
 
         $product = Product::where('seller_id', $request->user()->id)->findOrFail($id);
+ 
+        if ($product->status === 'banned') {
+            return response()->json(['message' => 'Cannot delete a banned product'], 403);
+        }
 
         try {
             // Manually delete related records to avoid FK constraint issues
@@ -196,7 +204,12 @@ class ProductController extends Controller
             // Media storage cleanup
             foreach ($product->media as $media) {
                 if ($media->public_id) {
-                    Cloudinary::destroy($media->public_id);
+                    try {
+                        $resourceType = ($media->media_type === 'video') ? 'video' : 'image';
+                        Cloudinary::uploadApi()->destroy($media->public_id, ['resource_type' => $resourceType]);
+                    } catch (\Exception $e) {
+                        Log::warning("Couldinary cleanup failed for product deletion: " . $e->getMessage());
+                    }
                 }
             }
             $product->media()->delete();

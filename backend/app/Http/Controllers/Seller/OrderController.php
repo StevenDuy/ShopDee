@@ -69,6 +69,17 @@ class OrderController extends Controller
                 $oldStatus = $order->status;
                 $newStatus = $request->status;
 
+                // Restriction: If order contains banned products, seller can ONLY cancel it
+                if (!in_array($newStatus, ['cancelled', 'returned'])) {
+                    $hasBanned = $order->items()->whereHas('product', function($q) {
+                        $q->where('status', 'banned');
+                    })->exists();
+                    
+                    if ($hasBanned) {
+                        throw new \Exception("Đơn hàng này chứa sản phẩm đang bị cấm kinh doanh. Bạn chỉ có thể chọn trạng thái 'Đã hủy' hoặc 'Trả hàng'.");
+                    }
+                }
+
                 $order->update([
                     'status' => $newStatus
                 ]);

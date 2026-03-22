@@ -48,6 +48,14 @@ class OrderController extends Controller
                     $product = $products->get($item['product_id']);
                     if (!$product) throw new \Exception("Sản phẩm không tồn tại (ID: {$item['product_id']})");
 
+                    // Check product status
+                    if ($product->status === 'banned') {
+                        throw new \Exception("Sản phẩm '{$product->title}' hiện đang bị cấm và không thể thực hiện giao dịch.");
+                    }
+                    if ($product->status === 'hide') {
+                        throw new \Exception("Sản phẩm '{$product->title}' hiện không khả dụng để đặt mua.");
+                    }
+
                     // Base price from DB - FIXES SECURITY FLAW
                     $unitPrice = $product->sale_price ?? $product->price;
                     
@@ -105,9 +113,21 @@ class OrderController extends Controller
                 // OPTIMIZED: Update stock in bulk-like mapping
                 foreach ($stockUpdates as $update) {
                     if ($update['type'] === 'variant') {
-                        \App\Models\ProductOptionValue::where('id', $update['id'])->decrement('stock_quantity', $update['qty']);
+                        $vVal = \App\Models\ProductOptionValue::find($update['id']);
+                        if ($vVal) {
+                            $vVal->decrement('stock_quantity', $update['qty']);
+                            // Optional: check if all variants of the parent product are out of stock
+                            // but usually the main product stock field is also a sum or direct check.
+                        }
                     } else {
-                        \App\Models\Product::where('id', $update['id'])->decrement('stock_quantity', $update['qty']);
+                        $prod = \App\Models\Product::find($update['id']);
+                        if ($prod) {
+                            $prod->decrement('stock_quantity', $update['qty']);
+                            if ($prod->refresh()->stock_quantity <= 0) {
+                                $prod->status = 'out_of_stock';
+                                $prod->save();
+                            }
+                        }
                     }
                 }
 
