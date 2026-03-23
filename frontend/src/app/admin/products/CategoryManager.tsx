@@ -7,6 +7,7 @@ import {
   ChevronDown, Folder, Save, AlertCircle 
 } from "lucide-react";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 interface Category {
   id: number;
@@ -25,6 +26,7 @@ interface CategoryManagerProps {
 }
 
 export default function CategoryManager({ isOpen, onClose, token, api }: CategoryManagerProps) {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -86,7 +88,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
       fetchCategories();
     } catch (err: any) {
       console.error("Save category error:", err.response?.data);
-      alert(err.response?.data?.message || "Lỗi khi lưu danh mục: " + (err.response?.data?.errors ? JSON.stringify(err.response.data.errors) : ""));
+      alert(err.response?.data?.message || t("admin.banners.save_error"));
     }
   };
 
@@ -98,7 +100,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
       setDeletingId(null);
       fetchCategories();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Không thể xóa danh mục này (có thể do chứa sản phẩm hoặc danh mục con)");
+      alert(err.response?.data?.message || t("admin.banners.delete_error"));
       setDeletingId(null);
     }
   };
@@ -147,7 +149,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
             <div className="p-5 border-b-4 border-primary flex justify-between items-center bg-muted/50">
               <div className="flex items-center gap-3">
                 <Folder className="text-primary" size={24} />
-                <h2 className="text-xl font-black uppercase tracking-tight">Quản lý danh mục</h2>
+                <h2 className="text-xl font-black uppercase tracking-tight">{t("admin.banners.categories.title")}</h2>
               </div>
               <button 
                 onClick={onClose} 
@@ -165,7 +167,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input 
                     type="text" 
-                    placeholder="Tìm kiếm danh mục..." 
+                    placeholder={t("admin.banners.categories.search_placeholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 bg-muted/30 border-2 border-border focus:border-primary outline-none font-bold text-sm transition-all"
@@ -175,7 +177,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                   onClick={() => startCreate()}
                   className="px-4 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest hover:opacity-90 transition-all border-2 border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)] flex items-center gap-2 shrink-0"
                 >
-                  <Plus size={16} /> Thêm
+                  <Plus size={16} /> {t("admin.banners.categories.add_new")}
                 </button>
               </div>
 
@@ -184,7 +186,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                 {loading && categories.length === 0 ? (
                   <div className="py-20 text-center">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    <p className="text-[10px] font-bold uppercase opacity-40 italic font-mono tracking-widest">Đang tải dữ liệu...</p>
+                    <p className="text-[10px] font-bold uppercase opacity-40 italic font-mono tracking-widest">{t("admin.banners.categories.loading")}</p>
                   </div>
                 ) : (
                   <div className="grid gap-3 font-mono">
@@ -195,11 +197,11 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                           autoFocus
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
-                          placeholder="Tên danh mục mới..."
+                          placeholder={t("admin.banners.categories.new_parent_placeholder")}
                           className="flex-1 bg-background border-2 border-border px-3 py-1.5 font-bold text-sm outline-none focus:border-primary"
                         />
-                        <button onClick={() => handleSave()} className="p-1.5 bg-primary text-white hover:bg-primary/90"><Save size={16} /></button>
-                        <button onClick={() => setIsCreating(false)} className="p-1.5 hover:bg-muted"><X size={16} /></button>
+                        <button onClick={() => handleSave()} className="p-1.5 bg-primary text-white hover:bg-primary/90" title={t("admin.banners.categories.save_btn")}><Save size={16} /></button>
+                        <button onClick={() => setIsCreating(false)} className="p-1.5 hover:bg-muted" title={t("admin.banners.categories.cancel_btn")}><X size={16} /></button>
                       </div>
                     )}
 
@@ -226,7 +228,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                             ) : (
                               <div className="flex items-center gap-2 truncate">
                                 <span className="font-black uppercase text-xs tracking-tight">{cat.name}</span>
-                                <span className="text-[9px] font-bold opacity-30 bg-muted px-1.5 py-0.5">({cat.products_count} SP)</span>
+                                <span className="text-[9px] font-bold opacity-30 bg-muted px-1.5 py-0.5">({cat.products_count} {t("seller.orders.items")})</span>
                               </div>
                             )}
                           </div>
@@ -234,8 +236,8 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                           <div className="flex items-center gap-1 shrink-0">
                             {editingId === cat.id ? (
                               <>
-                                <button onClick={() => handleSave(cat.id)} className="p-1.5 text-primary hover:bg-primary/10 rounded" title="Lưu"><Save size={16} /></button>
-                                <button onClick={() => setEditingId(null)} className="p-1.5 text-muted-foreground hover:bg-muted rounded" title="Hủy"><X size={16} /></button>
+                                <button onClick={() => handleSave(cat.id)} className="p-1.5 text-primary hover:bg-primary/10 rounded" title={t("admin.banners.categories.save_btn")}><Save size={16} /></button>
+                                <button onClick={() => setEditingId(null)} className="p-1.5 text-muted-foreground hover:bg-muted rounded" title={t("admin.banners.categories.cancel_btn")}><X size={16} /></button>
                               </>
                             ) : deletingId === cat.id ? (
                                 <div className="flex items-center gap-1 animate-in zoom-in-50">
@@ -243,20 +245,20 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                                         onClick={() => handleDelete(cat.id)}
                                         className="h-8 px-3 bg-red-500 text-white font-black uppercase text-[10px] tracking-widest hover:bg-red-600"
                                     >
-                                        XÓA
+                                        {t("admin.banners.categories.delete_confirm")}
                                     </button>
                                     <button 
                                         onClick={() => setDeletingId(null)}
                                         className="h-8 px-3 bg-muted text-foreground font-black uppercase text-[10px] tracking-widest hover:bg-muted/80"
                                     >
-                                        HỦY
+                                        {t("admin.banners.categories.delete_cancel")}
                                     </button>
                                 </div>
                             ) : (
                               <>
-                                <button onClick={() => startCreate(cat.id)} className="p-1.5 text-primary hover:bg-primary/10 rounded opacity-0 group-hover:opacity-100 transition-opacity" title="Thêm con"><Plus size={16} /></button>
-                                <button onClick={() => startEdit(cat)} className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded opacity-0 group-hover:opacity-100 transition-opacity" title="Sửa"><Edit2 size={16} /></button>
-                                <button onClick={() => setDeletingId(cat.id)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded opacity-0 group-hover:opacity-100 transition-opacity" title="Xóa"><Trash2 size={16} /></button>
+                                <button onClick={() => startCreate(cat.id)} className="p-1.5 text-primary hover:bg-primary/10 rounded sm:opacity-0 group-hover:opacity-100 transition-opacity" title={t("admin.banners.categories.add_child_hint")}><Plus size={16} /></button>
+                                <button onClick={() => startEdit(cat)} className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded sm:opacity-0 group-hover:opacity-100 transition-opacity" title={t("admin.banners.categories.edit_hint")}><Edit2 size={16} /></button>
+                                <button onClick={() => setDeletingId(cat.id)} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded sm:opacity-0 group-hover:opacity-100 transition-opacity" title={t("admin.banners.categories.delete_hint_btn")}><Trash2 size={16} /></button>
                               </>
                             )}
                           </div>
@@ -272,11 +274,11 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                                    autoFocus
                                    value={editName}
                                    onChange={(e) => setEditName(e.target.value)}
-                                   placeholder="Tên danh mục con..."
+                                   placeholder={t("admin.banners.categories.new_child_placeholder")}
                                    className="flex-1 bg-background border-2 border-border px-3 py-1 font-bold text-xs outline-none focus:border-primary"
                                  />
-                                 <button onClick={() => handleSave()} className="p-1 bg-primary text-white"><Save size={14} /></button>
-                                 <button onClick={() => setIsCreating(false)} className="p-1 hover:bg-muted"><X size={14} /></button>
+                                 <button onClick={() => handleSave()} className="p-1 bg-primary text-white" title={t("admin.banners.categories.save_btn")}><Save size={14} /></button>
+                                 <button onClick={() => setIsCreating(false)} className="p-1 hover:bg-muted" title={t("admin.banners.categories.cancel_btn")}><X size={14} /></button>
                                </div>
                              )}
 
@@ -294,15 +296,15 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                                    ) : (
                                      <div className="flex items-center gap-2 truncate">
                                        <span className="font-bold text-xs">{child.name}</span>
-                                       <span className="text-[9px] font-bold opacity-30">({child.products_count} SP)</span>
+                                       <span className="text-[9px] font-bold opacity-30">({child.products_count} {t("seller.orders.items")})</span>
                                      </div>
                                    )}
                                  </div>
                                  <div className="flex items-center gap-1 shrink-0">
                                    {editingId === child.id ? (
                                       <>
-                                        <button onClick={() => handleSave(child.id)} className="p-1 text-primary hover:bg-primary/10 rounded"><Save size={14} /></button>
-                                        <button onClick={() => setEditingId(null)} className="p-1 text-muted-foreground hover:bg-muted rounded"><X size={14} /></button>
+                                        <button onClick={() => handleSave(child.id)} className="p-1 text-primary hover:bg-primary/10 rounded" title={t("admin.banners.categories.save_btn")}><Save size={14} /></button>
+                                        <button onClick={() => setEditingId(null)} className="p-1 text-muted-foreground hover:bg-muted rounded" title={t("admin.banners.categories.cancel_btn")}><X size={14} /></button>
                                       </>
                                    ) : deletingId === child.id ? (
                                         <div className="flex items-center gap-1 animate-in zoom-in-50">
@@ -310,19 +312,19 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                                                 onClick={() => handleDelete(child.id)}
                                                 className="h-6 px-2 bg-red-500 text-white font-black uppercase text-[8px] tracking-widest hover:bg-red-600"
                                             >
-                                                XÓA
+                                                {t("admin.banners.categories.delete_confirm")}
                                             </button>
                                             <button 
                                                 onClick={() => setDeletingId(null)}
-                                                className="h-6 px-2 bg-muted text-foreground font-black uppercase text-[8px] tracking-widest hover:bg-muted/80"
+                                                className="h-8 px-3 bg-muted text-foreground font-black uppercase text-[10px] tracking-widest hover:bg-muted/80"
                                             >
-                                                HỦY
+                                                {t("admin.banners.categories.delete_cancel")}
                                             </button>
                                         </div>
                                    ) : (
                                       <>
-                                        <button onClick={() => startEdit(child)} className="p-1 text-blue-500 hover:bg-blue-500/10 rounded opacity-0 group-hover:opacity-100 transition-opacity"><Edit2 size={14} /></button>
-                                        <button onClick={() => setDeletingId(child.id)} className="p-1 text-red-500 hover:bg-red-500/10 rounded opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14} /></button>
+                                        <button onClick={() => startEdit(child)} className="p-1 text-blue-500 hover:bg-blue-500/10 rounded sm:opacity-0 group-hover:opacity-100 transition-opacity" title={t("admin.banners.categories.edit_hint")}><Edit2 size={14} /></button>
+                                        <button onClick={() => setDeletingId(child.id)} className="p-1 text-red-500 hover:bg-red-500/10 rounded sm:opacity-0 group-hover:opacity-100 transition-opacity" title={t("admin.banners.categories.delete_hint_btn")}><Trash2 size={14} /></button>
                                       </>
                                    )}
                                  </div>
@@ -339,9 +341,9 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
 
             {/* Footer */}
             <div className="p-4 border-t-2 border-border bg-muted/20 flex items-center gap-3">
-               <AlertCircle size={16} className="text-muted-foreground" />
+               <AlertCircle size={16} className="text-muted-foreground shrink-0" />
                <p className="text-[9px] font-bold text-muted-foreground uppercase leading-relaxed text-wrap">
-                 Lưu ý: Không thể xóa danh mục đã có sản phẩm hoặc có danh mục con. Hãy xóa các mục liên quan trước.
+                 {t("admin.banners.categories.delete_hint")}
                </p>
             </div>
           </motion.div>

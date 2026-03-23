@@ -279,7 +279,7 @@ export default function AdminProductsPage() {
                   className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white font-black uppercase text-[10px] tracking-widest hover:opacity-90 active:scale-95 transition-all border-2 border-primary shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none"
               >
                   <Package size={18} />
-                  DANH MỤC
+                  {t("admin.banners.categories.title").toUpperCase()}
               </button>
           </div>
           <div className="md:col-span-4 lg:col-span-3 flex items-center gap-2 text-wrap w-full">
@@ -445,7 +445,7 @@ export default function AdminProductsPage() {
                                 
                                 <div className="flex items-center gap-4 py-2">
                                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider ${statusBadge(selectedProduct.status)}`}>
-                                        {selectedProduct.status}
+                                        {t(`common.${selectedProduct.status}`).toUpperCase()}
                                      </div>
                                      <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-40">ITEM ID: {selectedProduct.id}</span>
                                 </div>

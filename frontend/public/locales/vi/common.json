@@ -312,7 +312,23 @@
       "select_product_warning": "Vui lòng chọn sản phẩm!",
       "upload_image_warning": "Vui lòng tải lên hình ảnh!",
       "continue_btn": "Tiếp tục dùng ảnh này",
-      "product_prefix": "Sản phẩm: "
+      "product_prefix": "Sản phẩm: ",
+      "categories": {
+        "title": "Quản lý danh mục",
+        "search_placeholder": "Tìm kiếm danh mục...",
+        "add_new": "Thêm",
+        "loading": "Đang tải dữ liệu...",
+        "new_parent_placeholder": "Tên danh mục mới...",
+        "new_child_placeholder": "Tên danh mục con...",
+        "delete_confirm": "XÓA",
+        "delete_cancel": "HỦY",
+        "delete_hint": "Lưu ý: Không thể xóa danh mục đã có sản phẩm hoặc có danh mục con. Hãy xóa các mục liên quan trước.",
+        "edit_hint": "Sửa danh mục",
+        "add_child_hint": "Thêm danh mục con",
+        "delete_hint_btn": "Xóa danh mục",
+        "save_btn": "Lưu",
+        "cancel_btn": "Hủy"
+      }
     },
     "moderation": {
       "title": "Kiểm duyệt Nội dung",
@@ -566,7 +582,14 @@
     "free_shipping_over": "Miễn phí cho đơn trên",
     "total": "Tổng cộng",
     "checkout": "Thanh toán ngay",
-    "continue_shopping": "Tiếp tục mua hàng"
+    "continue_shopping": "Tiếp tục mua hàng",
+    "grand_total": "Tổng thanh toán",
+    "items_count": "món",
+    "in_cart": "TRONG GIỎ",
+    "unit_price": "Đơn giá",
+    "subtotal_item": "Thành tiền",
+    "free_shipping_hint": "Miễn phí vận chuyển cho đơn hàng trên {{amount}}",
+    "shop_label": "Cửa hàng"
   },
   "checkout_page": {
     "title": "Thanh toán",
@@ -603,7 +626,9 @@
     "customers_reviewed": "{{count}} khách hàng đánh giá",
     "reviews_count": "{{count}} Nhận xét",
     "total": "Tổng cộng",
-    "purchased": "Đã mua"
+    "purchased": "Đã mua",
+    "back_to_products": "Quay lại sản phẩm",
+    "from_shop": "Cửa hàng"
   },
   "common": {
     "deleted": "Đã xóa",

@@ -401,33 +401,39 @@ export default function NewProductPage() {
             ) : (
               <div className="space-y-3">
                 {attributes.map((attr, idx) => (
-                  <div key={idx} className="flex gap-4 items-start">
-                    <input
-                      type="text"
-                      placeholder={t("seller.products_manage.spec_name_placeholder")}
-                      value={attr.attribute_name}
-                      onChange={(e) => {
-                        const newAttrs = [...attributes];
-                        newAttrs[idx].attribute_name = e.target.value;
-                        setAttributes(newAttrs);
-                      }}
-                      className="flex-1 px-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                    <input
-                      type="text"
-                      placeholder={t("seller.products_manage.spec_value_placeholder")}
-                      value={attr.attribute_value}
-                      onChange={(e) => {
-                        const newAttrs = [...attributes];
-                        newAttrs[idx].attribute_value = e.target.value;
-                        setAttributes(newAttrs);
-                      }}
-                      className="flex-1 px-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
+                  <div key={idx} className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start p-4 bg-muted/20 border border-border rounded-xl relative">
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground sm:hidden">Tên thông số</label>
+                      <input
+                        type="text"
+                        placeholder={t("seller.products_manage.spec_name_placeholder")}
+                        value={attr.attribute_name}
+                        onChange={(e) => {
+                          const newAttrs = [...attributes];
+                          newAttrs[idx].attribute_name = e.target.value;
+                          setAttributes(newAttrs);
+                        }}
+                        className="w-full px-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground sm:hidden">Giá trị</label>
+                      <input
+                        type="text"
+                        placeholder={t("seller.products_manage.spec_value_placeholder")}
+                        value={attr.attribute_value}
+                        onChange={(e) => {
+                          const newAttrs = [...attributes];
+                          newAttrs[idx].attribute_value = e.target.value;
+                          setAttributes(newAttrs);
+                        }}
+                        className="w-full px-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => setAttributes(attributes.filter((_, i) => i !== idx))}
-                      className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                      className="absolute top-2 right-2 sm:static p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors shrink-0"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -460,29 +466,45 @@ export default function NewProductPage() {
               {options.map((opt, oi) => (
                 <div key={oi} className="border border-border rounded-xl p-4 space-y-4 bg-muted/20">
                   {/* Option name row — compact */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={opt.option_name}
-                      onChange={e => updateOptionName(oi, e.target.value)}
-                      placeholder={t("seller.products_manage.option_name_placeholder")}
-                      className="w-40 shrink-0 px-2 py-1.5 bg-input border border-border rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                    <div className="flex-1 text-xs text-muted-foreground">{t("seller.products_manage.min_2_values")}</div>
-                    {/* Option total stock badge */}
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground" title="Tổng stock option = SUM của tất cả values">
-                      <span className="text-[10px] uppercase tracking-wide">{t("seller.products_manage.total")}:</span>
-                      <span className="px-1.5 py-0.5 bg-primary/10 text-primary font-bold rounded">{computedOptionStock(opt)}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-card/60 p-3 border-b border-border -mx-4 -mt-4 rounded-t-xl">
+                    <div className="flex-1 flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={opt.option_name}
+                        onChange={e => updateOptionName(oi, e.target.value)}
+                        placeholder={t("seller.products_manage.option_name_placeholder")}
+                        className="flex-1 sm:w-48 sm:shrink-0 px-3 py-2 bg-input border-2 border-primary/20 rounded-xl text-sm font-black uppercase tracking-tight focus:outline-none focus:border-primary transition-all"
+                      />
+                      <button type="button" onClick={() => removeOption(oi)}
+                        className="sm:hidden p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors" title="Remove option">
+                        <Trash2 size={18} />
+                      </button>
                     </div>
-                    <button type="button" onClick={() => removeOption(oi)}
-                      className="p-1.5 text-destructive hover:bg-destructive/10 rounded-lg transition-colors" title="Remove option">
-                      <X size={15} />
-                    </button>
+                    
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t("seller.products_manage.min_2_values")}</div>
+                      
+                      <div className="flex items-center gap-3">
+                        {/* Option total stock badge */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-xl" title="Tổng stock option">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-primary">{t("seller.products_manage.total")}:</span>
+                          <span className="text-xs font-black text-primary">{computedOptionStock(opt)}</span>
+                        </div>
+                        
+                        <button type="button" onClick={() => removeOption(oi)}
+                          className="hidden sm:flex p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors" title="Remove option">
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Column headers */}
-                  <div className="grid grid-cols-[1fr_100px_70px_auto] gap-2 text-[11px] font-medium text-muted-foreground pl-1">
-                    <span>{t("seller.products_manage.product")}</span><span>+ {t("seller.products_manage.price")} (VNĐ)</span><span>{t("seller.products_manage.inventory")}</span><span className="flex gap-1"><span className="w-6"></span><span className="w-6"></span></span>
+                  {/* Column headers (Hidden on Mobile) */}
+                  <div className="hidden sm:grid grid-cols-[1fr_120px_80px_auto] gap-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2">
+                    <span>{t("seller.products_manage.product")}</span>
+                    <span>+ {t("seller.products_manage.price")} (VNĐ)</span>
+                    <span className="text-center">{t("seller.products_manage.inventory")}</span>
+                    <span className="w-[70px]"></span>
                   </div>
 
                   {/* Values */}
@@ -494,87 +516,111 @@ export default function NewProductPage() {
                       return (
                         <div key={vi} className="space-y-1.5">
                           {/* Parent value row */}
-                          <div className="grid grid-cols-[1fr_100px_70px_auto] gap-2 items-center">
-                            <input type="text" value={val.option_value}
-                              onChange={e => updateValue(oi, vi, "option_value", e.target.value)}
-                              placeholder={t("seller.products_manage.value_placeholder")}
-                              className="px-2 py-1.5 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                          <div className="flex flex-col sm:grid sm:grid-cols-[1fr_120px_80px_auto] gap-3 p-3 bg-card border border-border rounded-xl group relative">
+                            {/* Input: Name */}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black uppercase text-primary/60 sm:hidden tracking-wider">{t("seller.products_manage.spec_name")}</label>
+                              <input type="text" value={val.option_value}
+                                onChange={e => updateValue(oi, vi, "option_value", e.target.value)}
+                                placeholder={t("seller.products_manage.value_placeholder")}
+                                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 font-bold" />
+                            </div>
 
-                            {/* Price: ẩn khi có sub_values */}
-                            {hasSubs ? (
-                              <div className="px-2 py-1.5 bg-muted border border-dashed border-border rounded-lg text-xs text-muted-foreground text-center" title="Tính từ giá option con">
-                                {t("seller.products_manage.from_sub")}
-                              </div>
-                            ) : (
-                              <input type="text" value={formatPrice(val.price_adjustment)}
-                                onChange={e => {
-                                  const raw = e.target.value.replace(/\./g, "");
-                                  if (!isNaN(Number(raw)) || raw === "") {
-                                    updateValue(oi, vi, "price_adjustment", parseFloat(raw) || 0);
-                                  }
-                                }}
-                                className="px-2 py-1.5 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                            )}
+                            <div className="grid grid-cols-2 sm:contents gap-3">
+                                {/* Price: ẩn khi có sub_values */}
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-black uppercase text-primary/60 sm:hidden tracking-wider">{t("seller.products_manage.price")}</label>
+                                  {hasSubs ? (
+                                    <div className="h-[38px] px-3 flex items-center justify-center bg-muted border border-dashed border-border rounded-lg text-[9px] text-muted-foreground font-bold italic text-center" title="Tính từ giá option con">
+                                      {t("seller.products_manage.from_sub")}
+                                    </div>
+                                  ) : (
+                                    <input type="text" value={formatPrice(val.price_adjustment)}
+                                      onChange={e => {
+                                        const raw = e.target.value.replace(/\./g, "");
+                                        if (!isNaN(Number(raw)) || raw === "") {
+                                          updateValue(oi, vi, "price_adjustment", parseFloat(raw) || 0);
+                                        }
+                                      }}
+                                      className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-center font-bold" />
+                                  )}
+                                </div>
 
-                            {/* Stock: auto-computed khi có sub_values */}
-                            {hasSubs ? (
-                              <div className="px-2 py-1.5 bg-muted border border-dashed border-border rounded-lg text-xs font-bold text-center" title="Tự động = MIN(stock sub_values)">
-                                {parentStock}
-                              </div>
-                            ) : (
-                              <input type="number" value={val.stock_quantity} min="0"
-                                onChange={e => updateValue(oi, vi, "stock_quantity", parseInt(e.target.value) || 0)}
-                                className="px-2 py-1.5 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                            )}
+                                {/* Stock: auto-computed khi có sub_values */}
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-black uppercase text-primary/60 sm:hidden tracking-wider">{t("seller.products_manage.inventory")}</label>
+                                  {hasSubs ? (
+                                    <div className="h-[38px] px-3 flex items-center justify-center bg-muted border border-dashed border-border rounded-lg text-xs font-black text-primary text-center" title="Tự động = SUM(stock sub_values)">
+                                      {parentStock}
+                                    </div>
+                                  ) : (
+                                    <input type="number" value={val.stock_quantity} min="0"
+                                      onChange={e => updateValue(oi, vi, "stock_quantity", parseInt(e.target.value) || 0)}
+                                      className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-center font-bold" />
+                                  )}
+                                </div>
+                            </div>
 
-                            {/* Buttons: [+ sub] [X] */}
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => addSubValue(oi, vi)}
-                                title="Thêm 2 sub-values"
-                                className="w-6 h-6 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
-                              >
-                                <Plus size={12} />
-                              </button>
-                              <button type="button"
-                                onClick={() => removeValue(oi, vi)}
-                                disabled={opt.values.length <= 2}
-                                title="Remove value"
-                                className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors disabled:opacity-30">
-                                <X size={12} />
-                              </button>
+                             {/* Buttons: [+ sub] [X] */}
+                            <div className="flex sm:static items-center justify-center gap-2 shrink-0 self-center sm:self-auto w-full sm:w-auto mt-2 sm:mt-0 border-t sm:border-t-0 border-border pt-3 sm:pt-0">
+                               <button
+                                 type="button"
+                                 onClick={() => addSubValue(oi, vi)}
+                                 title="Thêm phân loại cấp 2"
+                                 className="flex-1 sm:flex-none sm:w-8 h-8 flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-all font-black"
+                               >
+                                 <Plus size={16} />
+                               </button>
+                               <button type="button"
+                                 onClick={() => removeValue(oi, vi)}
+                                 disabled={opt.values.length <= 2}
+                                 title="Remove value"
+                                 className="flex-1 sm:flex-none sm:w-8 h-8 flex items-center justify-center bg-muted text-muted-foreground hover:bg-destructive hover:text-white rounded-lg transition-all disabled:opacity-30">
+                                 <Trash2 size={16} />
+                               </button>
                             </div>
                           </div>
 
-                          {/* Sub-values (indent + smaller) */}
+                           {/* Sub-values (indented nested style) */}
                           {val.sub_values.map((sub, si) => (
-                            <div key={si} className="grid grid-cols-[16px_1fr_100px_70px_auto] gap-2 items-center pl-2">
-                              <div className="flex items-center justify-center">
-                                <div className="w-px h-4 bg-border mr-0.5 opacity-60" />
-                                <div className="w-2 h-px bg-border opacity-60" />
-                              </div>
-                              <input type="text" value={sub.option_value}
-                                onChange={e => updateSubValue(oi, vi, si, "option_value", e.target.value)}
-                                placeholder={t("seller.products_manage.sub_value_placeholder")}
-                                className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
-                              <input type="text" value={formatPrice(sub.price_adjustment)}
-                                onChange={e => {
-                                  const raw = e.target.value.replace(/\./g, "");
-                                  if (!isNaN(Number(raw)) || raw === "") {
-                                    updateSubValue(oi, vi, si, "price_adjustment", parseFloat(raw) || 0);
-                                  }
-                                }}
-                                className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
-                              <input type="number" value={sub.stock_quantity} min="0"
-                                onChange={e => updateSubValue(oi, vi, si, "stock_quantity", parseInt(e.target.value) || 0)}
-                                className="px-2 py-1 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
-                              <div className="flex">
-                                <button type="button" onClick={() => removeSubValue(oi, vi, si)}
-                                  className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors">
-                                  <X size={11} />
-                                </button>
-                              </div>
+                            <div key={si} className="flex flex-col sm:grid sm:grid-cols-[20px_1fr_120px_80px_auto] gap-2 items-stretch sm:items-center px-3 pl-4 sm:pl-2 py-2 border-l-2 border-primary bg-primary/[0.03] rounded-r-xl my-1 relative">
+                               <div className="hidden sm:flex items-center justify-center">
+                                 <div className="w-px h-4 bg-primary/30 mr-0.5" />
+                                 <div className="w-2 h-px bg-primary/30" />
+                               </div>
+                               
+                               <div className="space-y-1">
+                                 <label className="text-[9px] font-black uppercase text-primary/60 sm:hidden tracking-wider px-1">{t("seller.products_manage.sub_value")}</label>
+                                 <input type="text" value={sub.option_value}
+                                   onChange={e => updateSubValue(oi, vi, si, "option_value", e.target.value)}
+                                   placeholder={t("seller.products_manage.sub_value_placeholder")}
+                                   className="w-full px-2 py-1.5 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 font-bold" />
+                               </div>
+
+                               <div className="grid grid-cols-2 sm:contents gap-2">
+                                 <div className="space-y-1">
+                                   <label className="text-[9px] font-black uppercase text-primary/60 sm:hidden tracking-wider px-1">{t("seller.products_manage.price")}</label>
+                                   <input type="text" value={formatPrice(sub.price_adjustment)}
+                                     onChange={e => {
+                                       const raw = e.target.value.replace(/\./g, "");
+                                       if (!isNaN(Number(raw)) || raw === "") {
+                                         updateSubValue(oi, vi, si, "price_adjustment", parseFloat(raw) || 0);
+                                       }
+                                     }}
+                                     className="w-full px-2 py-1.5 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 text-center font-bold" />
+                                 </div>
+                                 <div className="space-y-1">
+                                   <label className="text-[9px] font-black uppercase text-primary/60 sm:hidden tracking-wider px-1">{t("seller.products_manage.inventory")}</label>
+                                   <input type="number" value={sub.stock_quantity} min="0"
+                                     onChange={e => updateSubValue(oi, vi, si, "stock_quantity", parseInt(e.target.value) || 0)}
+                                     className="w-full px-2 py-1.5 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 text-center font-bold" />
+                                 </div>
+                               </div>
+
+                               <button type="button" onClick={() => removeSubValue(oi, vi, si)}
+                                 className="flex items-center justify-center w-6 h-6 sm:static sm:bg-transparent text-destructive sm:text-muted-foreground hover:bg-destructive/10 sm:hover:bg-destructive sm:hover:text-white rounded-md transition-all self-end mt-1 sm:mt-0">
+                                 <X size={14} />
+                               </button>
                             </div>
                           ))}
                         </div>

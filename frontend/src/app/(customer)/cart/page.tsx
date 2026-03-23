@@ -56,7 +56,7 @@ export default function CartPage() {
                 {t("cart_page.title")}
               </h1>
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mt-1">
-                {itemCount} {t("cart_page.items")} TRONG GIỎ
+                {itemCount} {t("cart_page.items")} {t("cart_page.in_cart")}
               </p>
             </div>
             <button 
@@ -79,7 +79,7 @@ export default function CartPage() {
                     </Link>
                     <div className="flex-1 min-w-0 flex flex-col">
                       <h3 className="font-black text-xs md:text-sm uppercase tracking-tight line-clamp-2 leading-tight mb-1">{item.title}</h3>
-                      <p className="text-[9px] font-bold text-muted-foreground uppercase mb-2">Cửa hàng: {item.sellerName}</p>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase mb-2">{t("cart_page.shop_label")}: {item.sellerName}</p>
                       
                       {Object.entries(item.attributes).length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-auto">
@@ -96,7 +96,7 @@ export default function CartPage() {
                   {/* Quantity & Price */}
                   <div className="flex items-center justify-between md:flex-col md:justify-center md:items-end gap-4 border-t-2 md:border-t-0 md:border-l-2 border-dashed border-border pt-4 md:pt-0 md:pl-6 shrink-0">
                     <div className="flex flex-col items-start md:items-end">
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase leading-none mb-1">Đơn giá</p>
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase leading-none mb-1">{t("cart_page.unit_price")}</p>
                       <p className="font-black text-xs text-primary">{formatPrice(item.salePrice ?? item.price)}</p>
                     </div>
 
@@ -117,7 +117,7 @@ export default function CartPage() {
                     </div>
 
                     <div className="hidden md:flex flex-col items-end">
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase leading-none mb-1">Thành tiền</p>
+                      <p className="text-[8px] font-bold text-muted-foreground uppercase leading-none mb-1">{t("cart_page.subtotal_item")}</p>
                       <p className="font-black text-sm text-primary">{formatPrice((item.salePrice ?? item.price) * item.quantity)}</p>
                     </div>
 
@@ -141,31 +141,31 @@ export default function CartPage() {
                 
                 <div className="space-y-3">
                   <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    <span>Tạm tính ({itemCount} món)</span>
+                    <span>{t("cart_page.subtotal")} ({itemCount} {t("cart_page.items_count")})</span>
                     <span className="text-foreground">{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                     <span>{t("cart_page.shipping")}</span>
                     <span className={shipping === 0 ? "text-green-600 font-black" : "text-foreground"}>
-                      {shipping === 0 ? "MIỄN PHÍ" : formatPrice(shipping)}
+                      {shipping === 0 ? t("cart_page.free") : formatPrice(shipping)}
                     </span>
                   </div>
                   {shipping > 0 && (
                     <div className="bg-amber-100 border-l-4 border-amber-500 p-2 text-[8px] font-bold text-amber-700 uppercase leading-relaxed">
-                      Miễn phí vận chuyển cho đơn hàng trên {formatPrice(500000)}
+                      {t("cart_page.free_shipping_hint", { amount: formatPrice(500000) })}
                     </div>
                   )}
                 </div>
 
                 <div className="pt-4 border-t-2 border-primary flex justify-between items-end">
-                  <span className="text-xs font-black uppercase tracking-tighter">Tổng thanh toán</span>
+                  <span className="text-xs font-black uppercase tracking-tighter">{t("cart_page.grand_total")}</span>
                   <span className="text-2xl font-black text-primary tracking-tighter">{formatPrice(total)}</span>
                 </div>
 
                 <div className="pt-4 space-y-3">
                   <Link href="/checkout"
                     className="w-full py-4 bg-primary text-white border-2 border-primary font-black uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]">
-                    TIẾP TỤC ĐẶT HÀNG <ArrowRight size={18} strokeWidth={3} />
+                    {t("cart_page.checkout").toUpperCase()} <ArrowRight size={18} strokeWidth={3} />
                   </Link>
                   <Link href="/products" className="w-full py-2 text-[9px] font-black text-center text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors block underline underline-offset-4 decoration-2">
                     {t("cart_page.continue_shopping")}

@@ -237,7 +237,7 @@ export default function ProductDetailPage() {
                   {product.seller.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="text-[8px] font-bold uppercase text-muted-foreground leading-none mb-1">{t("footer.shop")}</p>
+                  <p className="text-[8px] font-bold uppercase text-muted-foreground leading-none mb-1">{t("product_details.from_shop")}</p>
                   <Link href={`/shop/${product.seller.id}`} className="text-xs font-black uppercase hover:text-primary">{product.seller.name}</Link>
                 </div>
               </div>

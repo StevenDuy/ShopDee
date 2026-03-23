@@ -311,7 +311,23 @@
       "select_product_warning": "Please select a product!",
       "upload_image_warning": "Please upload an image!",
       "continue_btn": "Continue with this image",
-      "product_prefix": "Product: "
+      "product_prefix": "Product: ",
+      "categories": {
+        "title": "Category Manager",
+        "search_placeholder": "Search categories...",
+        "add_new": "Add",
+        "loading": "Loading data...",
+        "new_parent_placeholder": "New category name...",
+        "new_child_placeholder": "New sub-category name...",
+        "delete_confirm": "DELETE",
+        "delete_cancel": "CANCEL",
+        "delete_hint": "Note: Cannot delete categories with products or sub-categories. Please remove related items first.",
+        "edit_hint": "Edit category",
+        "add_child_hint": "Add sub-category",
+        "delete_hint_btn": "Delete category",
+        "save_btn": "Save",
+        "cancel_btn": "Cancel"
+      }
     },
     "moderation": {
       "title": "Content Moderation",
@@ -565,7 +581,14 @@
     "free_shipping_over": "Free shipping over",
     "total": "Total",
     "checkout": "Proceed to Checkout",
-    "continue_shopping": "Continue Shopping"
+    "continue_shopping": "Continue Shopping",
+    "grand_total": "Grand Total",
+    "items_count": "items",
+    "in_cart": "IN CART",
+    "unit_price": "Unit Price",
+    "subtotal_item": "Subtotal",
+    "free_shipping_hint": "Free shipping for orders over {{amount}}",
+    "shop_label": "Shop"
   },
   "checkout_page": {
     "title": "Checkout",
@@ -602,7 +625,9 @@
     "customers_reviewed": "{{count}} reviews",
     "reviews_count": "{{count}} Reviews",
     "total": "Total",
-    "purchased": "Purchased"
+    "purchased": "Purchased",
+    "back_to_products": "Back to products",
+    "from_shop": "Shop"
   },
   "common": {
     "deleted": "Deleted",
