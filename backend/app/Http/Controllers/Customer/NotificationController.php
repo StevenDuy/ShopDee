@@ -10,11 +10,21 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $notifications = Notification::where('user_id', $request->user()->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $user = $request->user();
+        $query = Notification::with('user')->orderBy('created_at', 'desc');
+
+        if ($user->role_id !== 1) {
+            $query->where('user_id', $user->id);
+        } else {
+            // Admin: Filter out duplicates of the same broadcast.
+            // Only show one representative for each batch_id.
+            $query->where(function($q) {
+                $q->whereNull('data->batch_id')
+                  ->orWhereRaw('id IN (SELECT MIN(id) FROM notifications GROUP BY JSON_UNQUOTE(JSON_EXTRACT(data, "$.batch_id")))');
+            });
+        }
             
-        return response()->json($notifications);
+        return response()->json($query->paginate(20));
     }
 
     public function markAsRead(Request $request, $id)

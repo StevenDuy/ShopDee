@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Events\NewChatMessage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use App\Models\Product;
 
 class ChatController extends Controller
 {
@@ -59,6 +61,7 @@ class ChatController extends Controller
             ->update(['is_read' => true]);
 
         $messages = ChatMessage::where('conversation_id', $conversation->id)
+            ->with('product')
             ->orderBy('created_at', 'desc')
             ->paginate(30);
 
@@ -101,6 +104,9 @@ class ChatController extends Controller
             ]);
         }
 
+        $conversation->load(['user1', 'user2']);
+        $conversation->other_user = $conversation->user1_id === $userId ? $conversation->user2 : $conversation->user1;
+
         return response()->json($conversation);
     }
 
@@ -109,7 +115,9 @@ class ChatController extends Controller
     {
         $request->validate([
             'message_text' => 'nullable|string',
-            'media_url'    => 'nullable|string'
+            'media_url'    => 'nullable|string',
+            'file'         => 'nullable|file|image|max:10240',
+            'product_id'   => 'nullable|exists:products,id'
         ]);
 
         $userId = $request->user()->id;
@@ -118,11 +126,25 @@ class ChatController extends Controller
             $query->where('user1_id', $userId)->orWhere('user2_id', $userId);
         })->findOrFail($id);
 
+        $mediaUrl = $request->media_url;
+
+        if ($request->hasFile('file')) {
+            try {
+                // Using the v2/v3 SDK way since the macro isn't found
+                $uploadResult = cloudinary()->uploadApi()->upload($request->file('file')->getRealPath());
+                $mediaUrl = $uploadResult['secure_url'] ?? null;
+                \Illuminate\Support\Facades\Log::info("Cloudinary upload successful: " . $mediaUrl);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Cloudinary upload failed: " . $e->getMessage());
+            }
+        }
+
         $message = ChatMessage::create([
             'conversation_id' => $conversation->id,
             'sender_id'       => $userId,
             'message_text'    => $request->message_text,
-            'media_url'       => $request->media_url,
+            'media_url'       => $mediaUrl,
+            'product_id'      => $request->product_id,
             'is_read'         => false
         ]);
 
@@ -130,9 +152,36 @@ class ChatController extends Controller
         $conversation->touch();
 
         // Broadcast to Reverb/Pusher
-        event(new NewChatMessage($message));
+        $message->load('product.media');
+
+        broadcast(new NewChatMessage($message))->toOthers();
 
         return response()->json($message, 201);
+    }
+
+    // Delete a conversation
+    public function destroyConversation(Request $request, $id)
+    {
+        $userId = $request->user()->id;
+        $conversation = ChatConversation::where(function ($query) use ($userId) {
+            $query->where('user1_id', $userId)->orWhere('user2_id', $userId);
+        })->findOrFail($id);
+
+        $conversation->delete();
+        return response()->json(['message' => 'Conversation deleted']);
+    }
+
+    // Get products for attachment
+    public function shopProducts(Request $request, $shopId)
+    {
+        $products = \App\Models\Product::where('seller_id', $shopId)
+            ->with('media')
+            ->where('status', 'active')
+            ->latest()
+            ->limit(10)
+            ->get();
+            
+        return response()->json($products);
     }
 
     // New: Search for users to message

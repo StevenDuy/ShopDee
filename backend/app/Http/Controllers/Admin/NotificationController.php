@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class NotificationController extends Controller
 {
@@ -16,33 +17,29 @@ class NotificationController extends Controller
             'title' => 'required|string|max:255',
             'message' => 'required|string',
             'link' => 'nullable|url',
-            'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'role' => 'nullable|string|in:all,customer,seller'
         ]);
 
-        $attachments = [];
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                // Ensure the directory exists or just let store handle it
-                $path = $file->store('notifications', 'public');
-                $attachments[] = [
-                    'name' => $file->getClientOriginalName(),
-                    'url' => asset('storage/' . $path), // Using asset() for complete URL
-                    'type' => $file->getClientMimeType(),
-                ];
-            }
-        }
+        $roleType = $request->role ?? 'all';
 
-        // Data structure matching what frontend expects in its 'n.data' or logic
+        $batchId = (string) \Illuminate\Support\Str::uuid();
         $dataBlob = [
             'title' => $request->title,
             'message' => $request->message,
             'link' => $request->link,
-            'attachments' => $attachments,
+            'is_broadcast' => true,
+            'target_role' => $roleType,
+            'batch_id' => $batchId,
         ];
 
-        // Broadcast to all users
-        // Note: For large user bases, this should be a background job.
-        $users = User::all();
+        $query = User::query();
+        if ($roleType === 'customer') {
+            $query->where('role_id', 3);
+        } elseif ($roleType === 'seller') {
+            $query->where('role_id', 2);
+        }
+
+        $users = $query->get();
         foreach ($users as $user) {
             Notification::create([
                 'user_id' => $user->id,
@@ -58,8 +55,24 @@ class NotificationController extends Controller
     public function destroy($id)
     {
         $notification = Notification::findOrFail($id);
-        $notification->delete();
+        
+        $data = $notification->data;
+        if (isset($data['is_broadcast']) && $data['is_broadcast']) {
+            // Delete FOR EVERYONE using batch_id or fallback to title/message
+            $query = Notification::where('type', 'system');
+            
+            if (isset($data['batch_id'])) {
+                $query->whereJsonContains('data->batch_id', $data['batch_id']);
+            } else {
+                $query->whereJsonContains('data->title', $data['title'])
+                      ->whereJsonContains('data->message', $data['message']);
+            }
 
+            $query->delete();
+            return response()->json(['message' => 'Broadcast deleted for all users']);
+        }
+
+        $notification->delete();
         return response()->json(['message' => 'Notification deleted successfully']);
     }
 }

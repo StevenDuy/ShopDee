@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
+import { toast } from "sonner";
 import { 
   Search, Send, Image as ImageIcon, CheckCheck, 
   Bell, MessageCircle, Package, CheckCircle, Info, Star, Store,
-  ChevronLeft, Plus, X, Trash2, Paperclip, FileText, Link as LinkIcon,
+  ChevronLeft, Plus, X, Trash2, FileText, Link as LinkIcon,
   MoreVertical, User, ShieldAlert
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import echo from "@/lib/echo";
-import { storage } from "@/lib/firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+
 import imageCompression from "browser-image-compression";
 import { useTranslation } from "react-i18next";
 
@@ -43,6 +43,7 @@ export function UnifiedInbox() {
   const { unreadCount, hasUnreadMessages, hasUnreadNotifications, fetchUnreadCounts } = useNotificationStore();
   
   const searchParams = useSearchParams();
+  const router = useRouter();
   const targetUserId = searchParams.get("userId");
   
   const [loading, setLoading] = useState(false);
@@ -57,6 +58,8 @@ export function UnifiedInbox() {
   
   const [notifications, setNotifications] = useState<any[]>([]);
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [productSearch, setProductSearch] = useState("");
   
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,7 +67,13 @@ export function UnifiedInbox() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   
-  const [form, setForm] = useState({ title: "", message: "", link: "", files: [] as File[] });
+  const [form, setForm] = useState({ title: "", message: "", link: "", role: "all" });
+  const [isDeletingConv, setIsDeletingConv] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  
+  const [isAttachingProduct, setIsAttachingProduct] = useState(false);
+  const [shopProducts, setShopProducts] = useState<any[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
   useEffect(() => {
     if (activeConv || selectedNotif) {
@@ -76,13 +85,23 @@ export function UnifiedInbox() {
   }, [activeConv, selectedNotif]);
 
   useEffect(() => {
+    setIsConfirmingDelete(false);
+  }, [selectedNotif]);
+
+  useEffect(() => {
     if (!token) return;
     refreshData().then(() => {
       if (targetUserId && activeTab === "chat") {
         handleStartChat(parseInt(targetUserId));
       }
     });
-  }, [token, activeTab, targetUserId]);
+
+    // Handle auto-attaching product from URL
+    const productId = searchParams.get("productId");
+    if (productId) {
+      setSelectedProductId(parseInt(productId));
+    }
+  }, [token, activeTab, targetUserId, searchParams]);
 
   useEffect(() => {
     if (activeConv && token) {
@@ -191,88 +210,141 @@ export function UnifiedInbox() {
     } catch(e) { console.error(e); }
   };
 
-  const handleCompressAndUpload = async (file: File) => {
-    try {
-      if (!storage) {
-        console.error("Firebase Storage is not initialized.");
-        return null;
-      }
-      setUploading(true);
-      const options = { maxSizeMB: 0.3, maxWidthOrHeight: 1200, useWebWorker: true };
-      const compressedFile = await imageCompression(file, options);
-      
-      const fileName = `${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, `chat_media/${fileName}`);
-      const uploadTask = uploadBytesResumable(storageRef, compressedFile);
+  const handleSendMessage = async (e: React.FormEvent, mediaUrl?: string, file?: File) => {
+    if (e) e.preventDefault();
+    if (!newMessage.trim() && !mediaUrl && !file && !selectedProductId || !activeConv || !token) return;
+    
+    // Optimistic clear
+    const msgText = newMessage;
+    const prodId = selectedProductId;
+    setNewMessage(""); 
+    setSelectedProductId(null);
+    setIsAttachingProduct(false);
 
-      return new Promise<string>((resolve, reject) => {
-        uploadTask.on('state_changed', null, reject, async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(url);
-        });
+    try {
+      const formData = new FormData();
+      if (msgText.trim()) formData.append("message_text", msgText);
+      if (mediaUrl) formData.append("media_url", mediaUrl);
+      if (file) formData.append("file", file);
+      if (prodId) formData.append("product_id", prodId.toString());
+
+      const optimisticId = Date.now();
+      if (!user) return;
+      const tempMsg = {
+        id: optimisticId,
+        sender_id: user.id,
+        message_text: msgText,
+        media_url: file ? URL.createObjectURL(file) : mediaUrl,
+        product_id: prodId,
+        created_at: new Date().toISOString(),
+        is_optimistic: true
+      };
+      setMessages(prev => [...prev, tempMsg]);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+
+      const res = await axios.post(`${API}/chat/${activeConv.id}`, formData, { 
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
+        } 
       });
-    } catch (err) {
-      console.error("Upload error", err);
-      return null;
-    } finally {
-      setUploading(false);
+      
+      setMessages(prev => prev.map(m => m.id === optimisticId ? res.data : m));
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    } catch (err: any) {
+      console.error("Chat Error Detail:", err.response?.data || err.message || err);
+      toast.error(t("common.error_send_message") || "Lỗi gửi tin nhắn");
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent, mediaUrl?: string) => {
-    if (e) e.preventDefault();
-    if (!newMessage.trim() && !mediaUrl || !activeConv || !token) return;
-    
-    const msgData = { 
-      message_text: newMessage,
-      media_url: mediaUrl 
-    };
-    setNewMessage(""); 
+  const handleDeleteConversation = async (convId: number) => {
     try {
-      const res = await axios.post(`${API}/chat/${activeConv.id}`, msgData, { headers: { Authorization: `Bearer ${token}` } });
-      setMessages(prev => {
-        if (prev.some(m => m.id === res.data.id)) return prev;
-        return [...prev, res.data];
-      });
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    } catch (err: any) {
-      console.error("Chat Error:", err.response?.data || err.message);
+      await axios.delete(`${API}/chat/conversations/${convId}`, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success(t("inbox.conversation_deleted") || "Đã xóa cuộc hội thoại");
+      setActiveConv(null);
+      setIsDeletingConv(false);
+      refreshData();
+    } catch(err) {
+      console.error(err);
+      toast.error(t("inbox.error_delete_conversation") || "Lỗi xóa cuộc hội thoại");
+    }
+  };
+
+  const fetchShopProducts = async () => {
+    if (!activeConv || !token) return;
+    // For customers, the seller is the other user. For sellers, they are themselves.
+    const sellerId = user?.role_id === 2 ? user.id : activeConv.other_user?.id;
+    if (!sellerId) return;
+    
+    try {
+      const res = await axios.get(`${API}/chat/shop-products/${sellerId}`, { headers: { Authorization: `Bearer ${token}` } });
+      setShopProducts(res.data);
+      setIsAttachingProduct(true);
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const onFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = await handleCompressAndUpload(file);
-    if (url) await handleSendMessage(null as any, url);
+    
+    setUploading(true);
+    try {
+      // 1. Frontend Compression
+      const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true };
+      const compressedFile = await imageCompression(file, options);
+      
+      // 2. Call sendMessage which uploads to Cloudinary via Backend
+      await handleSendMessage(null as any, undefined, compressedFile);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleCreateNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) return;
+    
+    // Simple URL validation if not empty
+    if (form.link && !/^(https?:\/\/)/i.test(form.link)) {
+      toast.error(t("inbox.invalid_link"));
+      return;
+    }
+
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("title", form.title);
-      formData.append("message", form.message);
-      if (form.link) formData.append("link", form.link);
-      form.files.forEach(f => formData.append("attachments[]", f));
-      await axios.post(`${API}/notifications`, formData, { 
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } 
-      });
-      setForm({ title: "", message: "", link: "", files: [] });
+      await axios.post(`${API}/notifications`, {
+        title: form.title,
+        message: form.message,
+        link: form.link,
+        role: form.role
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      
+      setForm({ title: "", message: "", link: "", role: "all" });
       setShowCreateModal(false);
       refreshData();
-    } catch (e) { console.error(e); }
+      toast.success(t("inbox.broadcast_success"));
+    } catch (e: any) { 
+      console.error(e); 
+      if (e.response?.status === 422) {
+        toast.error(t("inbox.invalid_link"));
+      } else {
+        toast.error(t("inbox.error_broadcast"));
+      }
+    }
     finally { setLoading(false); }
   };
 
   const handleDeleteNotification = async (id: number) => {
-    if (!isAdmin || !confirm(t("inbox.delete_confirm"))) return;
+    if (!isAdmin) return;
     try {
       await axios.delete(`${API}/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setNotifications(prev => prev.filter(n => n.id !== id));
       if (selectedNotif?.id === id) setSelectedNotif(null);
+      setIsConfirmingDelete(false);
       fetchUnreadCounts(token!);
     } catch (e) { console.error(e); }
   };
@@ -297,7 +369,7 @@ export function UnifiedInbox() {
           className={`p-4 rounded-[22px] transition-all duration-300 relative group ${activeTab === "notifications" ? "bg-primary text-primary-foreground shadow-xl shadow-primary/30" : "text-muted-foreground hover:bg-muted"}`}
         >
           <Bell size={24} />
-          {hasUnreadNotifications && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
+          {hasUnreadNotifications && !isAdmin && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
           <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">{t("inbox.notifications")}</div>
         </button>
       </div>
@@ -365,9 +437,14 @@ export function UnifiedInbox() {
                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${getNotifColor(n.type || "info")}`}>{getNotifIcon(n.type || "info")}</div>
                    <div className="flex-1 min-w-0">
                      <p className="font-bold text-[11px] md:text-sm truncate uppercase tracking-tight">{n.data?.title || n.title || "Note"}</p>
+                     {isAdmin && (n as any).user && (
+                        <p className="text-[9px] md:text-[10px] font-black text-primary/60 mt-0.5 uppercase tracking-widest">
+                            {t("admin.recipient") || "Người nhận"}: {(n as any).user.name}
+                        </p>
+                     )}
                      <p className="text-[11px] md:text-xs text-muted-foreground line-clamp-1 md:line-clamp-2 mt-1">{n.data?.message || n.message}</p>
                    </div>
-                   {!n.is_read && <div className="w-2 h-2 rounded-full bg-primary shrink-0" />}
+                   {!n.is_read && !isAdmin && <div className="w-2 h-2 rounded-full bg-primary shrink-0" />}
                  </button>
                ))}
              </div>
@@ -402,10 +479,57 @@ export function UnifiedInbox() {
                    <div className="flex items-center gap-3">
                       <button onClick={() => setActiveConv(null)} className="p-2 -ml-2"><ChevronLeft size={24} /></button>
                       <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary flex items-center justify-center text-white font-black text-sm">{activeConv.other_user?.name?.charAt(0)}</div>
-                      <h3 className="font-black text-sm md:text-lg truncate max-w-[150px] md:max-w-none">{activeConv.other_user?.name || "Chat"}</h3>
+                      <div className="flex flex-col">
+                         <h3 className="font-black text-sm md:text-md tracking-tight uppercase leading-none">{activeConv.other_user?.name}</h3>
+                         <div className="flex items-center gap-1.5 mt-1.5">
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]"></span>
+                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t("inbox.online") || "Online"}</span>
+                         </div>
+                      </div>
+                   </div>
+                   
+                   <div className="flex items-center gap-2">
+                       {!isDeletingConv ? (
+                         <button 
+                           onClick={() => setIsDeletingConv(true)}
+                           className="p-2 md:p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl md:rounded-2xl transition-all shadow-sm"
+                           title={t("inbox.delete_conversation")}
+                         >
+                             <Trash2 size={18} />
+                         </button>
+                       ) : (
+                         <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => handleDeleteConversation(activeConv.id)}
+                              className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-xl font-black text-[10px] md:text-xs uppercase transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
+                            >
+                                <CheckCheck size={14} /> {t("inbox.confirm") || "Xóa"}
+                            </button>
+                            <button 
+                              onClick={() => setIsDeletingConv(false)}
+                              className="px-4 py-2 bg-muted text-muted-foreground hover:bg-muted/80 rounded-xl font-bold text-[10px] md:text-xs uppercase transition-all"
+                            >
+                                {t("inbox.cancel_short") || "Hủy"}
+                            </button>
+                         </div>
+                       )}
                    </div>
                 </div>
-                 <div 
+           
+           <AnimatePresence>
+             {viewingImage && (
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl" onClick={() => setViewingImage(null)}>
+                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative max-w-5xl w-full">
+                    <img src={viewingImage} alt="Fullscreen" className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl" />
+                    <div className="absolute top-4 right-4 flex gap-2">
+                       <button onClick={() => window.open(viewingImage, '_blank')} className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"><LinkIcon size={20} /></button>
+                       <button onClick={() => setViewingImage(null)} className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"><X size={20} /></button>
+                    </div>
+                  </motion.div>
+               </motion.div>
+             )}
+           </AnimatePresence>
+                <div 
                    ref={scrollContainerRef}
                    className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar flex flex-col"
                  >
@@ -425,14 +549,43 @@ export function UnifiedInbox() {
                        <div key={msg.id || i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-2.5 md:px-5 md:py-3 shadow-sm ${isMe ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card border border-border/50 rounded-tl-none"}`}>
                              {msg.media_url && (
-                               <div className="mb-2 rounded-lg overflow-hidden border border-white/10 shadow-inner">
-                                 <img src={msg.media_url} alt="media" className="max-w-full h-auto object-cover hover:scale-105 transition-transform cursor-pointer" onClick={() => window.open(msg.media_url, '_blank')} />
+                               <div className="mb-2 rounded-lg overflow-hidden border border-white/10 shadow-inner group relative">
+                                 <img 
+                                   src={msg.media_url} 
+                                   alt="media" 
+                                   className="max-w-full h-auto object-cover hover:scale-105 transition-all duration-500 cursor-pointer" 
+                                   onClick={() => setViewingImage(msg.media_url)} 
+                                 />
+                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                    <Search className="text-white" size={24} />
+                                 </div>
+                               </div>
+                             )}
+                             {msg.product && (
+                               <div 
+                                 onClick={() => {
+                                   if (user?.role_id === 2 || user?.role_id === 1) {
+                                     router.push(`/seller/products?search=${encodeURIComponent(msg.product.title)}`);
+                                   } else {
+                                     router.push(`/products/${msg.product.slug}`);
+                                   }
+                                 }}
+                                 className={`mb-2 p-2 rounded-xl border flex gap-3 cursor-pointer hover:shadow-lg transition-all ${isMe ? "bg-white/10 border-white/20" : "bg-muted/50 border-border"}`}
+                               >
+                                 <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden shrink-0">
+                                   <img src={msg.product.media?.[0]?.url || 'https://via.placeholder.com/64'} className="w-full h-full object-cover" />
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                   <p className="text-[10px] md:text-xs font-bold truncate line-clamp-1">{msg.product.title}</p>
+                                   <p className="text-[9px] md:text-[10px] font-black text-primary mt-1">{msg.product.price?.toLocaleString()} đ</p>
+                                 </div>
                                </div>
                              )}
                              {msg.message_text && <p className="text-[13px] md:text-sm leading-relaxed">{msg.message_text}</p>}
-                             <div className={`text-[9px] mt-1.5 opacity-50 flex items-center gap-1 ${isMe ? "justify-end" : ""}`}>
-                               {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                               {isMe && <CheckCheck size={10} />}
+                             <div className={`text-[9px] mt-1.5 opacity-50 flex items-center gap-2 ${isMe ? "justify-end" : ""}`}>
+                               {isMe && (
+                                 <CheckCheck size={10} />
+                               )}
                              </div>
                           </div>
                        </div>
@@ -440,22 +593,91 @@ export function UnifiedInbox() {
                    })}
                    <div ref={messagesEndRef} />
                 </div>
-                <form onSubmit={handleSendMessage} className="p-3 md:p-4 bg-card border-t border-border/50 flex gap-3 items-center">
-                    <label className={`p-2 rounded-xl hover:bg-muted cursor-pointer transition-colors ${uploading ? "animate-pulse opacity-50" : ""}`}>
-                      <ImageIcon size={20} />
-                      <input type="file" accept="image/*" className="hidden" onChange={onFileSelect} disabled={uploading} />
-                    </label>
-                    <input 
-                      type="text" 
-                      value={newMessage} 
-                      onChange={(e) => setNewMessage(e.target.value)} 
-                      placeholder={uploading ? t("inbox.loading") : t("inbox.say_something")}
-                      disabled={uploading}
-                      className="flex-1 bg-muted/50 rounded-xl md:rounded-2xl px-4 md:px-6 py-2.5 md:py-3 outline-none text-sm"
-                    />
-                    <button type="submit" disabled={(!newMessage.trim() && !uploading) || uploading} className="bg-primary text-primary-foreground p-3 rounded-xl md:rounded-2xl shadow-lg disabled:opacity-20 transition-all shrink-0">
-                      <Send size={18} />
-                    </button>
+                <form onSubmit={handleSendMessage} className="p-3 md:p-4 bg-card border-t border-border/50 flex flex-col gap-3">
+                    {selectedProductId && (
+                      <div className="flex items-center gap-3 p-2 bg-primary/10 rounded-xl relative border border-primary/20">
+                         <div className="w-8 h-8 rounded-lg bg-muted overflow-hidden shrink-0"><Package size={16} className="m-2" /></div>
+                         <p className="text-[10px] font-bold uppercase tracking-tight line-clamp-1">{t("inbox.product_attached")}</p>
+                         <button onClick={() => setSelectedProductId(null)} className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"><X size={12} /></button>
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-3 items-center">
+                      <div className="flex items-center gap-1">
+                        <label className={`p-2 rounded-xl hover:bg-muted cursor-pointer transition-colors ${uploading ? "animate-pulse opacity-50" : ""}`}>
+                          <ImageIcon size={20} />
+                          <input type="file" accept="image/*" className="hidden" onChange={onFileSelect} disabled={uploading} />
+                        </label>
+                        <button type="button" onClick={fetchShopProducts} className="p-2 rounded-xl hover:bg-muted transition-colors">
+                          <Package size={20} />
+                        </button>
+                      </div>
+                      
+                      <input 
+                        type="text" 
+                        value={newMessage} 
+                        onChange={(e) => setNewMessage(e.target.value)} 
+                        placeholder={uploading ? t("inbox.loading") : t("inbox.say_something")}
+                        disabled={uploading}
+                        className="flex-1 bg-muted/50 rounded-xl md:rounded-2xl px-4 md:px-6 py-2.5 md:py-3 outline-none text-sm"
+                      />
+                      <button type="submit" disabled={(!newMessage.trim() && !uploading && !selectedProductId) || uploading} className="bg-primary text-primary-foreground p-3 rounded-xl md:rounded-2xl shadow-lg disabled:opacity-20 transition-all shrink-0">
+                        <Send size={18} />
+                      </button>
+                    </div>
+
+                    <AnimatePresence>
+                      {isAttachingProduct && (
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-background/60 backdrop-blur-xl">
+                          <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }} className="bg-card w-full max-w-2xl border border-border shadow-2xl rounded-[32px] md:rounded-[48px] overflow-hidden flex flex-col max-h-[85vh]">
+                             <div className="p-6 md:p-8 border-b border-border bg-stone-50/50 dark:bg-stone-900/50 flex items-center justify-between">
+                                <div>
+                                   <h2 className="text-xl md:text-3xl font-black tracking-tighter uppercase px-2">{t("inbox.attach_product") || "CHỌN SẢN PHẨM"}</h2>
+                                   <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 ml-2 mt-1">{t("inbox.select_desc") || "Tìm kiếm và đính kèm vào tin nhắn"}</p>
+                                </div>
+                                <button onClick={() => setIsAttachingProduct(false)} className="p-3 md:p-4 bg-muted hover:bg-muted/80 rounded-full transition-all group active:scale-95"><X size={20} className="group-hover:rotate-90 transition-transform duration-300" /></button>
+                             </div>
+                             
+                             <div className="p-4 md:p-6 bg-muted/20 border-b border-border">
+                                <div className="relative">
+                                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30" size={18} />
+                                   <input 
+                                     autoFocus
+                                     type="text" 
+                                     value={productSearch} 
+                                     onChange={(e) => setProductSearch(e.target.value)}
+                                     placeholder={t("inbox.search_product_placeholder") || "Tìm kiếm sản phẩm theo tên..."}
+                                     className="w-full pl-12 pr-6 py-4 bg-muted/50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium"
+                                   />
+                                </div>
+                             </div>
+
+                             <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
+                                  {shopProducts.filter(p => !productSearch || p.title.toLowerCase().includes(productSearch.toLowerCase())).map(p => (
+                                    <button key={p.id} type="button" onClick={() => { setSelectedProductId(p.id); setIsAttachingProduct(false); setProductSearch(""); }} className="group p-2 flex flex-col gap-2 hover:bg-primary/5 rounded-2xl transition-all text-left border border-transparent hover:border-primary/20">
+                                      <div className="aspect-square w-full rounded-xl bg-card overflow-hidden shrink-0 border border-border group-hover:shadow-lg transition-all">
+                                          <img src={p.media?.[0]?.url || 'https://via.placeholder.com/200'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                      </div>
+                                      <div className="px-1">
+                                          <p className="text-[10px] font-bold truncate uppercase">{p.title}</p>
+                                          <p className="text-[11px] font-black text-primary mt-0.5">{p.price?.toLocaleString()} đ</p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                  {shopProducts.filter(p => !productSearch || p.title.toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
+                                    <p className="col-span-full text-center py-10 text-[10px] font-black uppercase opacity-20 tracking-widest">{t("inbox.no_products")}</p>
+                                  )}
+                                </div>
+                             </div>
+                             
+                             <div className="p-4 md:p-6 bg-muted/20 border-t border-border flex justify-end">
+                                <button onClick={() => setIsAttachingProduct(false)} className="px-8 py-3 bg-muted hover:bg-muted/80 rounded-xl md:rounded-2xl font-black text-xs uppercase transition-all">{t("inbox.close") || "Đóng"}</button>
+                             </div>
+                          </motion.div>
+                        </div>
+                      )}
+                    </AnimatePresence>
                  </form>
              </motion.div>
           ) : selectedNotif ? (
@@ -471,16 +693,7 @@ export function UnifiedInbox() {
                     {selectedNotif.data?.message || selectedNotif.message}
                   </div>
 
-                  {(selectedNotif.data?.attachments || selectedNotif.attachments) && (selectedNotif.data?.attachments || selectedNotif.attachments).length > 0 && (
-                    <div className="grid grid-cols-1 gap-3 mb-10">
-                      {(selectedNotif.data?.attachments || selectedNotif.attachments).map((f: any, idx: number) => (
-                        <a key={idx} href={f.url} target="_blank" rel="noreferrer" className="flex items-center gap-4 p-3 md:p-4 bg-muted/50 rounded-xl md:rounded-2xl hover:bg-primary/5 transition-all border border-transparent hover:border-primary/20">
-                          <div className="w-8 h-8 md:w-10 md:h-10 bg-primary/10 rounded-lg md:rounded-xl flex items-center justify-center text-primary">{f.type?.includes("pdf") ? <FileText size={18} /> : <ImageIcon size={18} />}</div>
-                          <div className="min-w-0 flex-1"><p className="text-[11px] md:text-xs font-bold truncate">{f.name || "File"}</p></div>
-                        </a>
-                      ))}
-                    </div>
-                  )}
+
 
                   {(selectedNotif.data?.link || selectedNotif.link) && (
                     <a href={selectedNotif.data?.link || selectedNotif.link} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-4 bg-foreground text-background rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-xs md:text-sm hover:scale-[1.02] transition-all shadow-xl">
@@ -489,10 +702,21 @@ export function UnifiedInbox() {
                   )}
 
                   {isAdmin && (
-                    <div className="mt-10 md:mt-20 pt-6 md:pt-10 border-t border-border/50 flex justify-center">
-                       <button onClick={() => handleDeleteNotification(selectedNotif.id)} className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold text-[10px] md:text-xs uppercase transition-all">
-                         <Trash2 size={14} /> {t("inbox.delete")}
-                       </button>
+                    <div className="mt-10 md:mt-20 pt-6 md:pt-10 border-t border-border/50 flex justify-center gap-3">
+                       {!isConfirmingDelete ? (
+                         <button onClick={() => setIsConfirmingDelete(true)} className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold text-[10px] md:text-xs uppercase transition-all">
+                           <Trash2 size={14} /> {t("inbox.delete")}
+                         </button>
+                       ) : (
+                         <>
+                           <button onClick={() => handleDeleteNotification(selectedNotif.id)} className="flex items-center gap-2 px-6 py-2.5 bg-red-600 text-white hover:bg-red-700 rounded-xl font-black text-[10px] md:text-xs uppercase transition-all shadow-lg hover:scale-105 active:scale-95">
+                             <CheckCheck size={14} /> {t("inbox.confirm")}
+                           </button>
+                           <button onClick={() => setIsConfirmingDelete(false)} className="px-6 py-2.5 bg-muted text-muted-foreground hover:bg-muted/80 rounded-xl font-bold text-[10px] md:text-xs uppercase transition-all">
+                             {t("inbox.cancel_short")}
+                           </button>
+                         </>
+                       )}
                     </div>
                   )}
                 </div>
@@ -520,29 +744,28 @@ export function UnifiedInbox() {
                      <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.headline")}</label>
                      <input required value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm" />
                    </div>
-                   <div className="space-y-1.5">
-                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.action_link")}</label>
-                     <input value={form.link} onChange={e => setForm({...form, link: e.target.value})} placeholder="https://..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none text-sm" />
-                   </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.target_role") || "ĐỐI TƯỢNG NHẬN"}</label>
+                      <select 
+                        value={form.role} 
+                        onChange={e => setForm({...form, role: e.target.value})}
+                        className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm appearance-none cursor-pointer font-bold"
+                      >
+                         <option value="all">{t("inbox.role_all") || "Tất cả mọi người"}</option>
+                         <option value="customer">{t("inbox.role_customer") || "Khách hàng"}</option>
+                         <option value="seller">{t("inbox.role_seller") || "Người bán / Shop"}</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.action_link")}</label>
+                      <input value={form.link} onChange={e => setForm({...form, link: e.target.value})} placeholder="https://..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none text-sm" />
+                    </div>
                    <div className="space-y-1.5">
                      <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.message_body")}</label>
                      <textarea required rows={4} value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none resize-none text-sm" />
                    </div>
-                   <div className="space-y-2">
-                     <label className="flex items-center gap-3 p-4 border border-dashed border-border rounded-xl hover:bg-primary/5 cursor-pointer">
-                        <Paperclip size={18} />
-                        <span className="text-[10px] font-bold uppercase">{t("inbox.attach")}</span>
-                        <input type="file" multiple className="hidden" onChange={e => e.target.files && setForm({...form, files: [...form.files, ...Array.from(e.target.files!)]})} />
-                     </label>
-                     <div className="flex flex-wrap gap-1.5 mt-2">
-                        {form.files.map((f, i) => (
-                           <div key={i} className="bg-primary/10 text-primary px-3 py-1 rounded-lg text-[9px] font-bold flex items-center gap-2 italic">
-                             <span>{f.name}</span>
-                             <button type="button" onClick={() => setForm({...form, files: form.files.filter((_, idx) => idx !== i)})}><X size={10} /></button>
-                           </div>
-                        ))}
-                     </div>
-                   </div>
+
                    <div className="pt-4 flex gap-3 md:gap-4">
                       <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3.5 md:py-4 font-bold border rounded-xl md:rounded-2xl hover:bg-muted text-xs uppercase transition-all">{t("inbox.cancel")}</button>
                        <button disabled={loading || !form.title || !form.message} className="flex-[2] bg-primary text-primary-foreground py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold shadow-lg text-xs uppercase tracking-widest transition-all">
