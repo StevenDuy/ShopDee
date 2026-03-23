@@ -594,11 +594,14 @@
     "subtotal": "Subtotal",
     "description": "DESCRIPTION",
     "reviews": "REVIEWS",
+    "specifications": "SPECIFICATIONS",
     "product_story": "Product Detail",
     "updating_data": "Updating data...",
     "ratings": "Ratings",
     "customer_experience": "Based on real experience",
     "customers_reviewed": "{{count}} reviews",
+    "reviews_count": "{{count}} Reviews",
+    "total": "Total",
     "purchased": "Purchased"
   },
   "common": {

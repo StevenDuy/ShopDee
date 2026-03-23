@@ -595,11 +595,14 @@
     "subtotal": "Tạm tính",
     "description": "MÔ TẢ SẢN PHẨM",
     "reviews": "ĐÁNH GIÁ",
+    "specifications": "THÔNG SỐ",
     "product_story": "Chi tiết sản phẩm",
     "updating_data": "Đang cập nhật...",
     "ratings": "Xếp hạng",
     "customer_experience": "Dựa trên trải nghiệm thực tế",
     "customers_reviewed": "{{count}} khách hàng đánh giá",
+    "reviews_count": "{{count}} Nhận xét",
+    "total": "Tổng cộng",
     "purchased": "Đã mua"
   },
   "common": {

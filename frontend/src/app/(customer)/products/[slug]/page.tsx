@@ -9,6 +9,8 @@ import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
+import { useDragScroll } from "@/hooks/useDragScroll";
+
 
 interface ProductAttribute { id: number; attribute_name: string; attribute_value: string }
 interface ProductMedia { id: number; full_url: string; is_primary: boolean; media_type: string }
@@ -60,6 +62,15 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [addedMsg, setAddedMsg] = useState(false);
   const [detailTab, setDetailTab] = useState<"description" | "specifications" | "reviews">("description");
+  const { 
+    scrollRef, 
+    onMouseDown, 
+    onMouseLeave, 
+    onMouseUp, 
+    onMouseMove, 
+    onClickCapture 
+  } = useDragScroll();
+
 
   useEffect(() => {
     setLoading(true);
@@ -164,15 +175,25 @@ export default function ProductDetailPage() {
               <img src={images[activeImg].full_url} alt={product.title} className="max-w-full max-h-full object-contain" />
             </div>
             {images.length > 1 && (
-              <div className="flex h-20 gap-2 overflow-x-auto no-scrollbar snap-x scroll-smooth pb-2">
+              <div 
+                ref={scrollRef}
+                onMouseDown={onMouseDown}
+                onMouseLeave={onMouseLeave}
+                onMouseUp={onMouseUp}
+                onMouseMove={onMouseMove}
+                className="flex h-20 gap-3 overflow-x-auto no-scrollbar pb-2 cursor-grab active:cursor-grabbing select-none"
+              >
                 {images.map((img, i) => (
-                  <button key={i} onClick={() => setActiveImg(i)}
-                    className={`w-20 h-full border-2 shrink-0 snap-start transition-colors ${i === activeImg ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 opacity-70"}`}>
-                    <img src={img.full_url} alt="" className="w-full h-full object-cover" />
+                  <button key={i} 
+                    onClickCapture={onClickCapture}
+                    onClick={() => setActiveImg(i)}
+                    className={`w-20 h-full border-2 shrink-0 transition-colors cursor-grab active:cursor-grabbing ${i === activeImg ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 opacity-70"}`}>
+                    <img src={img.full_url} alt="" className="w-full h-full object-cover pointer-events-none" />
                   </button>
                 ))}
               </div>
             )}
+
           </div>
 
           {/* Info - Densely Organized */}
@@ -216,7 +237,7 @@ export default function ProductDetailPage() {
                   {product.seller.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="text-[8px] font-bold uppercase text-muted-foreground leading-none mb-1">Cửa hàng</p>
+                  <p className="text-[8px] font-bold uppercase text-muted-foreground leading-none mb-1">{t("footer.shop")}</p>
                   <Link href={`/shop/${product.seller.id}`} className="text-xs font-black uppercase hover:text-primary">{product.seller.name}</Link>
                 </div>
               </div>
@@ -224,7 +245,7 @@ export default function ProductDetailPage() {
                 onClick={() => { if (!token) router.push("/login?redirect=/products/" + slug); else router.push(`/inbox?userId=${product.seller.id}`); }}
                 className="px-3 py-1.5 border-2 border-primary bg-background text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-colors"
                 >
-                CHAT
+                {t("chat")}
               </button>
             </div>
 
@@ -276,7 +297,7 @@ export default function ProductDetailPage() {
                   <button onClick={() => setQty(q => Math.min(effectiveStock, q + 1))} className="w-10 h-10 flex items-center justify-center hover:bg-muted"><Plus size={14} /></button>
                 </div>
                 <div className="text-right">
-                  <p className="text-[8px] font-bold uppercase text-muted-foreground">Tổng cộng</p>
+                  <p className="text-[8px] font-bold uppercase text-muted-foreground">{t("product_details.total")}</p>
                   <p className="text-lg font-black text-primary tracking-tighter">{formatPrice(totalPrice * qty)}</p>
                 </div>
               </div>
@@ -290,7 +311,7 @@ export default function ProductDetailPage() {
                   onClick={() => { handleAddToCart(); if (allComplete) router.push("/checkout"); }}
                   disabled={effectiveStock === 0 || !allComplete}
                   className="py-4 bg-primary text-white border-2 border-primary font-black text-[10px] uppercase tracking-[0.2em] hover:bg-primary/90 transition-colors disabled:opacity-30">
-                  MUA NGAY
+                  {t("buy_now")}
                 </button>
               </div>
             </div>
@@ -335,7 +356,7 @@ export default function ProductDetailPage() {
                   <div className="text-4xl font-black text-primary tracking-tighter">{avgRating.toFixed(1)}</div>
                   <div className="text-right">
                     <StarRow rating={avgRating} />
-                    <p className="text-[10px] font-black uppercase tracking-widest mt-1">{reviews.length} Nhận xét</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest mt-1">{t("product_details.reviews_count", { count: reviews.length })}</p>
                   </div>
                 </div>
                 <div className="grid gap-4">

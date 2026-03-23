@@ -16,6 +16,8 @@ import { useTranslation } from "react-i18next";
 import FullPageLoader from "@/components/FullPageLoader";
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
+import CategoryManager from "./CategoryManager";
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -41,6 +43,8 @@ export default function AdminProductsPage() {
   const [showSellerModal, setShowSellerModal] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<any>(null);
   const [loadingSeller, setLoadingSeller] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+
 
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
@@ -259,7 +263,7 @@ export default function AdminProductsPage() {
 
       {/* Toolbar */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-card border-2 border-border p-4">
-          <div className="md:col-span-8 relative">
+          <div className="md:col-span-5 lg:col-span-6 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-all" size={20} />
               <input 
                   type="text" 
@@ -269,7 +273,16 @@ export default function AdminProductsPage() {
                   className="w-full pl-12 pr-4 py-3 bg-muted/30 border-2 border-transparent focus:border-primary focus:bg-background outline-none font-bold text-sm transition-all"
               />
           </div>
-          <div className="md:col-span-4 flex items-center gap-2 text-wrap w-full">
+          <div className="md:col-span-3 lg:col-span-3">
+              <button 
+                  onClick={() => setShowCategoryManager(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white font-black uppercase text-[10px] tracking-widest hover:opacity-90 active:scale-95 transition-all border-2 border-primary shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none"
+              >
+                  <Package size={18} />
+                  DANH MỤC
+              </button>
+          </div>
+          <div className="md:col-span-4 lg:col-span-3 flex items-center gap-2 text-wrap w-full">
               <Filter size={20} className="text-muted-foreground ml-2 shrink-0" />
               <select 
                   value={statusFilter}
@@ -812,6 +825,14 @@ export default function AdminProductsPage() {
             </div>
         )}
       </AnimatePresence>
+
+      <CategoryManager 
+        isOpen={showCategoryManager} 
+        onClose={() => setShowCategoryManager(false)} 
+        token={token} 
+        api={API} 
+      />
+
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }

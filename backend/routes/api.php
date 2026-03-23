@@ -155,6 +155,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin Settings
         Route::get('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'index']);
         Route::put('/settings', [\App\Http\Controllers\Admin\SystemConfigController::class, 'update']);
+
+        // Categories
+        Route::get('/categories', [\App\Http\Controllers\Admin\CategoryController::class, 'index']);
+        Route::post('/categories', [\App\Http\Controllers\Admin\CategoryController::class, 'store']);
+        Route::put('/categories/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'update']);
+        Route::delete('/categories/{id}', [\App\Http\Controllers\Admin\CategoryController::class, 'destroy']);
     });
 
 
