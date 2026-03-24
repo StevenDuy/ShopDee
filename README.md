@@ -41,6 +41,15 @@ Dùng để AI phân tích hành vi người dùng và theo dõi log hệ thốn
    - Đổi tên file này thành `firebase-credentials.json`.
    - Để file này vào thư mục: `backend/storage/`.
 
+### 4. GMAIL (Gửi email xác thực)
+Dùng để gửi mã xác nhận, thông báo đơn hàng hoặc khôi phục mật khẩu.
+
+1. Truy cập [Google App Passwords](https://myaccount.google.com/apppasswords).
+2. **Bật Xác minh 2 lớp** (nếu chưa có).
+3. Ô **Chọn ứng dụng**: Chọn `Thư` (Mail).
+4. Ô **Chọn thiết bị**: Chọn `Khác (Tên tùy chỉnh)` -> Nhập `ShopDee`.
+5. Nhấn **Tạo**. Copy dải **mã 16 ký tự** hiện ra (đây là mật khẩu để dán vào `.env`).
+
 ---
 
 ## ⚙️ PHẦN 2: CẤU HÌNH HỆ THỐNG
@@ -65,6 +74,18 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 NEXT_PUBLIC_PUSHER_APP_KEY="DÁN_KEY_PUSHER_SAU_KHI_LẤY"
 NEXT_PUBLIC_FIREBASE_API_KEY="DÁN_API_KEY_FIREBASE"
 # ... các thông số khác
+```
+
+### 3. Cấu hình Email (Backend)
+Mở `backend/.env` và điền thông tin Gmail của bạn:
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=465
+MAIL_USERNAME="email_cua_ban@gmail.com"
+MAIL_PASSWORD="ma_16_ky_tu_vừa_tạo"
+MAIL_ENCRYPTION=ssl
+MAIL_FROM_ADDRESS="email_cua_ban@gmail.com"
 ```
 
 ---
