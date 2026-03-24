@@ -14,22 +14,15 @@ const firebaseConfig = {
 
 // Initialize Firebase (Singleton pattern)
 const isConfigValid = !!firebaseConfig.projectId && !!firebaseConfig.apiKey;
+export const isFirebaseConfigured = isConfigValid;
 
-let app: FirebaseApp = undefined!;
+let app: FirebaseApp | null = null;
 try {
   if (!getApps().length) {
     if (isConfigValid) {
       app = initializeApp(firebaseConfig);
     } else {
-      console.warn("Firebase config is missing. Analytics and Storage will not work.");
-      app = initializeApp({
-        apiKey: "placeholder",
-        authDomain: "placeholder",
-        projectId: "placeholder", // Prevent library crash
-        storageBucket: "placeholder",
-        messagingSenderId: "placeholder",
-        appId: "placeholder"
-      });
+      console.warn("Firebase config is missing. AI/Analytics may not work.");
     }
   } else {
     app = getApp();

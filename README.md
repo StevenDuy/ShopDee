@@ -1,139 +1,108 @@
-# 🚀 ShopDee - Nền tảng Thương mại Điện tử Hiện đại (Next.js & Laravel)
+# 🚀 ShopDee - Hướng dẫn Cấu hình & Cài đặt Chi tiết
 
-Chào mừng bạn đến với **ShopDee**! Dự án này là một hệ thống thương mại điện tử full-stack mạnh mẽ, được thiết kế để mang lại trải nghiệm mượt mà với Chat Realtime, Quản lý sản phẩm thông minh và Hiển thị biểu đồ thống kê hiện đại (Dashboard).
-
----
-
-## 🏛️ Kiến trúc Hệ thống
-
-| Thành phần | Công nghệ Sử dụng | Vai trò |
-| :--- | :--- | :--- |
-| **Backend** | Laravel 11 + PHP 8.2+ | Xử lý API, Business Logic, Bảo mật, Realtime Broadcast |
-| **Frontend** | Next.js 15 (App Router) + TypeScript | Giao diện người dùng, Dashboard admin, Responsive design |
-| **Database** | TiDB Cloud (Cơ sở dữ liệu phân tán) | Lưu trữ dữ liệu an toàn, hiệu năng cao, chứng chỉ SSL |
-| **Realtime** | Pusher / Laravel Echo | Chat trực tiếp giữa người mua và người bán, Thông báo |
-| **Lưu trữ** | Cloudinary | Tối ưu hóa và lưu trữ hình ảnh/video sản phẩm |
-| **Authentication** | Google OAuth 2.0 (Socialite) | Cho phép đăng nhập nhanh bằng tài khoản Google |
-| **Firebase** | Service Account (Admin SDK) | Quản lý xác thực nâng cao và dữ liệu Chat đồng bộ |
-| **UI/UX** | Tailwind CSS + Lucide Icons + Framer Motion | Thiết kế hiện đại, mượt mà và trực quan |
-| **Charts** | Recharts | Trình diễn dữ liệu thống kê doanh thu và rủi ro trực quan |
+ShopDee là hệ thống Thương mại điện tử Full-Stack (Next.js + Laravel). Để dự án chạy được, bạn **bắt buộc** phải cấu hình 3 dịch vụ ngoại vi (Cloudinary, Pusher, Firebase). Hãy làm theo hướng dẫn từng bước dưới đây để lấy Key.
 
 ---
 
-## ⚙️ Hướng dẫn Cài đặt Chi tiết
+## 🛠️ PHẦN 1: HƯỚNG DẪN LẤY API KEY (TỪNG BƯỚC)
 
-### 1. Chuẩn bị Môi trường
-*   **PHP:** >= 8.2 (Cần bật extension: `bcmath`, `curl`, `mbstring`, `openssl`, `xml`, `zip`).
-*   **Composer:** Phiên bản mới nhất.
-*   **Node.js:** >= 18.x (Bản LTS) & **npm**.
-*   **Database:** [TiDB Cloud](https://tidbcloud.com/) (Tạo cụm miễn phí).
+### 1. CLOUDINARY (Xử lý & Nén ảnh)
+Dùng để upload ảnh sản phẩm, banner và nén ảnh tự động giúp web mượt hơn.
 
----
+1. Truy cập [Cloudinary.com](https://cloudinary.com/) -> Nhấn **Sign Up for Free**.
+2. Sau khi đăng nhập, bạn sẽ thấy giao diện **Dashboard**.
+3. Hãy tìm mục **Product Environment Settings** (ở góc trái dưới) -> Chọn **API Keys**.
+4. Tại đây bạn sẽ thấy 3 thông số quan trọng:
+   - **Cloud Name**: Tên định danh của bạn.
+   - **API Key**: Mã định danh API.
+   - **API Secret**: (Nhấn nút con mắt để hiện) - Mã bảo mật.
+5. Copy 3 thông số này vào file `.env` của Backend.
 
-### 2. Cấu hình Backend (Laravel)
-Vào thư mục con: `cd backend`
+### 2. PUSHER (Chat Realtime)
+Dùng để đẩy thông báo tin nhắn ngay lập tức mà không cần load lại trang.
 
-1.  **Cài đặt thư viện:**
-    ```bash
-    composer install
-    ```
-2.  **Thiết lập file Môi trường:**
-    Copy `.env.example` thành `.env` và điền các thông số sau:
-    *   `DB_CONNECTION=mysql`
-    *   `DB_HOST`: gateway.. (lấy từ TiDB Cloud console)
-    *   `DB_PORT=4000` (TiDB sử dụng cổng 4000 thay vì 3306)
-    *   `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` tương ứng.
-    *   `MYSQL_ATTR_SSL_CA=storage/certs/isrgrootx1.pem` (Bắt buộc để kết nối TiDB Cloud).
-3.  **Cấu hình Cloudinary:**
-    Lấy `API Key`, `API Secret`, `Cloud Name` điền vào các biến `CLOUDINARY_...`.
-4.  **Cấu hình Firebase (BẮT BUỘC):**
-    *   Tải file Private Key JSON từ: *Firebase Console -> Project Settings -> Service Accounts*.
-    *   Đổi tên file thành `firebase-credentials.json`.
-    *   Đưa vào thư mục: `backend/storage/firebase-credentials.json`.
-5.  **Cấu hình Google Login (OAuth 2.0):**
-    *   Truy cập [Google Cloud Console](https://console.cloud.google.com/).
-    *   Tạo dự án mới và vào **APIs & Services -> Credentials**.
-    *   Tạo **OAuth 2.0 Client ID** (Web application).
-    *   Thêm **Authorized redirect URIs**: `http://localhost:8000/api/auth/google/callback`.
-    *   Copy `Client ID` và `Client Secret` vào `.env`:
-        *   `GOOGLE_CLIENT_ID=...`
-        *   `GOOGLE_CLIENT_SECRET=...`
-        *   `GOOGLE_REDIRECT_URL=http://localhost:8000/api/auth/google/callback`
-        *   `FRONTEND_URL=http://localhost:3000`
-6.  **Khởi động Backend:**
-    ```bash
-    php artisan key:generate
-    php artisan migrate:fresh --seed
-    php artisan serve
-    ```
+1. Truy cập [Pusher.com](https://pusher.com/) -> Chọn **Get Started Free**.
+2. Tạo một app mới: Nhấn **Create app**.
+   - **Name your app**: `ShopDee`.
+   - **Select a cluster**: Chọn `ap1 (Asia Pacific)`.
+3. Sau khi tạo xong, chọn mục **App Keys** ở menu bên trái.
+4. Copy các giá trị: `app_id`, `key`, `secret`, `cluster` vào file `.env` (cả Backend và Frontend).
+
+### 3. FIREBASE (AI & Theo dõi hành vi - Analytics)
+Dùng để AI phân tích hành vi người dùng và theo dõi log hệ thống.
+
+1. Truy cập [Firebase Console](https://console.firebase.google.com/).
+2. Nhấn **Add Project** -> Đặt tên: `ShopDee`.
+3. Nhấn **Continue** (Giữ nguyên mặc định bật Google Analytics).
+4. Sau khi tạo xong Project -> Nhấn vào biểu tượng **Web (</>)** để tạo ứng dụng web.
+5. Copy đoạn mã cấu hình `firebaseConfig` bao gồm: `apiKey`, `authDomain`, `projectId`, v.v...
+6. Lấy Key cho Backend: Nhấn vào bánh răng (Settings) -> **Project Settings** -> **Service accounts**.
+7. Nhấn nút **Generate new private key**. Một file `.json` sẽ được tải về máy.
+   - Đổi tên file này thành `firebase-credentials.json`.
+   - Để file này vào thư mục: `backend/storage/`.
 
 ---
 
-### 3. Cấu hình Frontend (Next.js)
-Vào thư mục con: `cd frontend`
+## ⚙️ PHẦN 2: CẤU HÌNH HỆ THỐNG
 
-1.  **Cài đặt thư viện:**
-    ```bash
-    npm install
-    ```
-2.  **Thiết lập file Môi trường:**
-    Copy `.env.example` thành `.env.local` và điền:
-    *   `NEXT_PUBLIC_API_URL=http://localhost:8000/api`
-    *   Thông tin Web App của Firebase (apiKey, authDomain, projectId...).
-    *   `NEXT_PUBLIC_PUSHER_APP_KEY`: Dùng chung với Backend.
-3.  **Khởi động Frontend:**
-    ```bash
-    npm run dev
-    ```
-
----
-
-## 🛡️ Bảo mật & Git (Lưu ý Tuyệt đối)
-
-Dự án đã được cấu hình `.gitignore` cực kỳ nghiêm ngặt để bảo vệ Token và API Key của bạn.
-- **KHÔNG BAO GIỜ** đẩy file `.env` hoặc `firebase-credentials.json` lên Git.
-- Nếu bạn lỡ đẩy file nhạy cảm, hãy chạy lệnh sau để gỡ bỏ chúng khỏi bộ nhớ đệm của Git (Git cache):
-  ```bash
-  git rm --cached backend/storage/firebase-credentials.json
-  git rm --cached backend/.env
-  git rm --cached frontend/.env.local
+### 1. Cơ sở dữ liệu (XAMPP)
+- Mở XAMPP -> Start Apache & MySQL.
+- Vào `phpMyAdmin` -> Tạo database tên `shopdee`.
+- Mở `backend/.env` và sửa:
+  ```env
+  DB_CONNECTION=mysql
+  DB_HOST=127.0.0.1
+  DB_PORT=3306
+  DB_DATABASE=shopdee
+  DB_USERNAME=root
+  DB_PASSWORD=
   ```
 
----
-
-## 🛠️ Giải quyết các Lỗi thường gặp (Troubleshooting)
-
-### 1. Lỗi: `Module not found: Can't resolve 'recharts'`
-*   **Nguyên nhân:** Thư viện vẽ biểu đồ chưa được cài đặt.
-*   **Cách sửa:** Chạy `npm install recharts` trong thư mục `frontend`.
-
-### 2. Lỗi: `Can't connect to MySQL server on ... (10060)` (TiDB)
-*   **Nguyên nhân:** Thường do sai Port (mặc định Laravel là 3306) hoặc chưa bật SSL.
-*   **Cách sửa:** 
-    *   Kiểm tra `DB_PORT` phải là `4000`.
-    *   Đảm bảo `MYSQL_ATTR_SSL_CA` trỏ đúng đến file `.pem` trong `storage/certs`.
-    *   Kiểm tra Allow-list IP trên TiDB Cloud console.
-
-### 3. Lỗi: `Firebase initialization failed`
-*   **Nguyên nhân:** Thiếu file `firebase-credentials.json` ở Backend hoặc sai config ở Frontend.
-*   **Cách sửa:** Kiểm tra đường dẫn file trong `.env` Backend (`FIREBASE_CREDENTIALS`). Đảm bảo file JSON đó là hợp lệ.
-
-### 4. Lỗi: `CORS Error` khi gọi API
-*   **Cách sửa:** Kiểm tra file `backend/config/cors.php`. Đảm bảo `allowed_origins` chứa đúng URL của Frontend (`http://localhost:3000`).
-
-### 5. Lỗi: `Socialite Google: 403 Forbidden / Redirect URI mismatch`
-*   **Cách sửa:** 
-    *   Kiểm tra `GOOGLE_REDIRECT_URL` trong `.env` phải khớp chính xác với URL đã khai báo trong Google Cloud Console.
-    *   Đảm bảo bạn đã bật **Google People API** trong thư viện API của Google Cloud Project.
-    *   Kiểm tra `FRONTEND_URL` để đảm bảo hệ thống quay về đúng trang web sau khi đăng nhập.
+### 2. Cấu hình Frontend
+Mở `frontend/.env.local` và điền đầy đủ các Key bạn vừa lấy ở Phần 1:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+NEXT_PUBLIC_PUSHER_APP_KEY="DÁN_KEY_PUSHER_SAU_KHI_LẤY"
+NEXT_PUBLIC_FIREBASE_API_KEY="DÁN_API_KEY_FIREBASE"
+# ... các thông số khác
+```
 
 ---
 
-## 📈 Dashboard Admin
-Trang quản trị của dự án tích hợp hệ thống BI (Business Intelligence) mini sử dụng **Recharts** để theo dõi:
-- Biểu đồ vùng (Area Chart): Doanh thu và lợi nhuận 7 ngày gần nhất.
-- Biểu đồ cột (Bar Chart): Phân tích rủi ro và các cảnh báo hành vi bất thường của người dùng.
-- Theo dõi Realtime các hành vi gian lận thông qua AI Security.
+## 🚀 PHẦN 3: KHỞI CHẠY DỰ ÁN
+
+**Chạy Backend (Laravel):**
+```bash
+cd backend
+composer install
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
+
+**Chạy Frontend (Next.js):**
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ---
-**ShopDee Team** - *Chúc bạn có những giây phút lập trình tuyệt vời!* 🚀
+
+## 📘 PHẦN 4: GIẢI THÍCH CHỨC NĂNG CÔNG CỤ
+
+Tại sao ShopDee lại cần nhiều công cụ như vậy? Đây là vai trò của chúng:
+
+| Công cụ | Chức năng chính | Tại sao hệ thống cần nó? |
+| :--- | :--- | :--- |
+| **Cloudinary** | Quản lý & Tối ưu ảnh | Tự động hạ độ phân giải ảnh cho các máy yếu, giúp web không bị giật lag khi có nhiều ảnh sản phẩm. |
+| **Pusher** | Truyền tin Realtime | Đảm bảo khi người dùng gửi tin nhắn, hệ thống sẽ đẩy tin đó đi ngay lập tức (như Facebook Messenger). |
+| **Firebase** | AI & Analytics | Thu thập dữ liệu hành vi (click, xem hàng) để AI của hệ thống có thể phân tích và đề xuất sản phẩm phù hợp. |
+| **XAMPP / MySQL** | Lưu trữ cốt lõi | Nơi "nhớ" toàn bộ thông tin tài khoản, đơn hàng và sản phẩm của bạn. |
+
+---
+> [!IMPORTANT]
+> **KIỂM TRA LỖI**:
+> Nếu bạn thiếu bất kỳ Key nào hoặc cấu hình sai, hệ thống sẽ hiện một **Bản thông báo cảnh báo** ngay trên màn hình để bạn biết cần sửa ở đâu, thay vì bị lỗi trắng trang (Crash).
+
+**ShopDee Team** - *Cùng nhau kiến tạo nền tảng chuyên nghiệp!* 🚀
