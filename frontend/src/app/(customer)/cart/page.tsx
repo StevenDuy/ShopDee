@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, ShoppingBag } from "lucide-react";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/store/useCartStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
 
 export default function CartPage() {
   const { t } = useTranslation();
-  const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCartStore();
+  const { items, removeItem, updateQuantity, clearCart, totalPrice, totalItems } = useCart();
   const { formatPrice } = useCurrencyStore();
 
   const [isClient, setIsClient] = useState(false);
@@ -17,11 +17,12 @@ export default function CartPage() {
 
   if (!isClient) return null;
 
-  const subtotal = totalPrice();
+  const subtotal = totalPrice;
   const shipping = subtotal > 500000 ? 0 : 30000;
   const total = subtotal + shipping;
 
-  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
+  const itemCount = totalItems;
+
 
   return (
     <div className="min-h-screen bg-background text-foreground animate-in fade-in duration-500">

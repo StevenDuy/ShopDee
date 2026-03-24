@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, ArrowLeft, CheckCircle, MapPin, ClipboardList, Package, ShoppingBag } from "lucide-react";
 import axios from "axios";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
@@ -14,9 +14,10 @@ interface Address { id: number; address_line_1: string; city: string; country: s
 export default function CheckoutPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { items, totalPrice, clearCart } = useCartStore();
+  const { items, totalPrice, clearCart } = useCart();
   const { token } = useAuthStore();
   const { formatPrice } = useCurrencyStore();
+
   
   const PAYMENT_METHODS = [
     { value: "cod",           label: t("checkout_page.payment_methods.cod"),  emoji: "💵" },
@@ -49,7 +50,7 @@ export default function CheckoutPage() {
       .finally(() => setIsInitialLoading(false));
   }, [token, items.length, router, API, success]);
 
-  const subtotal = totalPrice();
+  const subtotal = totalPrice;
   const shipping = subtotal > 500000 ? 0 : 30000;
   const total    = subtotal + shipping;
 

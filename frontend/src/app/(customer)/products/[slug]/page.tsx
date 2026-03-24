@@ -6,7 +6,7 @@ import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, MessageCi
 import axios from "axios";
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 import { useDragScroll } from "@/hooks/useDragScroll";
@@ -49,8 +49,9 @@ export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { formatPrice } = useCurrencyStore();
-  const addItem = useCartStore(s => s.addItem);
+  const { addItem } = useCart();
   const { token } = useAuthStore();
+
 
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);

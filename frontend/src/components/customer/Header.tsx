@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/store/useCartStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
 import { UserDropdown } from "@/components/common/UserDropdown";
 
@@ -25,7 +25,8 @@ export function CustomerHeader() {
   const pathname  = usePathname();
   const { t } = useTranslation();
   const { token } = useAuthStore();
-  const totalItems = useCartStore((s) => s.totalItems());
+  const { totalItems } = useCart();
+
   const { unreadCount, fetchUnreadCounts } = useNotificationStore();
   const [isOpen, setIsOpen] = useState(false);
 
