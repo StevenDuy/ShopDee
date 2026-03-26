@@ -7,7 +7,7 @@ export function ConfigAlert() {
   
   if (!process.env.NEXT_PUBLIC_API_URL) missingConfigs.push("NEXT_PUBLIC_API_URL (Backend API)");
   if (!process.env.NEXT_PUBLIC_PUSHER_APP_KEY) missingConfigs.push("NEXT_PUBLIC_PUSHER_APP_KEY (Chat Realtime)");
-  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) missingConfigs.push("NEXT_PUBLIC_FIREBASE_API_KEY (AI - Analytics)");
+  if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) missingConfigs.push("NEXT_PUBLIC_GOOGLE_CLIENT_ID (Google Login)");
 
   if (missingConfigs.length === 0) return null;
 

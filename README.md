@@ -1,6 +1,6 @@
 # 🚀 ShopDee - Hướng dẫn Cấu hình & Cài đặt Chi tiết
 
-ShopDee là hệ thống Thương mại điện tử Full-Stack (Next.js + Laravel). Để dự án chạy được, bạn **bắt buộc** phải cấu hình 3 dịch vụ ngoại vi (Cloudinary, Pusher, Firebase). Hãy làm theo hướng dẫn từng bước dưới đây để lấy Key.
+ShopDee là hệ thống Thương mại điện tử Full-Stack (Next.js + Laravel). Để dự án chạy được, bạn **bắt buộc** phải cấu hình các dịch vụ ngoại vi (Cloudinary, Pusher, Google Auth). Hãy làm theo hướng dẫn từng bước dưới đây để lấy Key.
 
 ---
 
@@ -28,20 +28,8 @@ Dùng để đẩy thông báo tin nhắn ngay lập tức mà không cần load
 3. Sau khi tạo xong, chọn mục **App Keys** ở menu bên trái.
 4. Copy các giá trị: `app_id`, `key`, `secret`, `cluster` vào file `.env` (cả Backend và Frontend).
 
-### 3. FIREBASE (AI & Theo dõi hành vi - Analytics)
-Dùng để AI phân tích hành vi người dùng và theo dõi log hệ thống.
 
-1. Truy cập [Firebase Console](https://console.firebase.google.com/).
-2. Nhấn **Add Project** -> Đặt tên: `ShopDee`.
-3. Nhấn **Continue** (Giữ nguyên mặc định bật Google Analytics).
-4. Sau khi tạo xong Project -> Nhấn vào biểu tượng **Web (</>)** để tạo ứng dụng web.
-5. Copy đoạn mã cấu hình `firebaseConfig` bao gồm: `apiKey`, `authDomain`, `projectId`, v.v...
-6. Lấy Key cho Backend: Nhấn vào bánh răng (Settings) -> **Project Settings** -> **Service accounts**.
-7. Nhấn nút **Generate new private key**. Một file `.json` sẽ được tải về máy.
-   - Đổi tên file này thành `firebase-credentials.json`.
-   - Để file này vào thư mục: `backend/storage/`.
-
-### 4. GMAIL (Gửi email xác thực)
+### 3. GMAIL (Gửi email xác thực)
 Dùng để gửi mã xác nhận, thông báo đơn hàng hoặc khôi phục mật khẩu.
 
 1. Truy cập [Google App Passwords](https://myaccount.google.com/apppasswords).
@@ -49,6 +37,18 @@ Dùng để gửi mã xác nhận, thông báo đơn hàng hoặc khôi phục m
 3. Ô **Chọn ứng dụng**: Chọn `Thư` (Mail).
 4. Ô **Chọn thiết bị**: Chọn `Khác (Tên tùy chỉnh)` -> Nhập `ShopDee`.
 5. Nhấn **Tạo**. Copy dải **mã 16 ký tự** hiện ra (đây là mật khẩu để dán vào `.env`).
+
+### 4. GOOGLE AUTH (Đăng nhập Google)
+Dùng để cho phép người dùng đăng nhập nhanh bằng tài khoản Google.
+
+1. Truy cập [Google Cloud Console](https://console.cloud.google.com/).
+2. Tạo một Project mới.
+3. Tìm kiếm **APIs & Services** -> **OAuth consent screen**. Cấu hình App Name và Email hỗ trợ.
+4. Vào mục **Credentials** -> **Create Credentials** -> **OAuth client ID**.
+   - **Application type**: Chọn `Web application`.
+   - **Authorized redirect URIs**: Thêm `http://localhost:8000/api/auth/google/callback`.
+5. Nhấn **Create**. Bạn sẽ nhận được `Client ID` và `Client Secret`.
+6. Copy các giá trị này vào file `.env` của Backend và Frontend.
 
 ---
 
@@ -71,9 +71,8 @@ Dùng để gửi mã xác nhận, thông báo đơn hàng hoặc khôi phục m
 Mở `frontend/.env.local` và điền đầy đủ các Key bạn vừa lấy ở Phần 1:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000/api
-NEXT_PUBLIC_PUSHER_APP_KEY="DÁN_KEY_PUSHER_SAU_KHI_LẤY"
-NEXT_PUBLIC_FIREBASE_API_KEY="DÁN_API_KEY_FIREBASE"
-# ... các thông số khác
+NEXT_PUBLIC_PUSHER_APP_KEY="DÁN_KEY_PUSHER"
+NEXT_PUBLIC_GOOGLE_CLIENT_ID="DÁN_CLIENT_ID_GOOGLE"
 ```
 
 ### 3. Cấu hình Email (Backend)
@@ -86,6 +85,11 @@ MAIL_USERNAME="email_cua_ban@gmail.com"
 MAIL_PASSWORD="ma_16_ky_tu_vừa_tạo"
 MAIL_ENCRYPTION=ssl
 MAIL_FROM_ADDRESS="email_cua_ban@gmail.com"
+
+# Cấu hình Google Login (Backend)
+GOOGLE_CLIENT_ID="DÁN_CLIENT_ID"
+GOOGLE_CLIENT_SECRET="DÁN_CLIENT_SECRET"
+GOOGLE_REDIRECT_URL=http://localhost:8000/api/auth/google/callback
 ```
 
 ---
@@ -118,7 +122,7 @@ Tại sao ShopDee lại cần nhiều công cụ như vậy? Đây là vai trò 
 | :--- | :--- | :--- |
 | **Cloudinary** | Quản lý & Tối ưu ảnh | Tự động hạ độ phân giải ảnh cho các máy yếu, giúp web không bị giật lag khi có nhiều ảnh sản phẩm. |
 | **Pusher** | Truyền tin Realtime | Đảm bảo khi người dùng gửi tin nhắn, hệ thống sẽ đẩy tin đó đi ngay lập tức (như Facebook Messenger). |
-| **Firebase** | AI & Analytics | Thu thập dữ liệu hành vi (click, xem hàng) để AI của hệ thống có thể phân tích và đề xuất sản phẩm phù hợp. |
+| **Google Auth** | Đăng nhập an toàn | Cho phép người dùng đăng nhập bằng 1 cú click, tăng tỷ lệ chuyển đổi khách hàng. |
 | **XAMPP / MySQL** | Lưu trữ cốt lõi | Nơi "nhớ" toàn bộ thông tin tài khoản, đơn hàng và sản phẩm của bạn. |
 
 ---

@@ -6,8 +6,6 @@ import { Star, X, MessageSquare, Send } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
-import { storage } from "@/lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { ImagePlus, Video, Loader2 } from "lucide-react";
 
 interface ReviewModalProps {
