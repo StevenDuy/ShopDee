@@ -185,7 +185,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
               <div className="space-y-4">
                 {loading && categories.length === 0 ? (
                   <div className="py-20 text-center">
-                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <div className="w-8 h-8 bg-muted animate-pulse rounded-full" />
                     <p className="text-[10px] font-bold uppercase opacity-40 italic font-mono tracking-widest">{t("admin.banners.categories.loading")}</p>
                   </div>
                 ) : (
@@ -352,3 +352,4 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
     </AnimatePresence>
   );
 }
+

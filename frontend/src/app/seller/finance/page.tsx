@@ -8,7 +8,7 @@ import { DollarSign, ArrowUpRight, ArrowDownRight, Clock, Building, Plus, AlertC
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import FullPageLoader from "@/components/FullPageLoader";
+
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -109,7 +109,7 @@ export default function SellerFinancePage() {
   return (
     <div className="min-h-screen">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -348,3 +348,7 @@ export default function SellerFinancePage() {
     </div>
   );
 }
+
+
+
+

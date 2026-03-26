@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { User, Package, MapPin, Lock, CheckCircle, Truck, Clock, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -125,12 +125,12 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: loading ? 0 : 1 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         {profile && (
@@ -283,3 +283,7 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+
+
+

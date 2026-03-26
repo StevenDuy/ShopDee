@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -143,7 +143,7 @@ export default function AdminModerationPage() {
   return (
     <div className="min-h-screen">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -238,7 +238,7 @@ export default function AdminModerationPage() {
         <div className="overflow-x-auto min-h-[400px]">
           {loading ? (
              <div className="flex h-64 items-center justify-center">
-               <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+               <div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
              </div>
           ) : activeTab === "products" ? (
              // Products Table 
@@ -429,3 +429,8 @@ export default function AdminModerationPage() {
     </div>
   );
 }
+
+
+
+
+

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
 
-const MapPicker = dynamic(() => import("./MapPicker"), { 
+const MapPicker = dynamic(() => import("./MapPicker"), {
   ssr: false,
   loading: () => <div className="w-full h-[250px] md:h-[300px] bg-muted animate-pulse rounded-2xl flex items-center justify-center text-sm text-muted-foreground">Loading Map...</div>
 });
@@ -55,7 +55,7 @@ interface NominatimResult {
   };
 }
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function AddressModal({ isOpen, onClose, onSuccess, token, address }: AddressModalProps) {
   const { t } = useTranslation();
@@ -161,7 +161,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
   const handleSelect = (result: NominatimResult) => {
     const addr = result.address;
     const city = addr.city || addr.town || addr.village || addr.state || "";
-    
+
     setFormData(prev => ({
       ...prev,
       address_line_1: result.display_name,
@@ -195,14 +195,15 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
         setSearch(data.display_name);
       }
     } catch (error) {
-      console.error("Reverse geocoding failed", error);
+      console.warn("Reverse geocoding failed", error);
       setSearchError(getErrorMessage(error));
     }
   };
 
   const handleLocateMe = () => {
+    setSearchError(""); // Clear previous errors
     if (!navigator.geolocation) {
-      alert(t("profile_page.geo_not_supported"));
+      setSearchError(t("profile_page.geo_not_supported"));
       return;
     }
 
@@ -213,21 +214,22 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
         setLoading(false);
       },
       (error) => {
-        console.error("Error getting location", error);
-        alert(t("profile_page.geo_error"));
+        // Silently handle error and show in UI instead of alert/console.error
+        setSearchError(t("profile_page.geo_error"));
         setLoading(false);
-      }
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    
+
     const finalType = formData.type === "Other" ? formData.custom_type : formData.type;
-    
+
     if (formData.type === "Other" && !formData.custom_type.trim()) {
-      alert(t("profile_page.custom_type_required"));
+      setSearchError(t("profile_page.custom_type_required"));
       setSaving(false);
       return;
     }
@@ -262,12 +264,12 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={onClose}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
-          
+
           <motion.div
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -287,7 +289,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               <div className="p-5 md:p-6 space-y-6">
-                
+
                 <div className="relative z-50" ref={searchRef}>
                   <label className="block text-sm font-medium mb-2">Search Address</label>
                   <div className="relative">
@@ -298,7 +300,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
                       className="pl-10 pr-10 h-11 md:h-12 rounded-xl text-sm"
                     />
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                    {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-primary" size={18} />}
+                    
                   </div>
                   {searchError && <p className="text-[11px] text-destructive mt-1 font-medium">{searchError}</p>}
 
@@ -338,10 +340,10 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2 relative z-0">
                     <label className="block text-sm font-medium">{t("profile_page.map_pick")}</label>
-                    <MapPicker 
-                      lat={parseFloat(formData.lat) || 10.762622} 
-                      lng={parseFloat(formData.lng) || 106.660172} 
-                      onChange={handleMapChange} 
+                    <MapPicker
+                      lat={parseFloat(formData.lat) || 10.762622}
+                      lng={parseFloat(formData.lng) || 106.660172}
+                      onChange={handleMapChange}
                       onLocate={handleLocateMe}
                     />
                   </div>
@@ -414,3 +416,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
     </AnimatePresence>
   );
 }
+
+
+

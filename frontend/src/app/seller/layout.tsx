@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { SellerSidebar } from "@/components/seller/Sidebar";
 
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const { user, token, hasHydrated } = useAuthStore();
@@ -23,7 +23,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   }, [hasHydrated, token, user, router]);
 
   if (!hasHydrated || !token || !user || (user.role_id !== 2 && user.role_id !== 1)) {
-    return <FullPageLoader />;
+    return null; // Silent load during redirect
   }
 
   return (
@@ -35,3 +35,4 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
     </div>
   );
 }
+

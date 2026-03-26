@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { Package, Truck, CheckCircle, Clock, XCircle, AlertCircle, Star } from "lucide-react";
@@ -10,7 +10,7 @@ import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { toast } from "sonner";
 import ReviewModal from "@/components/customer/ReviewModal";
 import { useTranslation } from "react-i18next";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 interface Order {
   id: number;
@@ -75,6 +75,25 @@ export default function MyOrdersPage() {
     }
   };
 
+  const searchParams = useSearchParams();
+  const paymentStatus = searchParams.get("payment");
+
+  useEffect(() => {
+    if (paymentStatus === "success") {
+      toast.success(t("checkout_page.order_success") || "Thanh toán thành công!", {
+        description: "Đơn hàng của bạn đã được xác nhận và đang chờ xử lý.",
+        duration: 5000,
+      });
+      // Cleanup URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (paymentStatus === "failed") {
+      toast.error("Thanh toán chưa hoàn tất", {
+        description: "Giao dịch đã bị hủy hoặc gặp lỗi. Vui lòng thử lại sau.",
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [paymentStatus, t]);
+
   useEffect(() => {
     if (!token) {
       router.replace("/login");
@@ -129,7 +148,7 @@ export default function MyOrdersPage() {
       </div>
 
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -398,10 +417,12 @@ function OrderImageItem({ src, alt }: { src: string | null | undefined, alt: str
         className={`w-full h-full object-cover transition-all duration-500 ${loaded ? "opacity-100 scale-100" : "opacity-0 scale-110"}`}
       />
       {!loaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <div className="absolute inset-0 bg-muted animate-pulse" />
       )}
     </div>
   );
 }
+
+
+
+

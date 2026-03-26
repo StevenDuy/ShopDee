@@ -31,7 +31,7 @@ export function TestPanel() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/api/login", {
+      const res = await axios.post("` + API_BASE_URL + `/login", {
         email,
         password,
       });
@@ -45,7 +45,7 @@ export function TestPanel() {
 
   const handleBroadcast = async () => {
     try {
-      await axios.post("http://localhost:8000/api/test-broadcast", {
+      await axios.post("` + API_BASE_URL + `/test-broadcast", {
         message: broadcastInput,
       });
     } catch (err) {

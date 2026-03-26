@@ -8,7 +8,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -39,7 +39,8 @@ export default function SellerDashboard() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <FullPageLoader />;
+  // Removed blocking loader for faster perceived performance
+  // 
 
   const formatPrice = (val: number) =>
     new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(val);
@@ -146,3 +147,8 @@ export default function SellerDashboard() {
     </div>
   );
 }
+
+
+
+
+

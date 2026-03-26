@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import FullPageLoader from "@/components/FullPageLoader";
+
 import { useTranslation } from "react-i18next";
 
 // --- Types ---
@@ -153,7 +153,7 @@ export default function AISecurityPage() {
   return (
     <div className="bg-background min-h-screen">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -519,3 +519,4 @@ function SuspectRow({ user, method, activity, consensus, severity }: any) {
     </tr>
   );
 }
+

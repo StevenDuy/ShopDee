@@ -31,7 +31,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+        <div className="w-8 h-8 bg-muted animate-pulse rounded-full" />
       </div>
     );
   }
@@ -51,3 +51,4 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     </div>
   );
 }
+

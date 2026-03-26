@@ -23,7 +23,7 @@ interface ReviewModalProps {
   onSuccess: () => void;
 }
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: ReviewModalProps) {
   const { token } = useAuthStore();
@@ -271,7 +271,7 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
               className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/30 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
             >
               {submitting ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-8 h-8 bg-muted animate-pulse rounded-full" />
               ) : (
                 <>
                   <Send size={18} />
@@ -285,3 +285,6 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
     </AnimatePresence>
   );
 }
+
+
+

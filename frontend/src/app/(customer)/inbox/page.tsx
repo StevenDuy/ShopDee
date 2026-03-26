@@ -12,7 +12,8 @@ export default function CustomerInboxPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  if (loading) return null;
+  // Removed blocking loader for faster perceived performance
+  // if (loading) return null;
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground animate-in fade-in duration-500">

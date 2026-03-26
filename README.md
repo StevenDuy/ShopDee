@@ -1,133 +1,116 @@
-# 🚀 ShopDee - Hướng dẫn Cấu hình & Cài đặt Chi tiết
+# 🚀 ShopDee - Hướng dẫn Cài đặt Siêu Chi Tiết (Cầm tay chỉ việc)
 
-ShopDee là hệ thống Thương mại điện tử Full-Stack (Next.js + Laravel). Để dự án chạy được, bạn **bắt buộc** phải cấu hình các dịch vụ ngoại vi (Cloudinary, Pusher, Google Auth). Hãy làm theo hướng dẫn từng bước dưới đây để lấy Key.
-
----
-
-## 🛠️ PHẦN 1: HƯỚNG DẪN LẤY API KEY (TỪNG BƯỚC)
-
-### 1. CLOUDINARY (Xử lý & Nén ảnh)
-Dùng để upload ảnh sản phẩm, banner và nén ảnh tự động giúp web mượt hơn.
-
-1. Truy cập [Cloudinary.com](https://cloudinary.com/) -> Nhấn **Sign Up for Free**.
-2. Sau khi đăng nhập, bạn sẽ thấy giao diện **Dashboard**.
-3. Hãy tìm mục **Product Environment Settings** (ở góc trái dưới) -> Chọn **API Keys**.
-4. Tại đây bạn sẽ thấy 3 thông số quan trọng:
-   - **Cloud Name**: Tên định danh của bạn.
-   - **API Key**: Mã định danh API.
-   - **API Secret**: (Nhấn nút con mắt để hiện) - Mã bảo mật.
-5. Copy 3 thông số này vào file `.env` của Backend.
-
-### 2. PUSHER (Chat Realtime)
-Dùng để đẩy thông báo tin nhắn ngay lập tức mà không cần load lại trang.
-
-1. Truy cập [Pusher.com](https://pusher.com/) -> Chọn **Get Started Free**.
-2. Tạo một app mới: Nhấn **Create app**.
-   - **Name your app**: `ShopDee`.
-   - **Select a cluster**: Chọn `ap1 (Asia Pacific)`.
-3. Sau khi tạo xong, chọn mục **App Keys** ở menu bên trái.
-4. Copy các giá trị: `app_id`, `key`, `secret`, `cluster` vào file `.env` (cả Backend và Frontend).
-
-
-### 3. GMAIL (Gửi email xác thực)
-Dùng để gửi mã xác nhận, thông báo đơn hàng hoặc khôi phục mật khẩu.
-
-1. Truy cập [Google App Passwords](https://myaccount.google.com/apppasswords).
-2. **Bật Xác minh 2 lớp** (nếu chưa có).
-3. Ô **Chọn ứng dụng**: Chọn `Thư` (Mail).
-4. Ô **Chọn thiết bị**: Chọn `Khác (Tên tùy chỉnh)` -> Nhập `ShopDee`.
-5. Nhấn **Tạo**. Copy dải **mã 16 ký tự** hiện ra (đây là mật khẩu để dán vào `.env`).
-
-### 4. GOOGLE AUTH (Đăng nhập Google)
-Dùng để cho phép người dùng đăng nhập nhanh bằng tài khoản Google.
-
-1. Truy cập [Google Cloud Console](https://console.cloud.google.com/).
-2. Tạo một Project mới.
-3. Tìm kiếm **APIs & Services** -> **OAuth consent screen**. Cấu hình App Name và Email hỗ trợ.
-4. Vào mục **Credentials** -> **Create Credentials** -> **OAuth client ID**.
-   - **Application type**: Chọn `Web application`.
-   - **Authorized redirect URIs**: Thêm `http://localhost:8000/api/auth/google/callback`.
-5. Nhấn **Create**. Bạn sẽ nhận được `Client ID` và `Client Secret`.
-6. Copy các giá trị này vào file `.env` của Backend và Frontend.
+Chào mừng bạn đến với ShopDee! Bản hướng dẫn này được thiết kế để giúp bất kỳ ai, kể cả người chưa biết về lập trình, cũng có thể cài đặt và chạy hệ thống thành công 100%.
 
 ---
 
-## ⚙️ PHẦN 2: CẤU HÌNH HỆ THỐNG
+## 📋 GIAI ĐOẠN 1: CHUẨN BỊ CÔNG CỤ (LÀM 1 LẦN DUY NHẤT)
 
-### 1. Cơ sở dữ liệu (XAMPP)
-- Mở XAMPP -> Start Apache & MySQL.
-- Vào `phpMyAdmin` -> Tạo database tên `shopdee`.
-- Mở `backend/.env` và sửa:
-  ```env
-  DB_CONNECTION=mysql
-  DB_HOST=127.0.0.1
-  DB_PORT=3306
-  DB_DATABASE=shopdee
-  DB_USERNAME=root
-  DB_PASSWORD=
-  ```
-
-### 2. Cấu hình Frontend
-Mở `frontend/.env.local` và điền đầy đủ các Key bạn vừa lấy ở Phần 1:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
-NEXT_PUBLIC_PUSHER_APP_KEY="DÁN_KEY_PUSHER"
-NEXT_PUBLIC_GOOGLE_CLIENT_ID="DÁN_CLIENT_ID_GOOGLE"
-```
-
-### 3. Cấu hình Email (Backend)
-Mở `backend/.env` và điền thông tin Gmail của bạn:
-```env
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=465
-MAIL_USERNAME="email_cua_ban@gmail.com"
-MAIL_PASSWORD="ma_16_ky_tu_vừa_tạo"
-MAIL_ENCRYPTION=ssl
-MAIL_FROM_ADDRESS="email_cua_ban@gmail.com"
-
-# Cấu hình Google Login (Backend)
-GOOGLE_CLIENT_ID="DÁN_CLIENT_ID"
-GOOGLE_CLIENT_SECRET="DÁN_CLIENT_SECRET"
-GOOGLE_REDIRECT_URL=http://localhost:8000/api/auth/google/callback
-```
+Trước khi bắt đầu, hãy đảm bảo máy tính của bạn đã cài đặt 3 công cụ sau:
+1. **XAMPP**: Để chạy cơ sở dữ liệu (Database). [Tải tại đây](https://www.apachefriends.org/download.html).
+2. **Node.js**: Để chạy giao diện (Frontend). [Tải bản LTS tại đây](https://nodejs.org/).
+3. **Composer**: Để chạy mã nguồn (Backend). [Tải tại đây](https://getcomposer.org/).
 
 ---
 
-## 🚀 PHẦN 3: KHỞI CHẠY DỰ ÁN
+## 🛠️ GIAI ĐOẠN 2: LẤY CÁC KHÓA API (QUAN TRỌNG NHẤT)
 
-**Chạy Backend (Laravel):**
-```bash
-cd backend
-composer install
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve
-```
+Hệ thống yêu cầu bạn phải có các "chìa khóa" kết nối sau đây. Bạn hãy copy chúng ra một file nháp (Notepad) để tí nữa dán vào cấu hình.
 
-**Chạy Frontend (Next.js):**
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### 1. CLOUDINARY (Để lưu ảnh sản phẩm)
+1. Vào [Cloudinary](https://cloudinary.com/) -> Đăng ký tài khoản miễn phí.
+2. Tại màn hình Dashboard, bạn sẽ thấy: **Cloud Name**, **API Key**, **API Secret**. Hãy lưu lại 3 thông số này.
+
+### 2. PUSHER (Để nhắn tin realtime)
+1. Vào [Pusher](https://pusher.com/) -> Đăng ký tài khoản.
+2. Nhấn nút **Create App** (Tạo ứng dụng mới).
+   - Đặt tên app: `ShopDee`.
+   - Chọn Cluster: `ap1 (Asia Pacific)`.
+3. Sau khi tạo, chọn menu **App Keys** ở bên trái. Lưu lại: `app_id`, `key`, `secret`, `cluster`.
+
+### 3. GMAIL APP PASSWORD (Để gửi email tự động)
+1. Vào [Tài khoản Google của bạn](https://myaccount.google.com/apppasswords).
+2. Đăng nhập và tạo một mật khẩu ứng dụng cho "ShopDee".
+3. Google sẽ cấp cho bạn một **mã 16 ký tự**. Đây chính là mật khẩu email ứng dụng của bạn.
+
+### 4. GOOGLE AUTH (Đăng nhập bằng nút Google)
+1. Vào [Google Cloud Console](https://console.cloud.google.com/).
+2. Tạo 1 Project mới -> Mục **OAuth consent screen** chọn `External` và điền tên app.
+3. Mục **Credentials** -> Chọn **Create Credentials** -> **OAuth client ID**.
+   - Chọn **Web Application**.
+   - **QUAN TRỌNG:** Ở ô **Authorized redirect URIs**, hãy nhập: `http://localhost:8000/api/auth/google/callback`. (Nếu sau này bạn dùng Cloudflare, hãy thay `http://localhost:8000` bằng link Cloudflare của bạn).
+4. Lưu lại **Client ID** và **Client Secret**.
+
+---
+
+## ⚙️ GIAI ĐOẠN 3: CẤU HÌNH HỆ THỐNG
+
+### Bước 1: Mở thư mục dự án
+Mở thư mục `ShopDee` trên máy tính của bạn. Bạn sẽ thấy 2 thư mục con là `backend` và `frontend`.
+
+### Bước 2: Cấu hình Backend (Máy chủ)
+1. Mở thư mục `backend`, tìm file tên là `.env`.
+2. Dán các khóa API bạn đã lấy ở Giai đoạn 2 vào các dòng tương ứng:
+   - `CLOUDINARY_URL`, `CLOUDINARY_CLOUD_NAME`, v.v...
+   - `PUSHER_APP_ID`, `PUSHER_APP_KEY`, v.v...
+   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+   - `GOOGLE_REDIRECT_URL`: Địa chỉ API đăng nhập (Quan trọng).
+   - `FRONTEND_URL`: Địa chỉ web của bạn (Mặc định là `http://localhost:3000`).
+   - `MAIL_USERNAME` (Email của bạn) và `MAIL_PASSWORD` (Mã 16 ký tự ở Bước 3).
+
+> [!TIP]
+> **KHI CHẠY PUBLIC (DÙNG CLOUDFLARE):** Bạn hãy sửa `FRONTEND_URL` thành link Cloudflare của trang web để sau khi đăng nhập Google, nó có thể quay về đúng trang web của bạn thay vì quay về localhost.
+
+### Bước 3: Cấu hình Frontend (Giao diện)
+1. Mở thư mục `frontend`, tìm file tên là `.env.local`.
+2. Điền các khóa:
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api
+   NEXT_PUBLIC_PUSHER_APP_KEY="Key Pusher của bạn"
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID="Client ID Google của bạn"
+   ```
 
 ---
 
-## 📘 PHẦN 4: GIẢI THÍCH CHỨC NĂNG CÔNG CỤ
+## 🚀 GIAI ĐOẠN 4: CHẠY DỰ ÁN (CÁCH NHẬP LỆNH)
 
-Tại sao ShopDee lại cần nhiều công cụ như vậy? Đây là vai trò của chúng:
+### Bước 1: Chạy Database (XAMPP)
+1. Mở phần mềm XAMPP lên.
+2. Nhấn nút **Start** ở dòng **Apache** và **MySQL**.
+3. Mở trình duyệt, gõ `localhost/phpmyadmin`. Nhấn **New** để tạo Database tên là `shopdee`.
 
-| Công cụ | Chức năng chính | Tại sao hệ thống cần nó? |
-| :--- | :--- | :--- |
-| **Cloudinary** | Quản lý & Tối ưu ảnh | Tự động hạ độ phân giải ảnh cho các máy yếu, giúp web không bị giật lag khi có nhiều ảnh sản phẩm. |
-| **Pusher** | Truyền tin Realtime | Đảm bảo khi người dùng gửi tin nhắn, hệ thống sẽ đẩy tin đó đi ngay lập tức (như Facebook Messenger). |
-| **Google Auth** | Đăng nhập an toàn | Cho phép người dùng đăng nhập bằng 1 cú click, tăng tỷ lệ chuyển đổi khách hàng. |
-| **XAMPP / MySQL** | Lưu trữ cốt lõi | Nơi "nhớ" toàn bộ thông tin tài khoản, đơn hàng và sản phẩm của bạn. |
+### Bước 2: Chạy Backend (Mở 1 cửa sổ Terminal mới)
+1. Mở thư mục `backend` trong Terminal hoặc CMD.
+2. Gõ các lệnh sau (nhấn Enter sau mỗi lệnh):
+   ```bash
+   composer install
+   php artisan key:generate
+   php artisan migrate --seed
+   php artisan serve
+   ```
+   *Giữ nguyên cửa sổ này, không được đóng lại.*
+
+### Bước 3: Chạy Frontend (Mở thêm 1 cửa sổ Terminal khác)
+1. Mở thư mục `frontend` trong Terminal.
+2. Gõ các lệnh sau:
+   ```bash
+   npm install
+   npm run dev
+   ```
+   *Giữ nguyên cửa sổ này.* Bây giờ bạn có thể vào `localhost:3000` để xem web.
 
 ---
-> [!IMPORTANT]
-> **KIỂM TRA LỖI**:
-> Nếu bạn thiếu bất kỳ Key nào hoặc cấu hình sai, hệ thống sẽ hiện một **Bản thông báo cảnh báo** ngay trên màn hình để bạn biết cần sửa ở đâu, thay vì bị lỗi trắng trang (Crash).
 
-**ShopDee Team** - *Cùng nhau kiến tạo nền tảng chuyên nghiệp!* 🚀
+## 🌐 GIAI ĐOẠN 5: ĐƯA WEB LÊN INTERNET (CLOUDFLARE TUNNEL)
+
+Nếu bạn muốn gửi link cho người khác xem (Public):
+1. Tải file `cloudflared.exe` vào thư mục gốc dự án.
+2. **Cho Backend:** Nhập lệnh `.\cloudflared.exe tunnel --url http://localhost:8000` -> Bạn sẽ nhận được 1 link HTTPS của Cloudflare.
+3. **CẬP NHẬT:** Lấy link đó, quay lại file `frontend/.env.local` và sửa dòng `NEXT_PUBLIC_API_URL` bằng link mới này (thêm `/api` ở cuối).
+4. **Cho Frontend:** Nhập lệnh `.\cloudflared.exe tunnel --url http://localhost:3000` -> Link HTTPS nhận được chính là trang web của bạn!
+
+> [!CAUTION]
+> **LỖI CẤU HÌNH:** Nếu bạn quên không điền bất kỳ khóa API nào ở Giai đoạn 2, hệ thống sẽ hiện một BẢNG CẢNH BÁO chặn toàn bộ trang web. Bạn phải điền đầy đủ và khởi động lại server thì bảng này mới biến mất.
+
+---
+🚀 **ShopDee Team** - *Chúc bạn thành công trên con đường trở thành chuyên gia!*

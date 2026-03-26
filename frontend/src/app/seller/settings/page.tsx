@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import AddressModal from "@/components/profile/AddressModal";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -92,7 +92,7 @@ export default function SellerSettingsPage() {
   return (
     <div className="min-h-screen">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -229,3 +229,7 @@ export default function SellerSettingsPage() {
     </div>
   );
 }
+
+
+
+

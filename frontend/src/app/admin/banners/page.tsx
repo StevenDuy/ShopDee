@@ -7,7 +7,7 @@ import { Plus, Trash2, Edit2, ShieldAlert, Image as ImageIcon, Save, X, External
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -249,7 +249,7 @@ export default function AdminBannersPage() {
   return (
     <div className="min-h-screen">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -274,7 +274,7 @@ export default function AdminBannersPage() {
 
       {loading ? (
          <div className="flex h-64 items-center justify-center">
-           <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+           <div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
          </div>
       ) : banners.length === 0 ? (
          <div className="bg-card border border-border rounded-xl p-12 text-center text-muted-foreground">
@@ -472,7 +472,7 @@ export default function AdminBannersPage() {
                         
                         {isSearchingProducts && (
                            <div className="absolute right-4 top-[38px]">
-                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                              <div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
                            </div>
                         )}
                      </div>
@@ -551,3 +551,8 @@ export default function AdminBannersPage() {
     </div>
   );
 }
+
+
+
+
+

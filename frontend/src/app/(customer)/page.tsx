@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Star, TrendingUp, Sparkles } from "lucide-react";
-import FullPageLoader from "@/components/FullPageLoader";
+
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
@@ -128,7 +128,8 @@ export default function CustomerHomePage() {
     fetchData();
   }, []);
 
-  if (loading) return <FullPageLoader />;
+  // Removed blocking loader for faster perceived performance
+  // 
 
   return (
     <div className="min-h-screen bg-background text-foreground animate-in fade-in duration-500">
@@ -183,3 +184,8 @@ export default function CustomerHomePage() {
     </div>
   );
 }
+
+
+
+
+

@@ -33,7 +33,7 @@ interface Product {
   media: { full_url: string }[];
 }
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function SellerShopPage() {
   const { id } = useParams<{ id: string }>();

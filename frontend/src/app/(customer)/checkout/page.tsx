@@ -63,8 +63,9 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!selectedAddr) { alert(t("checkout_page.alert_select_address")); return; }
     setLoading(true);
+    const authHeaders = { Authorization: `Bearer ${token}` };
     try {
-      await Promise.all(
+      const orderResponses = await Promise.all(
         Object.entries(bySeller).map(([sellerId, sellerItems]) =>
           axios.post(`${API}/orders`, {
             seller_id: Number(sellerId),
@@ -78,9 +79,20 @@ export default function CheckoutPage() {
               selected_options: i.attributes,
               variant_ids: i.variantIds
             })),
-          }, { headers: { Authorization: `Bearer ${token}` } })
+          }, { headers: authHeaders })
         )
       );
+
+      const orderIds = orderResponses.map(res => res.data.id);
+
+      if (payMethod === "vnpay") {
+        const vnpRes = await axios.post(`${API}/vnpay/create`, { order_ids: orderIds }, { headers: authHeaders });
+        if (vnpRes.data.payment_url) {
+          window.location.href = vnpRes.data.payment_url;
+          return;
+        }
+      }
+
       clearCart();
       setSuccess(true);
       setTimeout(() => router.push("/orders"), 3000);
@@ -241,17 +253,13 @@ export default function CheckoutPage() {
                 <span className="text-2xl font-black text-primary tracking-tighter">{formatPrice(total)}</span>
               </div>
 
-              <button 
-                onClick={handlePlaceOrder} 
-                disabled={loading}
-                className="w-full py-4 bg-primary text-white border-2 border-primary font-black uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-50"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent animate-spin" />
-                ) : (
-                  <>ĐẶT HÀNG NGAY <CreditCard size={18} strokeWidth={3} /></>
-                )}
-              </button>
+                <button 
+                  onClick={handlePlaceOrder} 
+                  disabled={loading}
+                  className="w-full py-4 bg-primary text-white border-2 border-primary font-black uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] disabled:opacity-50"
+                >
+                  ĐẶT HÀNG NGAY <CreditCard size={18} strokeWidth={3} />
+                </button>
             </div>
           </div>
         </div>
@@ -259,3 +267,7 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+
+
+

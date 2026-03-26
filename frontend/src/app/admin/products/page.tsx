@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
-import FullPageLoader from "@/components/FullPageLoader";
+
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import CategoryManager from "./CategoryManager";
@@ -312,7 +312,7 @@ export default function AdminProductsPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                     {loading ? (
-                        <tr><td colSpan={4} className="px-6 py-20 text-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" /><p className="text-[10px] font-bold uppercase opacity-40">{t("loading")}</p></td></tr>
+                        <tr><td colSpan={4} className="px-6 py-20 text-center"><div className="w-8 h-8 bg-muted animate-pulse rounded-full" /><p className="text-[10px] font-bold uppercase opacity-40">{t("loading")}</p></td></tr>
                     ) : products.length === 0 ? (
                         <tr><td colSpan={4} className="px-6 py-20 text-center text-muted-foreground"><Package size={40} className="mx-auto mb-3 opacity-20" /><p className="text-xs font-bold uppercase">{t("admin.no_recent_products") || "Không có sản phẩm nào"}</p></td></tr>
                     ) : products.map((p) => (
@@ -546,7 +546,7 @@ export default function AdminProductsPage() {
                              </div>
                              
                              {loadingReviews ? (
-                               <div className="p-10 text-center"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+                               <div className="p-10 text-center"><div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
                              ) : reviews.length === 0 ? (
                                 <div className="p-10 border-2 border-dashed border-border text-center opacity-30 rounded-3xl">
                                     <p className="text-xs font-black uppercase tracking-widest text-wrap">{t("product_details.no_reviews")}</p>
@@ -682,7 +682,7 @@ export default function AdminProductsPage() {
                     {/* Modal Content */}
                     <div className="p-4 md:p-8 overflow-y-auto space-y-10 custom-scrollbar">
                         {loadingSeller ? (
-                            <div className="py-20 text-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>
+                            <div className="py-20 text-center"><div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 {/* Information Columns */}
@@ -842,3 +842,8 @@ export default function AdminProductsPage() {
     </div>
   );
 }
+
+
+
+
+

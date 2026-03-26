@@ -208,11 +208,7 @@ export default function RegisterPage() {
 
             <button type="submit" disabled={loading}
               className="w-full py-4 bg-primary text-primary-foreground border-4 border-black font-black uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent animate-spin" />
-              ) : (
-                <><UserPlus size={20} /> ĐĂNG KÝ</>
-              )}
+              <UserPlus size={20} /> ĐĂNG KÝ
             </button>
           </form>
         </div>
@@ -224,3 +220,7 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+
+
+

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AdminSidebar } from "@/components/admin/Sidebar";
 
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [token, user, router]);
 
   if (!mounted || !token || !user || user.role_id !== 1) {
-    return <FullPageLoader />;
+    return null; // Silent load during redirect
   }
 
   return (
@@ -36,3 +36,4 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   );
 }
+

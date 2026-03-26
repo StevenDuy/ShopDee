@@ -6,7 +6,7 @@ import axios from "axios";
 import { Settings, Save, Percent, Truck, Power } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -81,7 +81,7 @@ export default function AdminSettingsPage() {
   return (
     <div className="min-h-screen">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -142,3 +142,7 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
+
+
+
+

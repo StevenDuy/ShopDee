@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
-import FullPageLoader from "@/components/FullPageLoader";
+
 import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
@@ -215,7 +215,7 @@ export default function AdminUsersPage() {
                   {loading ? (
                     <tr>
                       <td colSpan={3} className="px-6 py-20 text-center">
-                         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                         <div className="w-8 h-8 bg-muted animate-pulse rounded-full" />
                          <p className="text-[10px] font-bold uppercase opacity-40">{t("loading")}</p>
                       </td>
                     </tr>
@@ -448,3 +448,8 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+
+
+
+

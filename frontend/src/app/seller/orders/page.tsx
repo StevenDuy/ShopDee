@@ -10,7 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { OrderDetailsModal } from "@/components/seller/OrderDetailsModal";
 import { useTranslation } from "react-i18next";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -95,7 +95,7 @@ export default function SellerOrdersPage() {
   return (
     <div className="min-h-screen">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -229,3 +229,7 @@ export default function SellerOrdersPage() {
     </div>
   );
 }
+
+
+
+

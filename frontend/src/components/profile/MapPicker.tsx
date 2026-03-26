@@ -38,7 +38,7 @@ function LocationMarker({ lat, lng, onChange }: Omit<MapPickerProps, "onLocate">
     if (lat && lng) {
       const newPos = new L.LatLng(lat, lng);
       setPosition(newPos);
-      map.flyTo(newPos, map.getZoom() < 16 ? 16 : map.getZoom()); 
+      map.flyTo(newPos, map.getZoom() < 16 ? 16 : map.getZoom());
     }
   }, [lat, lng, map]);
 
@@ -67,25 +67,25 @@ export default function MapPicker({ lat, lng, onChange, onLocate }: MapPickerPro
         ) : (
           <TileLayer
             attribution='&copy; Google Maps'
-            url="http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}"
+            url="https://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}"
           />
         )}
 
         {/* Manual Toggle Button for cleaner UI */}
         <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
-            <button 
-                type="button"
-                onClick={() => setMapType(prev => prev === "standard" ? "satellite" : "standard")}
-                className="p-2.5 bg-background border border-border rounded-xl shadow-lg text-foreground hover:bg-muted transition-all active:scale-95 flex items-center gap-2 text-xs font-bold"
-            >
-                <Layers size={16} />
-                {mapType === "standard" ? "Satellite View" : "Street View"}
-            </button>
+          <button
+            type="button"
+            onClick={() => setMapType(prev => prev === "standard" ? "satellite" : "standard")}
+            className="p-2.5 bg-background border border-border rounded-xl shadow-lg text-foreground hover:bg-muted transition-all active:scale-95 flex items-center gap-2 text-xs font-bold"
+          >
+            <Layers size={16} />
+            {mapType === "standard" ? "Satellite View" : "Street View"}
+          </button>
         </div>
 
         <LocationMarker lat={lat} lng={lng} onChange={onChange} />
       </MapContainer>
-      
+
       {/* Floating Locate Button */}
       <button
         type="button"

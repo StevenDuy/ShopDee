@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UnifiedInbox } from "@/components/communication/UnifiedInbox";
-import FullPageLoader from "@/components/FullPageLoader";
+
 
 export default function SellerInboxPage() {
   const [loading, setLoading] = useState(true);
@@ -17,7 +17,7 @@ export default function SellerInboxPage() {
   return (
     <div className="h-full w-full overflow-hidden bg-muted/20">
       <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
+        
       </AnimatePresence>
 
       <motion.div
@@ -33,3 +33,4 @@ export default function SellerInboxPage() {
     </div>
   );
 }
+

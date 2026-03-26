@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
-import FullPageLoader from "@/components/FullPageLoader";
+
 import Link from "next/link";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -46,7 +46,8 @@ export default function AdminDashboardPage() {
     fetchStats();
   }, [token]);
 
-  if (loading) return <FullPageLoader />;
+  // Removed blocking loader for faster perceived performance
+  // 
 
   if (!stats) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -305,3 +306,8 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+
+
+
+

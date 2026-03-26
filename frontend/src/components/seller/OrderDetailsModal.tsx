@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 
-const API = "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 type OrderItem = {
   id: number;
@@ -73,7 +73,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
   if (loading || !order) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
       </div>
     );
   }
@@ -254,3 +254,6 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
     </div>
   );
 }
+
+
+
