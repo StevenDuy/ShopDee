@@ -40,9 +40,9 @@ export function NavSettings({ collapsed = false }: NavSettingsProps) {
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
-              className="truncate"
+              className="truncate flex-1 text-left"
             >
-              {theme === "dark" ? t("light_mode") : t("dark_mode")}
+              {theme === "dark" ? t("theme_light") : t("theme_dark")}
             </motion.span>
           )}
         </AnimatePresence>
@@ -61,9 +61,9 @@ export function NavSettings({ collapsed = false }: NavSettingsProps) {
           {!collapsed && (
             <motion.span 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="truncate"
+              className="truncate flex-1 text-left"
             >
-              {i18n.language === "vi" ? "🇻🇳 Tiếng Việt" : "🇺🇸 English"}
+              {i18n.language === "vi" ? t("language_vi") : t("language_en")}
             </motion.span>
           )}
         </AnimatePresence>

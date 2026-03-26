@@ -119,27 +119,31 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
             {/* Theme Toggle */}
             <button 
               onClick={toggleTheme}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border"
+              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border whitespace-nowrap overflow-hidden"
             >
-              <div className="flex items-center gap-3">
-                {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-                <span>{theme === "dark" ? t("theme_light") || "Sáng" : t("theme_dark") || "Tối"}</span>
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="shrink-0">
+                  {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+                </div>
+                <span className="truncate">{t("theme")}</span>
               </div>
-              <span className="text-[10px] font-bold border border-border px-1">
-                {theme === "dark" ? t("theme_light") || "LIGHT" : t("theme_dark") || "DARK"}
+              <span className="text-[10px] font-bold border border-border px-1.5 py-0.5 shrink-0 ml-2 bg-muted/50">
+                {theme === "dark" ? t("theme_light")?.toUpperCase() || "LIGHT" : t("theme_dark")?.toUpperCase() || "DARK"}
               </span>
             </button>
 
             <button 
               onClick={toggleLang}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border"
+              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border whitespace-nowrap overflow-hidden"
             >
-              <div className="flex items-center gap-3">
-                <Globe size={14} />
-                <span>{t("language")}</span>
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="shrink-0">
+                  <Globe size={14} />
+                </div>
+                <span className="truncate">{t("language")}</span>
               </div>
-              <span className="text-[10px] font-bold border border-border px-1">
-                {i18n.language === "vi" ? t("language_vi") || "VIE" : t("language_en") || "ENG"}
+              <span className="text-[10px] font-bold border border-border px-1.5 py-0.5 shrink-0 ml-2 bg-muted/50">
+                {i18n.language === "vi" ? "VI" : "EN"}
               </span>
             </button>
 

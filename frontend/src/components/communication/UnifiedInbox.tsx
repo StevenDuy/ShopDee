@@ -375,7 +375,7 @@ export function UnifiedInbox() {
       </div>
 
       {/* 2. List Pane */}
-      <div className={`w-full md:w-[380px] border-r border-border/50 flex flex-col bg-card shrink-0 transition-all ${ (activeConv || selectedNotif) ? "hidden md:flex" : "flex"}`}>
+      <div className={`w-full md:w-[380px] flex-1 md:flex-none border-r border-border/50 flex flex-col bg-card shrink-0 transition-all ${ (activeConv || selectedNotif) ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 md:p-6 border-b border-border/50">
            <div className="flex items-center justify-between mb-4 md:mb-6">
              <h2 className="hidden md:block text-xl md:text-2xl font-black tracking-tighter uppercase">{activeTab === "chat" ? t("inbox.title_chat") : t("inbox.title_updates")}</h2>
@@ -451,24 +451,8 @@ export function UnifiedInbox() {
            )}
         </div>
 
-        {/* 2.1 Bottom Tab Control (Mobile Only) */}
-        <div className="md:hidden flex border-t border-border/50 bg-card p-2 gap-2">
-           <button onClick={() => { setActiveTab("chat"); setSelectedNotif(null); setActiveConv(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-             <div className="relative">
-                <MessageCircle size={20} />
-                {hasUnreadMessages && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
-             </div>
-             <span className="text-[10px] font-bold uppercase">{t("inbox.messages")}</span>
-           </button>
-           <button onClick={() => { setActiveTab("notifications"); setActiveConv(null); setSelectedNotif(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "notifications" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-             <div className="relative">
-                <Bell size={20} />
-                {hasUnreadNotifications && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
-             </div>
-             <span className="text-[10px] font-bold uppercase">{t("inbox.notifications")}</span>
-           </button>
+         {/* List content ends here */}
         </div>
-      </div>
 
       {/* 3. Detail Pane */}
       <div className={`flex-1 bg-muted/10 relative flex flex-col min-w-0 ${ (activeConv || selectedNotif) ? "flex" : "hidden md:flex"}`}>
@@ -729,6 +713,24 @@ export function UnifiedInbox() {
              </div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* 4. Bottom Tab Control (Mobile Only) - Moved here to stay permanent at bottom */}
+      <div className="md:hidden flex border-t border-border/50 bg-card p-2 gap-2 shrink-0 z-50">
+         <button onClick={() => { setActiveTab("chat"); setSelectedNotif(null); setActiveConv(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+           <div className="relative">
+              <MessageCircle size={20} />
+              {hasUnreadMessages && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
+           </div>
+           <span className="text-[10px] font-bold uppercase">{t("inbox.messages")}</span>
+         </button>
+         <button onClick={() => { setActiveTab("notifications"); setActiveConv(null); setSelectedNotif(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "notifications" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+           <div className="relative">
+              <Bell size={20} />
+              {hasUnreadNotifications && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
+           </div>
+           <span className="text-[10px] font-bold uppercase">{t("inbox.notifications")}</span>
+         </button>
       </div>
 
       <AnimatePresence>

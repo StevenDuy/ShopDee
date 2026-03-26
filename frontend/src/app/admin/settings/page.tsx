@@ -11,7 +11,7 @@ import FullPageLoader from "@/components/FullPageLoader";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function AdminSettingsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -101,97 +101,43 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex flex-col items-center justify-center py-32 px-10 bg-card border-4 border-dashed border-border rounded-[48px] text-center shadow-inner mt-10 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
         
-        {/* Core Settings */}
-        <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
-          <div className="px-6 py-5 border-b border-border bg-muted/20 flex items-center gap-2">
-            <Settings className="text-primary" size={20} />
-            <h2 className="text-lg font-bold">{t("admin.system_config.platform_params")}</h2>
-          </div>
-          
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-muted-foreground flex items-center gap-2">
-                <Percent size={16} /> {t("admin.system_config.platform_fee")}
-              </label>
-              <input 
-                type="number" 
-                step="0.1"
-                min="0"
-                value={settings.platform_fee}
-                onChange={(e) => setSettings({...settings, platform_fee: e.target.value})}
-                className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-medium"
-              />
-              <p className="text-xs text-muted-foreground mt-2">{t("admin.system_config.platform_fee_desc")}</p>
-            </div>
+        <motion.div 
+          animate={{ 
+            rotate: 360,
+            scale: [1, 1.1, 1]
+          }} 
+          transition={{ 
+            rotate: { duration: 20, repeat: Infinity, ease: "linear" },
+            scale: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+          }}
+          className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-10 border-2 border-primary/20 relative z-10"
+        >
+          <Settings size={44} className="text-primary stroke-[2.5px]" />
+        </motion.div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-muted-foreground flex items-center gap-2">
-                <Truck size={16} /> {t("admin.system_config.shipping_rate")}
-              </label>
-              <input 
-                type="number" 
-                step="0.01"
-                min="0"
-                value={settings.shipping_base_rate}
-                onChange={(e) => setSettings({...settings, shipping_base_rate: e.target.value})}
-                className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-medium"
-              />
-              <p className="text-xs text-muted-foreground mt-2">{t("admin.system_config.shipping_rate_desc")}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-muted-foreground flex items-center gap-2">
-                <Percent size={16} /> {t("admin.system_config.tax_rate")}
-              </label>
-              <input 
-                type="number" 
-                step="0.01"
-                min="0"
-                value={settings.tax_rate}
-                onChange={(e) => setSettings({...settings, tax_rate: e.target.value})}
-                className="w-full px-4 py-2.5 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-medium"
-              />
-              <p className="text-xs text-muted-foreground mt-2">{t("admin.system_config.tax_rate_desc")}</p>
-            </div>
-          </div>
+        <div className="relative z-10">
+          <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4 text-foreground/90">
+            {i18n.language === "vi" ? "Sớm ra mắt" : "Coming Soon"}
+          </h2>
+          <div className="h-1.5 w-24 bg-primary mx-auto mb-6 rounded-full" />
+          <p className="text-muted-foreground text-sm max-w-sm font-bold uppercase tracking-[0.3em] opacity-40 leading-relaxed">
+             {i18n.language === "vi" 
+              ? "Tính năng cấu hình hệ thống đang được tinh chỉnh và sẽ sẵn sàng cho bạn trong thời gian tới."
+              : "System configuration features are being refined and will be available soon."}
+          </p>
         </div>
 
-        {/* Operational Guard */}
-        <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
-           <div className="p-6 flex items-center justify-between">
-              <div>
-                 <h2 className="text-lg font-bold flex items-center gap-2">
-                    <Power size={20} className={settings.maintenance_mode === "1" ? "text-amber-500" : "text-green-500"} />
-                    {t("admin.system_config.maintenance_mode")}
-                 </h2>
-                 <p className="text-sm text-muted-foreground mt-1">{t("admin.system_config.maintenance_desc")}</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer shrinks-0">
-                 <input 
-                    type="checkbox" 
-                    className="sr-only peer"
-                    checked={settings.maintenance_mode === "1"}
-                    onChange={(e) => setSettings({...settings, maintenance_mode: e.target.checked ? "1" : "0"})}
-                 />
-                 <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-              </label>
-           </div>
-        </div>
-
-        <div className="flex justify-end pt-4">
-           <button 
-             type="submit" 
-             disabled={saving}
-             className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-xl font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
-           >
-              <Save size={18} />
-              {saving ? t("admin.system_config.saving") : t("admin.system_config.save_all")}
-           </button>
-        </div>
-
-      </form>
+        <motion.div 
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 0.1 }}
+           className="absolute -bottom-20 -right-20"
+        >
+           <Settings size={300} strokeWidth={0.5} />
+        </motion.div>
+      </div>
       </motion.div>
     </div>
   );
