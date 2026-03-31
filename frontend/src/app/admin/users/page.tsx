@@ -14,6 +14,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 
 import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -161,35 +164,34 @@ export default function AdminUsersPage() {
     <div className="p-6 md:p-10 space-y-10 bg-background max-w-7xl mx-auto overflow-hidden">
       
       {/* Header */}
-      <div className="flex flex-col items-center justify-center text-center border-b-4 md:border-b-8 border-primary pb-6 md:pb-8 gap-4 px-2">
-        <div className="text-wrap">
-          <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight">{t("admin.users_nav")}</h1>
-          <p className="text-muted-foreground font-bold text-[10px] md:text-xs uppercase opacity-60 tracking-[0.2em] mt-2 md:mt-3 px-4">{t("admin.users_manage.desc")}</p>
+      <div className="flex flex-col md:flex-row items-center justify-between border-b border-border/50 pb-8 gap-6 px-2">
+        <div className="text-center md:text-left">
+          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-foreground">{t("admin.users_nav")}</h1>
+          <p className="text-muted-foreground font-bold text-[10px] uppercase opacity-70 tracking-widest mt-2">{t("admin.users_manage.desc")}</p>
         </div>
-        <div className="bg-primary/5 px-6 md:px-8 py-3 md:py-4 border-2 border-primary/20 flex flex-col items-center">
-            <p className="text-[9px] md:text-[10px] font-black opacity-40 uppercase tracking-widest mb-0.5 md:1">{t("admin.users_manage.total_users")}</p>
-            <p className="text-xl md:text-2xl font-black">{pagination.total}</p>
-        </div>
+        <Card className="bg-primary/5 px-8 py-5 border-primary/20 flex flex-col items-center hover:scale-105">
+            <p className="text-[10px] font-black opacity-50 uppercase tracking-widest mb-1">{t("admin.users_manage.total_users")}</p>
+            <p className="text-3xl font-black text-primary">{pagination.total}</p>
+        </Card>
       </div>
 
       {/* Toolbar */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-card border-2 border-border p-4">
-          <div className="md:col-span-8 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-all" size={20} />
-              <input 
-                  type="text" 
+      <Card className="p-2 border-border/50 hover:scale-100 flex flex-col md:flex-row gap-2">
+          <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" size={18} />
+              <Input 
                   placeholder={t("admin.users_manage.search_placeholder")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-muted/30 border-2 border-transparent focus:border-primary focus:bg-background outline-none font-bold text-sm transition-all"
+                  className="pl-12 h-14 bg-muted/20 border-transparent focus:bg-background h-12"
               />
           </div>
-          <div className="md:col-span-4 flex items-center gap-2 text-wrap w-full">
-              <Filter size={20} className="text-muted-foreground ml-2 shrink-0" />
+          <div className="flex items-center gap-2 min-w-[200px]">
+              <Filter size={18} className="text-muted-foreground ml-2 shrink-0 opacity-50" />
               <select 
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  className="flex-1 w-full bg-muted/30 border-2 border-transparent focus:border-primary px-4 py-3 outline-none font-black uppercase text-xs tracking-widest cursor-pointer transition-all truncate"
+                  className="w-full bg-muted/30 border-transparent rounded-xl px-4 h-12 outline-none font-bold uppercase text-[10px] tracking-widest cursor-pointer hover:bg-muted/50 transition-all"
               >
                   <option value="all">{t("admin.users_manage.all_roles")}</option>
                   <option value="1">{t("roles.admin").toUpperCase()}</option>
@@ -197,7 +199,7 @@ export default function AdminUsersPage() {
                   <option value="3">{t("roles.customer").toUpperCase()}</option>
               </select>
           </div>
-      </div>
+      </Card>
 
       {/* Seller-style Table */}
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -268,19 +270,21 @@ export default function AdminUsersPage() {
           
           {/* Pagination */}
           {!loading && pagination.last_page > 1 && (
-              <div className="px-4 md:px-6 py-4 md:py-5 bg-muted/20 flex flex-col md:flex-row gap-4 items-center justify-between border-t border-border">
-                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest opacity-60">
+              <div className="px-6 py-5 bg-muted/20 flex flex-col md:flex-row gap-4 items-center justify-between border-t border-border/50">
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-40">
                       {t("admin.users_manage.page_of", { current: pagination.current_page, total: pagination.last_page })}
                   </span>
-                  <div className="flex gap-2 overflow-x-auto max-w-full pb-2 md:pb-0 scrollbar-hide">
+                  <div className="flex gap-2">
                       {[...Array(pagination.last_page)].map((_, i) => (
-                          <button 
+                          <Button 
                               key={i} 
+                              size="sm"
+                              variant={pagination.current_page === i + 1 ? "default" : "outline"}
                               onClick={() => fetchUsers(i + 1)}
-                              className={`w-8 h-8 md:w-10 md:h-10 border-2 font-black transition-all shrink-0 ${pagination.current_page === i + 1 ? "bg-primary text-white border-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]" : "bg-background border-border hover:border-primary"}`}
+                              className="w-10 h-10 border-border/50"
                           >
                               {i + 1}
-                          </button>
+                          </Button>
                       ))}
                   </div>
               </div>
@@ -292,37 +296,35 @@ export default function AdminUsersPage() {
         {showDetail && selectedUser && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 
-               initial={{ opacity: 0 }} 
-               animate={{ opacity: 1 }} 
-               exit={{ opacity: 0 }}
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                onClick={() => setShowDetail(false)}
-               className="absolute inset-0 bg-background/80 backdrop-blur-sm shadow-[inset_0px_0px_100px_rgba(0,0,0,0.2)]" 
+               className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
             />
             
             <motion.div
-               initial={{ scale: 0.9, opacity: 0, y: 20 }}
+               initial={{ scale: 0.95, opacity: 0, y: 30 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
-               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-               className="relative w-full max-w-4xl bg-card border-4 border-border shadow-[16px_16px_0px_0px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col max-h-[95vh]"
+               exit={{ scale: 0.95, opacity: 0, y: 30 }}
+               className="relative w-full max-w-2xl bg-card border border-border/50 shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[90vh]"
             >
                {/* Modal Header */}
-               <div className="p-4 md:p-6 border-b-4 border-border bg-muted flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-                     <div className="w-16 h-16 border-4 border-border bg-background flex items-center justify-center font-black text-2xl text-primary shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+               <div className="p-6 md:p-8 border-b border-border/50 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-5">
+                     <div className="w-20 h-20 rounded-2xl bg-primary/5 flex items-center justify-center font-bold text-3xl text-primary border border-primary/20">
                          {selectedUser.name?.charAt(0).toUpperCase()}
                      </div>
                      <div>
-                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">{selectedUser.name}</h2>
-                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1">
-                           <span className={`px-2 py-0.5 border-2 font-black text-[9px] tracking-widest uppercase ${getRoleBadge(selectedUser.role_id)}`}>
+                        <h2 className="text-3xl font-black uppercase tracking-tight text-foreground">{selectedUser.name}</h2>
+                        <div className="flex items-center gap-3 mt-2">
+                           <span className={`px-2.5 py-1 rounded-lg font-black text-[10px] tracking-widest uppercase border ${getRoleBadge(selectedUser.role_id)}`}>
                               {getRoleLabel(selectedUser.role?.slug)}
                            </span>
-                           <span className="text-[10px] font-bold text-muted-foreground uppercase">UID: {selectedUser.id}</span>
+                           <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-50">UID #{selectedUser.id}</span>
                         </div>
                      </div>
                   </div>
-                  <button onClick={() => setShowDetail(false)} className="self-end sm:self-auto p-2 md:p-3 border-2 border-border hover:bg-red-500 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none">
-                     <X size={20} className="md:w-6 md:h-6" />
+                  <button onClick={() => setShowDetail(false)} className="p-3 hover:bg-muted rounded-full transition-colors truncate">
+                     <X size={24} className="text-muted-foreground" />
                   </button>
                </div>
 
@@ -403,36 +405,38 @@ export default function AdminUsersPage() {
                </div>
 
                {/* Modal Footer Actions */}
-               <div className="p-4 md:p-8 border-t-4 border-border bg-muted/10 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-                  <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+               <div className="p-8 border-t border-border/50 bg-muted/5 flex flex-col gap-6">
+                  <div className="flex flex-col sm:flex-row gap-4">
                      {selectedUser.id !== loggedInUser?.id && (
                        <Link 
                           href={`/admin/inbox?userId=${selectedUser.id}`}
-                          className="flex items-center justify-center gap-3 bg-blue-600 text-white px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
+                          className="flex-1"
                        >
-                          <MessageCircle size={18} />
-                          {t("admin.users_manage.chat_with_user")}
+                          <Button className="w-full h-14 text-[10px] tracking-widest" variant="outline">
+                            <MessageCircle size={18} className="mr-2" /> {t("admin.users_manage.chat_with_user")}
+                          </Button>
                        </Link>
                      )}
                      {selectedUser.id !== loggedInUser?.id && (
-                        <button 
+                        <Button 
                            onClick={() => selectedUser.status === 'banned' ? handleUnbanUser(selectedUser) : handleBanUser(selectedUser)}
-                           className={`flex items-center justify-center gap-3 ${selectedUser.status === 'banned' ? 'bg-green-600 shadow-[6px_6px_0px_0px_rgba(22,163,74,0.2)]' : 'bg-slate-900 shadow-[6px_6px_0px_0px_rgba(30,41,59,0.2)]'} text-white px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest active:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all`}
+                           variant={selectedUser.status === 'banned' ? "default" : "secondary"}
+                           className="flex-1 h-14 text-[10px] tracking-widest"
                         >
-                           {selectedUser.status === 'banned' ? <UserCheck size={18} /> : <Ban size={18} />}
+                           {selectedUser.status === 'banned' ? <UserCheck size={18} className="mr-2" /> : <Ban size={18} className="mr-2" />}
                            {selectedUser.status === 'banned' ? t("admin.users_manage.unban_user") : t("admin.users_manage.ban_user")}
-                        </button>
+                        </Button>
                       )}
                    </div>
                    
                    {selectedUser.id !== loggedInUser?.id && selectedUser.role_id !== 1 && (
-                      <button 
+                      <Button 
                          onClick={() => handleDeleteUser(selectedUser)}
-                         className="flex items-center justify-center gap-3 border-2 border-red-500 text-red-500 px-8 py-3.5 rounded-sm font-black uppercase text-xs tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-[6px_6px_0px_0px_rgba(239,68,68,0.1)]"
+                         variant="destructive"
+                         className="h-14 text-[10px] tracking-widest"
                       >
-                         <Trash2 size={18} />
-                         {t("admin.users_manage.delete_user")}
-                      </button>
+                         <Trash2 size={18} className="mr-2" /> {t("admin.users_manage.delete_user")}
+                      </Button>
                    )}
                 </div>
             </motion.div>

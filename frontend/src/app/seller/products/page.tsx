@@ -8,7 +8,10 @@ import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { EditProductModal } from "@/components/seller/EditProductModal";
 import { useTranslation } from "react-i18next";
-
+import { Card, CardContent } from "@/components/ui/card";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -70,20 +73,6 @@ export default function SellerProductsPage() {
     }
   };
 
-  const handleToggleStatus = async (id: number, newStatus: string) => {
-    if (!token) return;
-    try {
-      await axios.put(`${API}/seller/products/${id}`, 
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setProducts(products.map(p => p.id === id ? { ...p, status: newStatus } : p));
-    } catch (err) {
-      console.error("Failed to update status", err);
-      alert("Lỗi khi cập nhật trạng thái.");
-    }
-  };
-
   return (
     <div className="min-h-screen">
       <AnimatePresence>
@@ -96,34 +85,37 @@ export default function SellerProductsPage() {
         transition={{ duration: 0.5 }}
         className="p-6 md:p-8 max-w-7xl mx-auto space-y-6"
       >
-      <div className="flex flex-col items-center justify-center text-center border-b-8 border-primary pb-8 gap-6 mb-12">
-        <div className="space-y-4">
-          <h1 className="text-5xl font-black uppercase tracking-tighter leading-none">{t("seller.products")}</h1>
-          <p className="text-muted-foreground font-bold text-xs uppercase opacity-60 tracking-[0.2em]">{t("seller.products_manage.desc")}</p>
+      <div className="flex flex-col md:flex-row items-center justify-between border-b border-border/50 pb-8 gap-6 mb-12">
+        <div className="text-center md:text-left space-y-2">
+          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-foreground">{t("seller.products")}</h1>
+          <p className="text-muted-foreground font-bold text-[10px] uppercase opacity-70 tracking-widest">{t("seller.products_manage.desc")}</p>
         </div>
-        <Link href="/seller/products/new" className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95 shadow-[0_8px_0_0_rgba(0,0,0,0.1)] hover:shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:translate-y-1">
+        <Link 
+          href="/seller/products/new" 
+          className={cn(buttonVariants({ size: "lg" }), "h-14 px-10 text-[10px] tracking-widest font-black uppercase flex items-center gap-2")}
+        >
           <Plus size={20} strokeWidth={3} />
           {t("seller.products_manage.add_product")}
         </Link>
       </div>
 
-        <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-border flex items-center justify-between">
+        <Card className="overflow-hidden border-border/50">
+          <div className="p-6 border-b border-border/50 flex items-center justify-between bg-muted/5">
             <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-              <input
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" size={18} />
+              <Input
                 type="text"
                 placeholder={t("products_page.search_placeholder")}
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                className="pl-12 h-11"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto scrollbar-hide">
             <table className="w-full text-left text-sm border-separate border-spacing-0">
-              <thead className="bg-muted/50 text-muted-foreground border-b border-border">
+              <thead className="bg-muted/50 text-muted-foreground border-b border-border/50">
                 <tr>
                   <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">{t("seller.products_manage.product")}</th>
                   <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px] hidden sm:table-cell">{t("seller.products_manage.category")}</th>
@@ -132,7 +124,7 @@ export default function SellerProductsPage() {
                   <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">{t("seller.products_manage.status")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border/50">
                 {loading && products.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
@@ -156,15 +148,15 @@ export default function SellerProductsPage() {
                       className="hover:bg-muted/40 transition-colors group cursor-pointer"
                     >
                       <td className="px-6 py-4 font-medium flex items-center gap-3">
-                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center overflow-hidden text-muted-foreground shrink-0 border border-border">
+                        <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center overflow-hidden text-muted-foreground shrink-0 border border-border/50 transition-transform group-hover:scale-105">
                           {p.media && p.media.length > 0 ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={p.media[0].full_url} alt={p.title} loading="lazy" className="object-cover w-full h-full" />
                           ) : (
-                            <ImageIcon size={20} />
+                            <ImageIcon size={24} />
                           )}
                         </div>
-                        <span className="truncate max-w-[150px] md:max-w-[250px] group-hover:text-primary transition-colors">{p.title}</span>
+                        <span className="truncate max-w-[150px] md:max-w-[250px] font-bold group-hover:text-primary transition-colors">{p.title}</span>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground hidden sm:table-cell">
                         <span className="bg-muted px-2 py-1 rounded text-xs">{p.category?.name || "N/A"}</span>
@@ -208,19 +200,19 @@ export default function SellerProductsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="p-4 border-t border-border flex justify-center gap-2">
+            <div className="p-6 border-t border-border/50 flex justify-center gap-2 bg-muted/5">
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === i + 1 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted hover:bg-muted/80"}`}
+                  className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${currentPage === i + 1 ? "bg-primary text-primary-foreground" : "bg-background border border-border/50 hover:bg-muted"}`}
                 >
                   {i + 1}
                 </button>
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
         {editingId !== null && (
           <EditProductModal
@@ -233,7 +225,3 @@ export default function SellerProductsPage() {
     </div>
   );
 }
-
-
-
-

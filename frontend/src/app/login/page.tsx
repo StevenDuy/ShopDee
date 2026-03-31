@@ -6,6 +6,9 @@ import { Eye, EyeOff, LogIn, ShoppingBag, Chrome } from "lucide-react";
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -52,51 +55,55 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background border-[10px] border-primary flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5 flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Decorative Orbs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px]" />
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-16 h-16 bg-primary flex items-center justify-center border-4 border-black">
+            <div className="w-16 h-16 bg-primary flex items-center justify-center rounded-2xl shadow-xl shadow-primary/20">
               <ShoppingBag size={32} className="text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-4xl font-black text-foreground uppercase tracking-tighter">ShopDee 2D</h1>
-          <p className="text-muted-foreground font-bold uppercase tracking-widest text-xs mt-2">Hệ thống Thương mại điện tử</p>
+          <h1 className="text-4xl font-bold text-foreground uppercase tracking-tight">ShopDee</h1>
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-2 opacity-70">Hệ thống Thương mại điện tử 2.0</p>
         </div>
 
         {/* Card */}
-        <div className="bg-card border-4 border-black p-8">
+        <Card className="backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-border/50 shadow-2xl p-8 hover:scale-100">
           <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-xs font-black uppercase tracking-widest text-foreground mb-2">Email</label>
-              <input
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</label>
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-muted border-2 border-border font-bold text-sm focus:outline-none focus:border-primary"
                 placeholder="you@shopdee.com"
+                className="h-12"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-black uppercase tracking-widest text-foreground mb-2">Mật khẩu</label>
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mật khẩu</label>
               <div className="relative">
-                <input
+                <Input
                   type={showPw ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-11 bg-muted border-2 border-border font-bold text-sm focus:outline-none focus:border-primary"
+                  className="h-12 pr-11"
                   placeholder="••••••••"
                   required
                 />
                 <button type="button" onClick={() => setShowPw(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              <div className="flex justify-end mt-1">
+              <div className="flex justify-end pr-1">
                 <Link href="/forgot-password" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
                   Quên mật khẩu?
                 </Link>
@@ -115,21 +122,19 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="w-full py-4 bg-primary text-primary-foreground border-4 border-black font-black uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
-              <LogIn size={20} /> ĐĂNG NHẬP
-            </button>
+            <Button type="submit" disabled={loading} size="lg" className="w-full h-14 text-xs tracking-widest">
+              <LogIn size={18} className="mr-2" /> ĐĂNG NHẬP
+            </Button>
 
             <div className="relative flex items-center gap-4 py-2">
-              <div className="h-[2px] bg-black flex-1"></div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground whitespace-nowrap">Hoặc</span>
-              <div className="h-[2px] bg-black flex-1"></div>
+              <div className="h-px bg-border flex-1"></div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground whitespace-nowrap opacity-50">Hoặc</span>
+              <div className="h-px bg-border flex-1"></div>
             </div>
 
-            <button type="button" onClick={handleGoogleLogin}
-              className="w-full py-4 bg-white text-black border-4 border-black font-black uppercase tracking-widest hover:bg-muted flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
-              <Chrome size={20} /> TIẾP TỤC VỚI GOOGLE
-            </button>
+            <Button type="button" onClick={handleGoogleLogin} variant="outline" size="lg" className="w-full h-14 text-xs tracking-widest border-border/50">
+              <Chrome size={18} className="mr-2" /> TIẾP TỤC VỚI GOOGLE
+            </Button>
 
             <div className="text-center mt-4">
                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
@@ -139,22 +144,22 @@ export default function LoginPage() {
           </form>
 
           {/* Quick Login */}
-          <div className="mt-8 pt-8 border-t-2 border-black">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center mb-4">Tài khoản mẫu</p>
+          <div className="mt-8 pt-8 border-t border-border/50">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-center mb-4 opacity-70">Tài khoản mẫu</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: "Guest", email: "customer@shopdee.com" },
                 { label: "Seller",   email: "seller@shopdee.com" },
                 { label: "Admin",    email: "admin@shopdee.com" },
               ].map((acc) => (
-                <button key={acc.email} onClick={() => { setEmail(acc.email); setPassword("password"); }}
-                  className="py-2 text-[10px] font-black uppercase bg-muted border border-border hover:bg-primary hover:text-white hover:border-black">
+                <Button key={acc.email} variant="secondary" size="xs" onClick={() => { setEmail(acc.email); setPassword("password"); }}
+                  className="font-black text-[9px] hover:bg-primary hover:text-white transition-all">
                   {acc.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
-        </div>
+        </Card>
         
         <p className="mt-8 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-30">
           Powered by Antigravity Flat-Engine

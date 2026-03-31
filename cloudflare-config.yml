@@ -1,0 +1,14 @@
+tunnel: bdeb1e42-e864-4db2-ac8f-34db3f682022
+credentials-file: C:\Users\duyh1\.cloudflared\bdeb1e42-e864-4db2-ac8f-34db3f682022.json
+
+ingress:
+  # Frontend: shopdee.io.vn -> Next.js port 3000
+  - hostname: shopdee.io.vn
+    service: http://localhost:3000
+
+  # Backend: api.shopdee.io.vn -> Laravel port 8000
+  - hostname: api.shopdee.io.vn
+    service: http://localhost:8000
+
+  # Catch-all (bắt buộc phải có)
+  - service: http_status:404

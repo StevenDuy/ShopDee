@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { SellerSidebar } from "@/components/seller/Sidebar";
 
-
-
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const { user, token, hasHydrated } = useAuthStore();
   const router = useRouter();
@@ -27,12 +25,13 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="flex h-screen bg-muted/30 overflow-hidden">
+    <div className="flex bg-white dark:bg-slate-900 h-screen overflow-hidden">
       <SellerSidebar />
-      <main className="flex-1 overflow-y-auto">
-        {children}
+      <main className="flex-1 overflow-y-auto w-full relative bg-background/50 dark:bg-slate-950/50">
+        <div className="p-6 md:p-10 pb-24 md:pb-10 max-w-7xl mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );
 }
-

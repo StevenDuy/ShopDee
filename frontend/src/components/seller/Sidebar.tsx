@@ -48,7 +48,7 @@ export function SellerSidebar() {
         </button>
       )}
 
-      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"} md:static md:flex md:flex-col shrink-0`}>
+      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 border-r border-border/50 md:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"} md:static md:flex md:flex-col shrink-0 transition-all duration-300 shadow-sm`}>
         <div className="p-6 border-b border-border flex items-center gap-3">
           <div className="w-8 h-8 bg-primary flex items-center justify-center text-primary-foreground">
             <Store size={18} />
@@ -68,8 +68,8 @@ export function SellerSidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium border border-transparent ${active ? "bg-primary text-primary-foreground border-primary" : "text-foreground hover:bg-muted"
-                  }`}
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-bold border-l-4 transition-all ${active ? "bg-primary/5 text-primary border-primary" : "text-slate-500 hover:bg-slate-50 border-transparent hover:text-foreground"
+                   }`}
               >
                 <div className="relative shrink-0">
                   <item.icon size={20} />

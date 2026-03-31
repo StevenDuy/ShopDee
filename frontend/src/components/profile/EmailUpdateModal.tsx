@@ -5,6 +5,10 @@ import { X, Send, Mail, ShieldCheck, CheckCircle, ArrowRight } from "lucide-reac
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 interface EmailUpdateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -110,12 +114,13 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-card w-full max-w-md border-4 border-black p-8 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative"
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="w-full max-w-md relative"
       >
+        <Card className="backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-border/50 shadow-2xl p-8 hover:scale-100">
         <button onClick={onClose} className="absolute top-4 right-4 hover:rotate-90 transition-transform">
           <X size={24} />
         </button>
@@ -126,9 +131,9 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
 
         {/* Steps header */}
         <div className="flex gap-2 mb-8 items-center">
-          <div className={`h-2 rounded-full flex-1 ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
-          <ArrowRight size={14} className="text-muted-foreground" />
-          <div className={`h-2 rounded-full flex-1 ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
+          <div className={`h-1.5 rounded-full flex-1 transition-colors duration-500 ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
+          <ArrowRight size={14} className="text-muted-foreground opacity-50" />
+          <div className={`h-1.5 rounded-full flex-1 transition-colors duration-500 ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
         </div>
 
         <AnimatePresence mode="wait">
@@ -138,35 +143,35 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
                 Bước 1: Xác thực email hiện tại ({currentEmail})
               </p>
               
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleSendOtp(currentEmail)}
-                  disabled={loading || countdown > 0}
-                  className="w-full py-4 bg-black text-white font-black uppercase tracking-widest hover:bg-zinc-800 disabled:opacity-50 transition-all border-2 border-black flex items-center justify-center gap-2"
-                >
-                  {countdown > 0 ? `Gửi lại sau ${countdown}s` : <><Send size={18} /> Gửi mã đến email cũ</>}
-                </button>
-              </div>
+              <Button 
+                onClick={() => handleSendOtp(currentEmail)}
+                disabled={loading || countdown > 0}
+                variant="outline"
+                className="w-full h-12 text-[10px] tracking-widest font-black uppercase border-border/50"
+              >
+                {countdown > 0 ? `Gửi lại sau ${countdown}s` : <><Send size={16} className="mr-2" /> Gửi mã đến email cũ</>}
+              </Button>
 
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-foreground mb-2">Nhập mã xác thực</label>
-                <input
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nhập mã xác thực</label>
+                <Input
                   type="text"
                   value={oldOtp}
                   onChange={(e) => setOldOtp(e.target.value)}
-                  className="w-full px-4 py-3 bg-muted border-2 border-black font-black text-center text-xl tracking-[8px] focus:outline-none focus:border-primary"
+                  className="h-14 font-black text-center text-xl tracking-[10px] focus:ring-primary/20 bg-primary/5 border-primary/30"
                   placeholder="000000"
                   maxLength={6}
                 />
               </div>
 
-              <button 
+              <Button 
                 onClick={handleVerifyOld}
                 disabled={loading || oldOtp.length < 6}
-                className="w-full py-4 bg-primary text-white border-2 border-black font-black uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                size="lg"
+                className="w-full h-14 text-xs tracking-widest"
               >
                 Tiếp tục
-              </button>
+              </Button>
             </motion.div>
           ) : (
             <motion.div key="step2" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="space-y-4">
@@ -174,51 +179,54 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
                 Bước 2: Xác thực email mới
               </p>
               
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-foreground mb-2">Email mới</label>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email mới</label>
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type="email"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-muted border-2 border-black font-bold text-sm focus:outline-none"
+                    className="flex-1 h-12"
                     placeholder="new-email@example.com"
                   />
-                  <button 
+                  <Button 
                     onClick={() => handleSendOtp(newEmail)}
                     disabled={loading || countdown > 0 || !newEmail}
-                    className="px-4 bg-black text-white font-black text-[10px] uppercase border-2 border-black disabled:opacity-50"
+                    variant="outline"
+                    className="px-4 h-12 text-[10px] font-black uppercase border-border/50"
                   >
                     {countdown > 0 ? `${countdown}s` : "Gửi mã"}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-foreground mb-2">Nhập mã xác thực email mới</label>
-                <input
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mã xác thực email mới</label>
+                <Input
                   type="text"
                   value={newOtp}
                   onChange={(e) => setNewOtp(e.target.value)}
-                  className="w-full px-4 py-3 bg-primary/10 border-2 border-primary font-black text-center text-xl tracking-[8px] focus:outline-none"
+                  className="h-14 font-black text-center text-xl tracking-[10px] focus:ring-primary/20 bg-primary/5 border-primary/30"
                   placeholder="000000"
                   maxLength={6}
                 />
               </div>
 
-              <button 
+              <Button 
                 onClick={handleFinalUpdate}
                 disabled={loading || newOtp.length < 6 || !newEmail}
-                className="w-full py-4 bg-green-500 text-black border-2 border-black font-black uppercase tracking-widest hover:bg-green-400 disabled:opacity-50 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2"
+                size="lg"
+                className="w-full h-14 text-xs tracking-widest"
               >
-                <CheckCircle size={20} /> Cập nhật ngay
-              </button>
+                <CheckCircle size={18} className="mr-2" /> CẬP NHẬT NGAY
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {error && <p className="mt-4 text-[10px] font-black uppercase text-red-600 bg-red-100 p-2 border-2 border-red-600">{error}</p>}
-        {success && <p className="mt-4 text-[10px] font-black uppercase text-green-600 bg-green-100 p-2 border-2 border-green-600">{success}</p>}
+        {error && <p className="mt-4 text-[10px] font-black uppercase text-destructive bg-destructive/10 p-3 border border-destructive/20 rounded-lg text-center tracking-widest">{error}</p>}
+        {success && <p className="mt-4 text-[10px] font-black uppercase text-green-600 bg-green-500/10 p-3 border border-green-500/20 rounded-lg text-center tracking-widest">{success}</p>}
+        </Card>
       </motion.div>
     </div>
   );

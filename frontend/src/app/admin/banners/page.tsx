@@ -7,7 +7,9 @@ import { Plus, Trash2, Edit2, ShieldAlert, Image as ImageIcon, Save, X, External
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -258,18 +260,19 @@ export default function AdminBannersPage() {
         transition={{ duration: 0.5 }}
         className="space-y-6 max-w-7xl mx-auto"
       >
-      <div className="flex flex-col items-center justify-center text-center border-b-8 border-primary pb-8 gap-6 mb-12">
-        <div className="space-y-2">
-           <h1 className="text-5xl font-black uppercase tracking-tighter leading-none">{t("admin.banners.title")}</h1>
-           <p className="text-muted-foreground font-bold text-xs uppercase opacity-60 tracking-[0.2em]">{t("admin.banners.desc")}</p>
+      <div className="flex flex-col md:flex-row items-center justify-between border-b border-border/50 pb-8 gap-6 mb-12">
+        <div className="text-center md:text-left space-y-2">
+           <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-foreground">{t("admin.banners.title")}</h1>
+           <p className="text-muted-foreground font-bold text-[10px] uppercase opacity-70 tracking-widest">{t("admin.banners.desc")}</p>
         </div>
-        <button 
+        <Button 
            onClick={handleOpenAdd}
-           className="flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95 shadow-[0_8px_0_0_rgba(0,0,0,0.1)] hover:shadow-[0_4px_0_0_rgba(0,0,0,0.1)] active:translate-y-1"
+           size="lg"
+           className="h-14 px-10 text-[10px] tracking-widest font-black uppercase"
         >
-           <Plus size={20} strokeWidth={3} />
+           <Plus size={20} className="mr-2" strokeWidth={3} />
            {t("admin.banners.add")}
-        </button>
+        </Button>
       </div>
 
       {loading ? (
@@ -284,10 +287,10 @@ export default function AdminBannersPage() {
       ) : (
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {banners.map((banner) => (
-               <div 
+               <Card 
                  key={banner.id} 
                  onClick={() => handleOpenEdit(banner)}
-                 className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer relative group"
+                 className="overflow-hidden border-border/50 group cursor-pointer"
                >
                   <div className="aspect-video bg-muted relative overflow-hidden">
                      {banner.image_path ? (
@@ -325,25 +328,24 @@ export default function AdminBannersPage() {
                      )}
                      {/* Legacy link_url display removed */}
                   </div>
-               </div>
+               </Card>
             ))}
          </div>
       )}
 
-      {/* Modal / Form */}
       {isModalOpen && (
-         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-card border border-border w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-               <div className="p-4 border-b border-border flex justify-between items-center bg-muted/20">
-                  <h2 className="font-bold">{editingBanner ? t("admin.banners.edit") : t("admin.banners.add")}</h2>
-                  <button onClick={() => setIsModalOpen(false)} className="p-1.5 hover:bg-muted rounded-full transition-colors text-muted-foreground"><X size={20} /></button>
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <Card className="w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border-border/50 bg-white/95 dark:bg-slate-900/95 hover:scale-100">
+               <div className="p-6 border-b border-border/50 flex justify-between items-center bg-muted/20">
+                  <h2 className="font-bold text-xl uppercase tracking-tight">{editingBanner ? t("admin.banners.edit") : t("admin.banners.add")}</h2>
+                  <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"><X size={24} /></button>
                </div>
 
                <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto [scrollbar-gutter:stable]">
                   <div className="space-y-4">
                      {/* Image Preview / Upload */}
                      <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.image_label")}</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("admin.banners.image_label")}</label>
                         <div 
                           className="aspect-video rounded-xl border-2 border-dashed border-border bg-muted/30 relative flex items-center justify-center overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors"
                           onClick={() => !imageWarning && document.getElementById('imageInput')?.click()}
@@ -392,59 +394,61 @@ export default function AdminBannersPage() {
                      </div>
 
                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.title_label")}</label>
-                           <input 
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("admin.banners.title_label")}</label>
+                           <Input 
                               type="text" 
                               value={formData.title}
                               onChange={(e) => setFormData({...formData, title: e.target.value})}
-                              className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all"
+                              className="h-12"
                               placeholder={t("admin.banners.placeholder_title")}
                            />
                         </div>
-                        <div className="space-y-1">
-                           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.subtitle_label")}</label>
-                           <input 
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("admin.banners.subtitle_label")}</label>
+                           <Input 
                               type="text" 
                               value={formData.subtitle}
                               onChange={(e) => setFormData({...formData, subtitle: e.target.value})}
-                              className="w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all"
+                              className="h-12"
                               placeholder={t("admin.banners.placeholder_subtitle")}
                            />
                         </div>
                      </div>
 
-                     <div className="space-y-1 relative">
-                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("admin.banners.product_link_label")}</label>
+                     <div className="space-y-2 relative">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("admin.banners.product_link_label")}</label>
                         {selectedProduct ? (
-                           <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl overflow-hidden">
-                              <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-                                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
-                                    <Package size={20} />
+                           <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-2xl overflow-hidden">
+                              <div className="flex items-center gap-4 min-w-0 flex-1 mr-2">
+                                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0 transition-transform group-hover:scale-105">
+                                    <Package size={24} />
                                  </div>
                                  <div className="min-w-0 flex-1">
                                     <p className="text-sm font-bold truncate" title={selectedProduct.title}>{selectedProduct.title}</p>
-                                    <p className="text-[10px] text-muted-foreground">ID: {selectedProduct.id}</p>
+                                    <p className="text-[10px] text-muted-foreground opacity-70">ID: {selectedProduct.id}</p>
                                  </div>
                               </div>
-                              <button 
+                              <Button 
                                 type="button"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => { setSelectedProduct(null); setFormData({...formData, product_id: null}); }}
-                                className="p-1.5 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors shrink-0"
+                                className="hover:bg-destructive/10 hover:text-destructive transition-colors shrink-0"
                               >
-                                 <Trash2 size={16} />
-                              </button>
+                                 <Trash2 size={18} />
+                              </Button>
                            </div>
                         ) : (
                            <div className="relative">
-                              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                              <input 
+                              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" size={18} />
+                              <Input 
                                  type="text" 
                                  value={productSearch}
                                  onChange={(e) => setProductSearch(e.target.value)}
-                                 className="w-full pl-11 pr-4 py-2.5 bg-background border border-border rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all"
+                                 className="pl-12 h-12"
                                  placeholder={t("admin.banners.search_product_placeholder")}
-                              />
+                               />
                            </div>
                         )}
                         
@@ -477,8 +481,6 @@ export default function AdminBannersPage() {
                         )}
                      </div>
 
-                     {/* Link URL field removed */}
-
                      <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col justify-end pb-1">
                            <label className="flex items-center gap-3 cursor-pointer group">
@@ -494,65 +496,64 @@ export default function AdminBannersPage() {
                      </div>
                   </div>
 
-                   <div className="pt-6 border-t border-border mt-2 min-h-[140px] flex flex-col gap-3">
-                      <div className="flex gap-3">
-                         <button 
+                   <div className="pt-6 border-t border-border/50 mt-4 space-y-4">
+                      <div className="flex gap-4">
+                         <Button 
                            type="button"
+                           variant="outline"
                            onClick={() => setIsModalOpen(false)}
-                           className="flex-1 py-3 bg-muted hover:bg-muted/80 rounded-xl font-bold transition-all text-sm"
+                           className="flex-1 h-14 text-[10px] tracking-widest font-black uppercase"
                          >
                             {t("profile_page.cancel")}
-                         </button>
-                         <button 
+                         </Button>
+                         <Button 
                            type="submit"
-                           className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-bold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] text-sm"
+                           className="flex-1 h-14 text-[10px] tracking-widest font-black uppercase"
                          >
                             {editingBanner ? t("seller.products_manage.update") : t("admin.banners.add")}
-                         </button>
+                         </Button>
                       </div>
                       
                       {editingBanner && (
-                        <div className="pt-2 border-t border-border/50 min-h-[50px]">
+                        <div className="pt-4 border-t border-dashed border-border/50">
                            {!showDeleteConfirm ? (
-                             <button 
+                             <Button 
                                type="button"
+                               variant="destructive"
                                onClick={() => setShowDeleteConfirm(true)}
-                               className="w-full py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-all text-xs flex items-center justify-center gap-2"
+                               className="w-full h-12 text-[10px] tracking-widest font-black uppercase bg-destructive/10 text-destructive border-transparent hover:bg-destructive hover:text-white"
                              >
-                                <Trash2 size={14} />
+                                <Trash2 size={16} className="mr-2" />
                                 {t("inbox.delete")} Banner
-                             </button>
+                             </Button>
                            ) : (
                              <div className="flex gap-2 animate-in slide-in-from-bottom-2 duration-300">
-                                <button 
+                                <Button 
                                   type="button"
+                                  variant="outline"
                                   onClick={() => setShowDeleteConfirm(false)}
-                                  className="flex-1 py-2 bg-muted rounded-xl font-bold text-xs hover:bg-muted/80 transition-colors"
+                                  className="flex-1 h-12 text-[10px] font-black uppercase"
                                 >
                                    {t("admin.banners.back_btn")}
-                                </button>
-                                <button 
+                                </Button>
+                                <Button 
                                   type="button"
+                                  variant="destructive"
                                   onClick={() => handleDelete(editingBanner.id)}
-                                  className="flex-[2] py-2 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20"
+                                  className="flex-[2] h-12 text-[10px] font-black uppercase"
                                 >
                                    {t("admin.banners.confirm_delete_btn")}
-                                </button>
+                                </Button>
                              </div>
                            )}
                         </div>
                       )}
                    </div>
-               </form>
-            </div>
-         </div>
-      )}
+                </form>
+             </Card>
+          </div>
+       )}
       </motion.div>
     </div>
   );
 }
-
-
-
-
-

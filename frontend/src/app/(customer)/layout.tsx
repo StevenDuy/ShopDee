@@ -40,9 +40,9 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   // Removed: if (!token) return null; // Allow guest access
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex bg-white dark:bg-slate-900 h-screen overflow-hidden">
       <CustomerHeader />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-background/50 dark:bg-slate-950/50">
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>

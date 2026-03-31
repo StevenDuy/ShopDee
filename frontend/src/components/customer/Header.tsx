@@ -58,30 +58,31 @@ export function CustomerHeader() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 lg:sticky top-0 h-screen w-[240px] flex flex-col bg-card border-r-4 border-primary shrink-0 z-[300] lg:translate-x-0 transition-transform ${
+        className={`fixed inset-y-0 left-0 lg:sticky top-0 h-screen w-64 flex flex-col bg-white dark:bg-slate-900 border-r border-border/50 shrink-0 z-[300] lg:translate-x-0 transition-all duration-300 shadow-sm ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Logo Section - Aligned with Page Header height */}
-        <div className="h-[74px] flex items-center px-6 border-b-2 border-primary bg-muted/50 shrink-0">
-          <span className="text-xl font-black text-primary uppercase tracking-tighter">
-            ShopDee
-          </span>
+        {/* Logo Section */}
+        <div className="p-6 border-b border-border/50 flex items-center gap-3 shrink-0">
+          <div className="w-8 h-8 bg-primary flex items-center justify-center text-primary-foreground">
+            <Home size={18} />
+          </div>
+          <span className="text-xl font-bold uppercase tracking-tight text-primary">ShopDee</span>
           <button 
             onClick={() => setIsOpen(false)} 
-            className="lg:hidden ml-auto p-2 bg-card border-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors"
+            className="lg:hidden ml-auto p-1 text-muted-foreground hover:text-primary transition-colors"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* User Profile Area */}
-        <div className="px-3 py-4 border-b border-border">
-          <UserDropdown collapsed={false} align="bottom" />
+        <div className="p-4 border-b border-border/50">
+          <UserDropdown align="bottom" />
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-3">
+        <nav className="flex-1 overflow-y-auto p-2 space-y-1">
           {navItems
             .filter(item => {
               if (!token) {
@@ -94,19 +95,19 @@ export function CustomerHeader() {
               return (
                 <Link key={href} href={href}
                   onClick={() => setIsOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium border border-transparent ${
-                    active ? "bg-primary text-primary-foreground border-primary" : "text-foreground hover:bg-muted"
+                  className={`flex items-center gap-3 px-4 py-3 text-sm font-bold border-l-4 transition-all ${
+                    active ? "bg-primary/5 text-primary border-primary" : "text-slate-500 hover:bg-slate-50 border-transparent hover:text-foreground"
                   }`}
                 >
                   <span className="relative shrink-0">
                     <Icon size={20} />
                     {badge && totalItems > 0 && mounted && (
-                      <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center px-1 border border-white">
-                        {totalItems > 99 ? "99+" : totalItems}
+                      <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold min-w-[15px] h-[15px] flex items-center justify-center px-1 border-2 border-white rounded-full">
+                        {totalItems > 9 ? "9+" : totalItems}
                       </span>
                     )}
                     {notificationBadge && unreadCount > 0 && mounted && (
-                      <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-card" />
+                      <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-white" />
                     )}
                   </span>
                   <span>
@@ -118,7 +119,7 @@ export function CustomerHeader() {
         </nav>
 
         {/* Footer info */}
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-border/50 mt-auto">
           <p className="text-[10px] text-center text-muted-foreground uppercase font-bold tracking-widest">
             ShopDee 2D
           </p>

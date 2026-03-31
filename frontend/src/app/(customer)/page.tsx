@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Star, TrendingUp, Sparkles } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -26,41 +27,41 @@ function ProductCard({ product }: { product: Product }) {
   const img = product.media.find((m) => m.is_primary)?.full_url ?? product.media[0]?.full_url ?? "https://picsum.photos/300/300";
 
   return (
-    <Link href={`/products/${product.slug}`} className="block h-full group">
-      <div className="bg-card border border-border h-full flex flex-col group-hover:border-primary">
-        <div className="relative aspect-square overflow-hidden bg-muted border-b border-border">
+    <Link href={`/products/${product.slug}`} className="block h-full">
+      <Card className="h-full border-border/50 shadow-sm hover:border-primary/30">
+        <div className="relative aspect-square overflow-hidden bg-muted border-b border-border/30">
           <img
             src={img}
             alt={product.title}
             loading="lazy"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
           />
           {product.sale_price && (
-            <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 border border-white">
+            <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-black px-2 py-1 uppercase scale-90 origin-top-left">
               -{Math.round((1 - product.sale_price / product.price) * 100)}%
             </span>
           )}
         </div>
-        <div className="p-3 flex-1 flex flex-col">
-          {product.category && <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{product.category.name}</p>}
-          <h3 className="font-bold text-xs line-clamp-2 mb-2 leading-tight uppercase">{product.title}</h3>
+        <CardContent className="p-3 flex-1 flex flex-col gap-1">
+          {product.category && <p className="text-[10px] uppercase font-black text-primary/60 tracking-wider transition-colors group-hover/card:text-primary">{product.category.name}</p>}
+          <h3 className="font-bold text-xs line-clamp-2 leading-tight uppercase transition-colors group-hover/card:text-primary">{product.title}</h3>
 
           <div className="mt-auto flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-primary">{formatPrice(product.sale_price ?? product.price)}</span>
+              <span className="font-black text-sm text-primary">{formatPrice(product.sale_price ?? product.price)}</span>
               {product.sale_price && (
-                <span className="text-[10px] text-muted-foreground line-through">{formatPrice(product.price)}</span>
+                <span className="text-[10px] text-muted-foreground line-through font-medium opacity-50">{formatPrice(product.price)}</span>
               )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 opacity-80">
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star key={s} size={10} className={s <= 4 ? "fill-primary text-primary" : "fill-muted text-muted"} />
               ))}
-              <span className="text-[10px] font-mono ml-1">4.0</span>
+              <span className="text-[10px] font-black ml-1 text-muted-foreground">4.0</span>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </Link>
   );
 }
@@ -69,16 +70,18 @@ function Section({ title, icon: Icon, products, href }: { title: string; icon: R
   const { t } = useTranslation();
   return (
     <section className="mb-12">
-      <div className="flex items-center justify-between mb-4 border-b-2 border-primary pb-2">
-        <div className="flex items-center gap-2">
-          <Icon size={20} className="text-primary" />
-          <h2 className="text-lg font-black uppercase tracking-tight">{title}</h2>
+      <div className="flex items-center justify-between mb-6 border-b border-border/50 pb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary">
+            <Icon size={22} strokeWidth={2.5} />
+          </div>
+          <h2 className="text-xl font-bold uppercase tracking-tight">{title}</h2>
         </div>
-        <Link href={href} className="text-xs font-bold uppercase flex items-center gap-1 hover:underline">
-          {t("view_all")} <ArrowRight size={14} />
+        <Link href={href} className="text-xs font-black uppercase flex items-center gap-1 text-primary hover:opacity-70 transition-opacity">
+          {t("view_all")} <ArrowRight size={14} strokeWidth={3} />
         </Link>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {products.slice(0, 10).map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
     </section>
@@ -144,19 +147,19 @@ export default function CustomerHomePage() {
 
       {/* 2D Hero Banner */}
       {banners.length > 0 && (
-        <div className="w-full border-b-4 border-primary">
-          <Link href={`/products/${banners[bannerIdx].product?.slug || ""}`} className="block relative aspect-[21/9] md:aspect-[21/6]">
+        <div className="w-full border-b border-border/50">
+          <Link href={`/products/${banners[bannerIdx].product?.slug || ""}`} className="block relative aspect-[21/9] md:aspect-[21/7] overflow-hidden group">
             <img
               src={getFullImageUrl(banners[bannerIdx].image_path)!}
               alt={banners[bannerIdx].title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-black/40 flex flex-col justify-center px-10">
-              <div className="border-l-8 border-primary pl-6 bg-white/10 backdrop-blur-sm self-start py-4 pr-12">
-                <h1 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">
+            <div className="absolute inset-0 bg-black/30 flex flex-col justify-center px-10">
+              <div className="border-l-4 border-primary pl-6 py-4 self-start">
+                <h1 className="text-3xl md:text-5xl font-bold text-white uppercase tracking-tight mb-2 drop-shadow-lg">
                   {banners[bannerIdx].title}
                 </h1>
-                <p className="text-white font-bold text-sm md:text-lg">
+                <p className="text-white font-medium text-sm md:text-xl opacity-90 drop-shadow">
                   {banners[bannerIdx].subtitle}
                 </p>
               </div>

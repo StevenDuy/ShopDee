@@ -400,7 +400,7 @@ export function UnifiedInbox() {
 
         <div className="flex-1 overflow-y-auto custom-scrollbar">
            {loading && notifications.length === 0 && conversations.length === 0 ? (
-             <div className="p-20 text-center flex flex-col items-center gap-4 opacity-30"><div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
+             <div className="p-20 text-center flex flex-col items-center gap-4 opacity-30"><div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div></div>
            ) : activeTab === "chat" ? (
              <div className="divide-y divide-border/10">
                {isSearching && searchResults.length > 0 && (
