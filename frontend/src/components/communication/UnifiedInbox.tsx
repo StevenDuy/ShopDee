@@ -17,6 +17,10 @@ import echo from "@/lib/echo";
 
 import imageCompression from "browser-image-compression";
 import { useTranslation } from "react-i18next";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -32,6 +36,13 @@ const getNotifColor = (type: string) => {
   if (type.includes("success")) return "bg-green-500/10 text-green-500";
   if (type.includes("review")) return "bg-amber-500/10 text-amber-500";
   return "bg-slate-500/10 text-slate-500";
+};
+
+const getNotifBadgeVariant = (type: string) => {
+  if (type.includes("order")) return "outline";
+  if (type.includes("success")) return "secondary";
+  if (type.includes("review")) return "outline";
+  return "outline";
 };
 
 export function UnifiedInbox() {
@@ -131,7 +142,6 @@ export function UnifiedInbox() {
     if (!token) return;
     setLoading(true);
     try {
-      // Always fetch both for consistent indicator dots
       const [convRes, notifRes] = await Promise.all([
         axios.get(`${API}/chat/conversations`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } })
@@ -140,7 +150,6 @@ export function UnifiedInbox() {
       setConversations(convRes.data || []);
       setNotifications(notifRes.data.data || notifRes.data || []);
       
-      // Update global store
       await fetchUnreadCounts(token);
     } catch (e) {
       console.error(e);
@@ -214,7 +223,6 @@ export function UnifiedInbox() {
     if (e) e.preventDefault();
     if (!newMessage.trim() && !mediaUrl && !file && !selectedProductId || !activeConv || !token) return;
     
-    // Optimistic clear
     const msgText = newMessage;
     const prodId = selectedProductId;
     setNewMessage(""); 
@@ -272,7 +280,6 @@ export function UnifiedInbox() {
 
   const fetchShopProducts = async () => {
     if (!activeConv || !token) return;
-    // For customers, the seller is the other user. For sellers, they are themselves.
     const sellerId = user?.role_id === 2 ? user.id : activeConv.other_user?.id;
     if (!sellerId) return;
     
@@ -291,11 +298,8 @@ export function UnifiedInbox() {
     
     setUploading(true);
     try {
-      // 1. Frontend Compression
       const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true };
       const compressedFile = await imageCompression(file, options);
-      
-      // 2. Call sendMessage which uploads to Cloudinary via Backend
       await handleSendMessage(null as any, undefined, compressedFile);
     } catch (err) {
       console.error(err);
@@ -308,7 +312,6 @@ export function UnifiedInbox() {
     e.preventDefault();
     if (!isAdmin) return;
     
-    // Simple URL validation if not empty
     if (form.link && !/^(https?:\/\/)/i.test(form.link)) {
       toast.error(t("inbox.invalid_link"));
       return;
@@ -346,86 +349,94 @@ export function UnifiedInbox() {
       if (selectedNotif?.id === id) setSelectedNotif(null);
       setIsConfirmingDelete(false);
       fetchUnreadCounts(token!);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      toast.error(t("inbox.error_delete_notification") || "Lỗi xóa thông báo");
+    }
   };
 
   if (!user) return null;
 
   return (
-    <div className="flex flex-col md:flex-row bg-background w-full h-full overflow-hidden border border-border/50 shadow-2xl rounded-[inherit]">
+    <div className="flex flex-col md:flex-row bg-background w-full h-full overflow-hidden border border-border/50 shadow-sm rounded-[inherit]">
       
-      {/* 1. Sidebar Control (Desktop) */}
+      {/* 1. Sidebar Control (Desktop) - Standardized Flat-Zoom */}
       <div className="hidden md:flex w-[80px] border-r border-border/50 flex-col items-center py-8 gap-8 bg-card shrink-0">
         <button 
           onClick={() => { setActiveTab("chat"); setSelectedNotif(null); setActiveConv(null); }}
-          className={`p-4 rounded-[22px] transition-all duration-300 relative group ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-xl shadow-primary/30" : "text-muted-foreground hover:bg-muted"}`}
+          className={`p-4 rounded-[22px] transition-all duration-300 relative group active:scale-95 hover:scale-110 ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
         >
           <MessageCircle size={24} />
           {hasUnreadMessages && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
-          <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">{t("inbox.messages")}</div>
+          <div className="absolute left-full ml-4 px-3 py-1.5 bg-foreground text-background text-[10px] font-black rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase tracking-widest border border-border/50">
+            {t("inbox.messages")}
+          </div>
         </button>
         <button 
           onClick={() => { setActiveTab("notifications"); setActiveConv(null); setSelectedNotif(null); }}
-          className={`p-4 rounded-[22px] transition-all duration-300 relative group ${activeTab === "notifications" ? "bg-primary text-primary-foreground shadow-xl shadow-primary/30" : "text-muted-foreground hover:bg-muted"}`}
+          className={`p-4 rounded-[22px] transition-all duration-300 relative group active:scale-95 hover:scale-110 ${activeTab === "notifications" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
         >
           <Bell size={24} />
           {hasUnreadNotifications && !isAdmin && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
-          <div className="absolute left-full ml-4 px-2 py-1 bg-foreground text-background text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase">{t("inbox.notifications")}</div>
+          <div className="absolute left-full ml-4 px-3 py-1.5 bg-foreground text-background text-[10px] font-black rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase tracking-widest border border-border/50">
+            {t("inbox.notifications")}
+          </div>
         </button>
       </div>
 
       {/* 2. List Pane */}
       <div className={`w-full md:w-[380px] flex-1 md:flex-none border-r border-border/50 flex flex-col bg-card shrink-0 transition-all ${ (activeConv || selectedNotif) ? "hidden md:flex" : "flex"}`}>
-        <div className="p-4 md:p-6 border-b border-border/50">
-           <div className="flex items-center justify-between mb-4 md:mb-6">
-             <h2 className="hidden md:block text-xl md:text-2xl font-black tracking-tighter uppercase">{activeTab === "chat" ? t("inbox.title_chat") : t("inbox.title_updates")}</h2>
+        <div className="p-6 border-b border-border/50 bg-muted/5">
+           <div className="flex items-center justify-between mb-6">
+             <h2 className="hidden md:block text-2xl font-black tracking-tight uppercase text-foreground">{activeTab === "chat" ? t("inbox.title_chat") : t("inbox.title_updates")}</h2>
              {activeTab === "notifications" && isAdmin && (
-               <button onClick={() => setShowCreateModal(true)} className="w-8 h-8 md:w-10 md:h-10 bg-primary text-primary-foreground rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg hover:scale-110 transition-all">
-                 <Plus size={18} />
-               </button>
+               <Button size="icon" onClick={() => setShowCreateModal(true)} className="w-10 h-10 rounded-2xl shadow-sm hover:scale-110 active:scale-95 transition-all">
+                 <Plus size={18} strokeWidth={3} />
+               </Button>
              )}
            </div>
            
            <div className="relative">
-             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-             <input 
-               type="text" 
+             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" size={18} />
+             <Input 
                placeholder={activeTab === "chat" ? t("inbox.search_chat") : t("inbox.filter_alerts")}
                value={searchQuery}
-               className="w-full pl-11 pr-4 py-2.5 md:py-3 bg-muted/40 rounded-xl md:rounded-2xl text-sm font-medium outline-none border border-transparent focus:border-primary/30 transition-all"
+               className="pl-12 h-14 bg-muted/20 border-transparent focus:bg-background rounded-xl"
                onChange={(e) => activeTab === "chat" ? handleSearchUsers(e.target.value) : setSearchQuery(e.target.value)}
              />
            </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-card/50">
            {loading && notifications.length === 0 && conversations.length === 0 ? (
-             <div className="p-20 text-center flex flex-col items-center gap-4 opacity-30"><div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div></div>
+             <div className="p-20 text-center flex flex-col items-center gap-4 opacity-30">
+               <div className="w-10 h-10 border-4 border-primary border-t-transparent animate-spin rounded-full"></div>
+             </div>
            ) : activeTab === "chat" ? (
              <div className="divide-y divide-border/10">
                {isSearching && searchResults.length > 0 && (
-                 <div className="bg-primary/5 p-4">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">{t("inbox.people")}</p>
+                 <div className="bg-primary/5 p-4 border-b border-border/20">
+                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 px-2">{t("inbox.people")}</p>
                     {searchResults.map(u => (
-                      <button key={u.id} onClick={() => handleStartChat(u.id)} className="w-full p-3 flex items-center gap-3 hover:bg-primary/10 rounded-xl transition-all">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{u.name.charAt(0)}</div>
-                        <span className="text-sm font-bold">{u.name}</span>
+                      <button key={u.id} onClick={() => handleStartChat(u.id)} className="w-full p-3 flex items-center gap-3 hover:bg-card border border-transparent hover:border-border/50 rounded-xl transition-all shadow-sm">
+                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary font-black text-lg">{u.name.charAt(0)}</div>
+                        <span className="text-sm font-black uppercase tracking-tight text-foreground">{u.name}</span>
                       </button>
                     ))}
                  </div>
                )}
                {conversations.map(conv => (
-                 <button key={conv.id} onClick={() => setActiveConv(conv)} className={`w-full p-4 md:p-5 flex items-center gap-4 hover:bg-muted/50 transition-all text-left ${activeConv?.id === conv.id ? "bg-primary/5 border-l-4 border-primary" : ""}`}>
-                   <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-muted flex items-center justify-center font-bold shrink-0 overflow-hidden">
+                 <button key={conv.id} onClick={() => setActiveConv(conv)} className={`w-full p-5 flex items-center gap-4 hover:bg-muted/30 transition-all text-left ${activeConv?.id === conv.id ? "bg-primary/5 border-l-4 border-primary" : "border-l-4 border-transparent"}`}>
+                   <div className="w-12 h-12 rounded-2xl bg-background border border-border/50 flex items-center justify-center font-black shrink-0 overflow-hidden shadow-sm">
                      {conv.other_user?.profile_image ? <img src={conv.other_user.profile_image} className="w-full h-full object-cover" /> : conv.other_user?.name?.charAt(0)}
                    </div>
                    <div className="flex-1 min-w-0">
                      <div className="flex items-center justify-between mb-1">
-                       <p className="font-bold text-sm truncate">{conv.other_user?.name || t("admin.user")}</p>
-                       <span className="text-[9px] text-muted-foreground">{conv.last_message ? new Date(conv.last_message.created_at).toLocaleDateString() : ""}</span>
+                       <p className="font-black text-xs uppercase tracking-tight truncate text-foreground">{conv.other_user?.name || t("admin.user")}</p>
+                       <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest">{conv.last_message ? new Date(conv.last_message.created_at).toLocaleDateString() : ""}</span>
                      </div>
-                     <p className="text-[11px] md:text-xs text-muted-foreground truncate">{conv.last_message?.message_text || t("inbox.say_something")}</p>
-                     {conv.unread_count > 0 && <div className="mt-1 w-2 h-2 rounded-full bg-primary" />}
+                     <p className="text-xs text-muted-foreground truncate font-medium opacity-80">{conv.last_message?.message_text || t("inbox.say_something")}</p>
+                     {conv.unread_count > 0 && <div className="mt-2 h-1.5 w-full bg-primary rounded-full" />}
                    </div>
                  </button>
                ))}
@@ -433,95 +444,110 @@ export function UnifiedInbox() {
            ) : (
              <div className="divide-y divide-border/10">
                {notifications.map(n => (
-                 <button key={n.id} onClick={() => { setSelectedNotif(n); if(!n.is_read) handleMarkAsRead(n.id); }} className={`w-full p-4 md:p-6 flex gap-4 hover:bg-muted/50 transition-all text-left ${selectedNotif?.id === n.id ? "bg-primary/5 border-l-4 border-primary" : ""} ${n.is_read ? "opacity-60" : ""}`}>
-                   <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${getNotifColor(n.type || "info")}`}>{getNotifIcon(n.type || "info")}</div>
+                 <button key={n.id} onClick={() => { setSelectedNotif(n); if(!n.is_read) handleMarkAsRead(n.id); }} className={`w-full p-6 flex gap-4 hover:bg-muted/30 transition-all text-left ${selectedNotif?.id === n.id ? "bg-primary/5 border-l-4 border-primary" : "border-l-4 border-transparent"} ${n.is_read ? "opacity-60" : ""}`}>
+                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border border-border/50 shadow-sm ${n.is_read ? 'bg-muted/20' : 'bg-background'}`}>
+                     <div className={isAdmin ? 'text-primary' : (n.is_read ? 'text-muted-foreground' : 'text-primary')}>
+                      {getNotifIcon(n.type || "info")}
+                     </div>
+                   </div>
                    <div className="flex-1 min-w-0">
-                     <p className="font-bold text-[11px] md:text-sm truncate uppercase tracking-tight">{n.data?.title || n.title || "Note"}</p>
+                     <p className="font-black text-xs uppercase tracking-tight text-foreground truncate">{n.data?.title || n.title || "Note"}</p>
                      {isAdmin && (n as any).user && (
-                        <p className="text-[9px] md:text-[10px] font-black text-primary/60 mt-0.5 uppercase tracking-widest">
+                        <p className="text-[9px] font-black text-primary/60 mt-1 uppercase tracking-widest opacity-80">
                             {t("admin.recipient") || "Người nhận"}: {(n as any).user.name}
                         </p>
                      )}
-                     <p className="text-[11px] md:text-xs text-muted-foreground line-clamp-1 md:line-clamp-2 mt-1">{n.data?.message || n.message}</p>
+                     <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5 font-medium leading-relaxed">{n.data?.message || n.message}</p>
                    </div>
-                   {!n.is_read && !isAdmin && <div className="w-2 h-2 rounded-full bg-primary shrink-0" />}
+                   {!n.is_read && !isAdmin && <div className="w-2 h-2 rounded-full bg-primary shrink-0 self-center animate-pulse" />}
                  </button>
                ))}
              </div>
            )}
         </div>
-
-         {/* List content ends here */}
-        </div>
+      </div>
 
       {/* 3. Detail Pane */}
-      <div className={`flex-1 bg-muted/10 relative flex flex-col min-w-0 ${ (activeConv || selectedNotif) ? "flex" : "hidden md:flex"}`}>
+      <div className={`flex-1 bg-muted/5 relative flex flex-col min-w-0 ${ (activeConv || selectedNotif) ? "flex" : "hidden md:flex"}`}>
         <AnimatePresence mode="wait">
           {activeConv ? (
-             <motion.div key="chat" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="flex flex-col h-full bg-background fixed md:absolute inset-0 md:relative z-[310] md:z-20">
-                <div className="p-4 md:p-5 border-b border-border/50 bg-card flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <button onClick={() => setActiveConv(null)} className="p-2 -ml-2"><ChevronLeft size={24} /></button>
-                      <div className="w-9 h-9 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-primary flex items-center justify-center text-white font-black text-sm">{activeConv.other_user?.name?.charAt(0)}</div>
+             <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col h-full bg-background fixed md:absolute inset-0 md:relative z-[310] md:z-20">
+                {/* Chat Header */}
+                <div className="p-5 border-b border-border/50 bg-card/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-50">
+                   <div className="flex items-center gap-4">
+                      <Button variant="ghost" size="icon" onClick={() => setActiveConv(null)} className="md:hidden">
+                        <ChevronLeft size={24} />
+                      </Button>
+                      <div className="w-10 h-10 rounded-xl bg-muted border border-border/50 flex items-center justify-center font-black text-primary shadow-sm text-lg">
+                        {activeConv.other_user?.name?.charAt(0)}
+                      </div>
                       <div className="flex flex-col">
-                         <h3 className="font-black text-sm md:text-md tracking-tight uppercase leading-none">{activeConv.other_user?.name}</h3>
-                         <div className="flex items-center gap-1.5 mt-1.5">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]"></span>
-                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t("inbox.online") || "Online"}</span>
+                         <h3 className="font-black text-sm uppercase tracking-tight leading-none text-foreground">{activeConv.other_user?.name}</h3>
+                         <div className="flex items-center gap-2 mt-2">
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-70">{t("inbox.online") || "Online"}</span>
                          </div>
                       </div>
                    </div>
                    
-                   <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-3">
                        {!isDeletingConv ? (
-                         <button 
-                           onClick={() => setIsDeletingConv(true)}
-                           className="p-2 md:p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl md:rounded-2xl transition-all shadow-sm"
-                           title={t("inbox.delete_conversation")}
-                         >
-                             <Trash2 size={18} />
-                         </button>
+                          <Button 
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => setIsDeletingConv(true)}
+                            className="w-10 h-10 rounded-xl shadow-sm"
+                            title={t("inbox.delete_conversation")}
+                          >
+                              <Trash2 size={18} strokeWidth={2.5} />
+                          </Button>
                        ) : (
-                         <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => handleDeleteConversation(activeConv.id)}
-                              className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-xl font-black text-[10px] md:text-xs uppercase transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
-                            >
-                                <CheckCheck size={14} /> {t("inbox.confirm") || "Xóa"}
-                            </button>
-                            <button 
-                              onClick={() => setIsDeletingConv(false)}
-                              className="px-4 py-2 bg-muted text-muted-foreground hover:bg-muted/80 rounded-xl font-bold text-[10px] md:text-xs uppercase transition-all"
-                            >
-                                {t("inbox.cancel_short") || "Hủy"}
-                            </button>
-                         </div>
+                          <div className="flex items-center gap-2 animate-in slide-in-from-right-4">
+                             <Button 
+                               variant="destructive"
+                               size="sm"
+                               onClick={() => handleDeleteConversation(activeConv.id)}
+                               className="px-4 h-10 font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg"
+                             >
+                                {t("inbox.confirm") || "XÓA VĨNH VIỄN"}
+                             </Button>
+                             <Button 
+                               variant="outline"
+                               size="sm"
+                               onClick={() => setIsDeletingConv(false)}
+                               className="px-4 h-10 font-bold text-[10px] uppercase tracking-widest rounded-xl"
+                             >
+                                {t("inbox.cancel_short") || "HỦY"}
+                             </Button>
+                          </div>
                        )}
                    </div>
                 </div>
            
-           <AnimatePresence>
-             {viewingImage && (
-               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl" onClick={() => setViewingImage(null)}>
-                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative max-w-5xl w-full">
-                    <img src={viewingImage} alt="Fullscreen" className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl" />
-                    <div className="absolute top-4 right-4 flex gap-2">
-                       <button onClick={() => window.open(viewingImage, '_blank')} className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"><LinkIcon size={20} /></button>
-                       <button onClick={() => setViewingImage(null)} className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all"><X size={20} /></button>
-                    </div>
-                  </motion.div>
-               </motion.div>
-             )}
-           </AnimatePresence>
+                <AnimatePresence>
+                  {viewingImage && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-background/95 backdrop-blur-2xl" onClick={() => setViewingImage(null)}>
+                       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative max-w-5xl w-full" onClick={e => e.stopPropagation()}>
+                         <img src={viewingImage} alt="Fullscreen" className="w-full h-auto max-h-[80vh] object-contain rounded-[2rem] shadow-2xl border border-border/20" />
+                         <div className="absolute top-6 right-6 flex gap-3">
+                            <Button size="icon" className="bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border-white/10" onClick={() => window.open(viewingImage, '_blank')}><LinkIcon size={20} /></Button>
+                            <Button size="icon" className="bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border-white/10" onClick={() => setViewingImage(null)}><X size={20} /></Button>
+                         </div>
+                       </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Message List */}
                 <div 
                    ref={scrollContainerRef}
-                   className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar flex flex-col"
+                   className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 custom-scrollbar flex flex-col bg-muted/5 shadow-inner"
                  >
                    {pagination.has_more && (
                       <button 
                         onClick={() => fetchMessages(activeConv.id, pagination.current_page + 1)}
                         disabled={loadingMore}
-                        className="self-center text-[10px] font-black uppercase tracking-widest text-primary/60 hover:text-primary transition-all py-4 hover:scale-110 active:scale-95"
+                        className="self-center px-6 py-2 rounded-full border border-border/50 bg-background text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 hover:text-primary transition-all shadow-sm hover:scale-105 active:scale-95"
                       >
                         {loadingMore ? t("inbox.loading") : t("inbox.load_older")}
                       </button>
@@ -530,18 +556,18 @@ export function UnifiedInbox() {
                    {messages.map((msg, i) => {
                      const isMe = msg.sender_id === user?.id;
                      return (
-                       <div key={msg.id || i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                          <div className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-2.5 md:px-5 md:py-3 shadow-sm ${isMe ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-card border border-border/50 rounded-tl-none"}`}>
+                       <div key={msg.id || i} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                          <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3 shadow-none border ${isMe ? "bg-primary text-primary-foreground border-primary rounded-tr-none" : "bg-card border-border/50 rounded-tl-none"}`}>
                              {msg.media_url && (
-                               <div className="mb-2 rounded-lg overflow-hidden border border-white/10 shadow-inner group relative">
+                               <div className="mb-3 rounded-xl overflow-hidden border border-black/5 dark:border-white/5 bg-muted/20 group relative shadow-sm">
                                  <img 
                                    src={msg.media_url} 
                                    alt="media" 
-                                   className="max-w-full h-auto object-cover hover:scale-105 transition-all duration-500 cursor-pointer" 
+                                   className="max-w-full h-auto object-cover hover:scale-105 transition-all duration-700 cursor-pointer" 
                                    onClick={() => setViewingImage(msg.media_url)} 
                                  />
-                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                    <Search className="text-white" size={24} />
+                                 <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                    <div className="p-3 bg-white/20 backdrop-blur-md rounded-full border border-white/20"><Search className="text-white" size={24} strokeWidth={3} /></div>
                                  </div>
                                </div>
                              )}
@@ -554,22 +580,22 @@ export function UnifiedInbox() {
                                      router.push(`/products/${msg.product.slug}`);
                                    }
                                  }}
-                                 className={`mb-2 p-2 rounded-xl border flex gap-3 cursor-pointer hover:shadow-lg transition-all ${isMe ? "bg-white/10 border-white/20" : "bg-muted/50 border-border"}`}
+                                 className={`mb-3 p-3 rounded-xl border flex gap-4 cursor-pointer transition-all hover:bg-opacity-80 active:scale-[0.98] ${isMe ? "bg-white/10 border-white/20" : "bg-muted/30 border-border/50"}`}
                                >
-                                 <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden shrink-0">
-                                   <img src={msg.product.media?.[0]?.url || 'https://via.placeholder.com/64'} className="w-full h-full object-cover" />
+                                 <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden shrink-0 border border-black/5 dark:border-white/5 bg-background shadow-sm">
+                                   <img src={msg.product.media?.[0]?.url || 'https://via.placeholder.com/200'} className="w-full h-full object-cover" />
                                  </div>
-                                 <div className="flex-1 min-w-0">
-                                   <p className="text-[10px] md:text-xs font-bold truncate line-clamp-1">{msg.product.title}</p>
-                                   <p className="text-[9px] md:text-[10px] font-black text-primary mt-1">{msg.product.price?.toLocaleString()} đ</p>
+                                 <div className="flex-1 min-w-0 py-1">
+                                   <p className="text-[11px] font-black uppercase tracking-tight leading-tight line-clamp-1">{msg.product.title}</p>
+                                   <p className={`text-[10px] font-black mt-2 inline-block px-2 py-0.5 rounded-full ${isMe ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
+                                      {msg.product.price?.toLocaleString()} đ
+                                   </p>
                                  </div>
                                </div>
                              )}
-                             {msg.message_text && <p className="text-[13px] md:text-sm leading-relaxed">{msg.message_text}</p>}
-                             <div className={`text-[9px] mt-1.5 opacity-50 flex items-center gap-2 ${isMe ? "justify-end" : ""}`}>
-                               {isMe && (
-                                 <CheckCheck size={10} />
-                               )}
+                             {msg.message_text && <p className="text-sm leading-relaxed font-medium">{msg.message_text}</p>}
+                             <div className={`text-[9px] mt-2 font-black uppercase tracking-widest opacity-40 flex items-center gap-2 ${isMe ? "justify-end" : ""}`}>
+                                {isMe && <CheckCheck size={10} strokeWidth={3} />}
                              </div>
                           </div>
                        </div>
@@ -577,202 +603,258 @@ export function UnifiedInbox() {
                    })}
                    <div ref={messagesEndRef} />
                 </div>
-                <form onSubmit={handleSendMessage} className="p-3 md:p-4 bg-card border-t border-border/50 flex flex-col gap-3">
+
+                {/* Input Area */}
+                <form onSubmit={handleSendMessage} className="p-5 bg-card border-t border-border/50 flex flex-col gap-4 shadow-sm z-50">
                     {selectedProductId && (
-                      <div className="flex items-center gap-3 p-2 bg-primary/10 rounded-xl relative border border-primary/20">
-                         <div className="w-8 h-8 rounded-lg bg-muted overflow-hidden shrink-0"><Package size={16} className="m-2" /></div>
-                         <p className="text-[10px] font-bold uppercase tracking-tight line-clamp-1">{t("inbox.product_attached")}</p>
-                         <button onClick={() => setSelectedProductId(null)} className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"><X size={12} /></button>
+                      <div className="flex items-center gap-4 p-3 bg-primary/5 rounded-2xl relative border border-primary/20 animate-in slide-in-from-bottom-2">
+                         <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center border border-border/50 shrink-0 shadow-sm">
+                            <Package size={20} className="text-primary" />
+                         </div>
+                         <div className="flex-1">
+                            <p className="text-[10px] font-black uppercase tracking-tight text-foreground line-clamp-1">{t("inbox.product_attached")}</p>
+                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID #{selectedProductId}</p>
+                         </div>
+                         <Button variant="destructive" size="icon" onClick={() => setSelectedProductId(null)} className="w-7 h-7 rounded-full shadow-lg active:scale-95"><X size={14} strokeWidth={4} /></Button>
                       </div>
                     )}
                     
-                    <div className="flex gap-3 items-center">
-                      <div className="flex items-center gap-1">
-                        <label className={`p-2 rounded-xl hover:bg-muted cursor-pointer transition-colors ${uploading ? "animate-pulse opacity-50" : ""}`}>
-                          <ImageIcon size={20} />
+                    <div className="flex gap-4 items-center">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <label className={`w-12 h-12 flex items-center justify-center rounded-2xl bg-muted/40 hover:bg-muted text-muted-foreground cursor-pointer transition-all active:scale-90 ${uploading ? "animate-pulse" : ""}`}>
+                          <Badge variant="ghost" className="p-0 border-0"><ImageIcon size={22} /></Badge>
                           <input type="file" accept="image/*" className="hidden" onChange={onFileSelect} disabled={uploading} />
                         </label>
-                        <button type="button" onClick={fetchShopProducts} className="p-2 rounded-xl hover:bg-muted transition-colors">
-                          <Package size={20} />
-                        </button>
+                        <Button type="button" variant="ghost" size="icon" onClick={fetchShopProducts} className="w-12 h-12 rounded-2xl bg-muted/40 hover:bg-muted active:scale-90">
+                          <Package size={22} />
+                        </Button>
                       </div>
                       
-                      <input 
-                        type="text" 
+                      <Input 
                         value={newMessage} 
                         onChange={(e) => setNewMessage(e.target.value)} 
                         placeholder={uploading ? t("inbox.loading") : t("inbox.say_something")}
                         disabled={uploading}
-                        className="flex-1 bg-muted/50 rounded-xl md:rounded-2xl px-4 md:px-6 py-2.5 md:py-3 outline-none text-sm"
+                        className="flex-1 h-14 bg-muted/20 border-transparent focus:bg-background rounded-2xl md:px-6 shadow-none text-sm font-medium"
                       />
-                      <button type="submit" disabled={(!newMessage.trim() && !uploading && !selectedProductId) || uploading} className="bg-primary text-primary-foreground p-3 rounded-xl md:rounded-2xl shadow-lg disabled:opacity-20 transition-all shrink-0">
-                        <Send size={18} />
-                      </button>
+                      
+                      <Button type="submit" size="icon" disabled={(!newMessage.trim() && !uploading && !selectedProductId) || uploading} className="w-14 h-14 rounded-2xl shadow-lg active:scale-95 transition-all">
+                        <Send size={24} strokeWidth={2.5} />
+                      </Button>
                     </div>
 
                     <AnimatePresence>
                       {isAttachingProduct && (
-                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-background/60 backdrop-blur-xl">
-                          <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }} className="bg-card w-full max-w-2xl border border-border shadow-2xl rounded-[32px] md:rounded-[48px] overflow-hidden flex flex-col max-h-[85vh]">
-                             <div className="p-6 md:p-8 border-b border-border bg-stone-50/50 dark:bg-stone-900/50 flex items-center justify-between">
+                        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-background/60 backdrop-blur-2xl">
+                          <motion.div initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.9 }} className="bg-card w-full max-w-2xl border border-border/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-[3rem] overflow-hidden flex flex-col max-h-[85vh]">
+                             <div className="p-8 border-b border-border/50 bg-muted/20 flex items-center justify-between">
                                 <div>
-                                   <h2 className="text-xl md:text-3xl font-black tracking-tighter uppercase px-2">{t("inbox.attach_product") || "CHỌN SẢN PHẨM"}</h2>
-                                   <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 ml-2 mt-1">{t("inbox.select_desc") || "Tìm kiếm và đính kèm vào tin nhắn"}</p>
+                                   <h2 className="text-3xl font-black tracking-tight uppercase text-foreground">{t("inbox.attach_product") || "CHỌN SẢN PHẨM"}</h2>
+                                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 mt-1">{t("inbox.select_desc") || "Tìm kiếm và đính kèm vào tin nhắn"}</p>
                                 </div>
-                                <button onClick={() => setIsAttachingProduct(false)} className="p-3 md:p-4 bg-muted hover:bg-muted/80 rounded-full transition-all group active:scale-95"><X size={20} className="group-hover:rotate-90 transition-transform duration-300" /></button>
+                                <Button variant="ghost" size="icon" onClick={() => setIsAttachingProduct(false)} className="w-12 h-12 rounded-full hover:bg-muted active:scale-95"><X size={24} strokeWidth={3} /></Button>
                              </div>
                              
-                             <div className="p-4 md:p-6 bg-muted/20 border-b border-border">
+                             <div className="p-6 bg-muted/10 border-b border-border/50">
                                 <div className="relative">
-                                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30" size={18} />
-                                   <input 
+                                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 opacity-30" size={20} />
+                                   <Input 
                                      autoFocus
-                                     type="text" 
                                      value={productSearch} 
                                      onChange={(e) => setProductSearch(e.target.value)}
                                      placeholder={t("inbox.search_product_placeholder") || "Tìm kiếm sản phẩm theo tên..."}
-                                     className="w-full pl-12 pr-6 py-4 bg-muted/50 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium"
+                                     className="w-full pl-14 h-14 bg-background border-border/30 rounded-2xl text-sm font-bold shadow-none"
                                    />
                                 </div>
                              </div>
 
-                             <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
+                             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                                   {shopProducts.filter(p => !productSearch || p.title.toLowerCase().includes(productSearch.toLowerCase())).map(p => (
-                                    <button key={p.id} type="button" onClick={() => { setSelectedProductId(p.id); setIsAttachingProduct(false); setProductSearch(""); }} className="group p-2 flex flex-col gap-2 hover:bg-primary/5 rounded-2xl transition-all text-left border border-transparent hover:border-primary/20">
-                                      <div className="aspect-square w-full rounded-xl bg-card overflow-hidden shrink-0 border border-border group-hover:shadow-lg transition-all">
-                                          <img src={p.media?.[0]?.url || 'https://via.placeholder.com/200'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    <button 
+                                      key={p.id} 
+                                      type="button" 
+                                      onClick={() => { setSelectedProductId(p.id); setIsAttachingProduct(false); setProductSearch(""); }} 
+                                      className="group p-3 flex flex-col gap-3 hover:bg-primary/5 rounded-[1.5rem] transition-all text-left border border-transparent hover:border-primary/20 bg-muted/10"
+                                    >
+                                      <div className="aspect-square w-full rounded-2xl bg-background overflow-hidden shrink-0 border border-border/50 group-hover:shadow-lg transition-all">
+                                          <img src={p.media?.[0]?.url || 'https://via.placeholder.com/200'} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                       </div>
                                       <div className="px-1">
-                                          <p className="text-[10px] font-bold truncate uppercase">{p.title}</p>
-                                          <p className="text-[11px] font-black text-primary mt-0.5">{p.price?.toLocaleString()} đ</p>
+                                          <p className="text-[10px] font-black uppercase tracking-tight truncate text-foreground">{p.title}</p>
+                                          <Badge variant="outline" className="mt-2 font-black text-[9px] bg-primary/10 text-primary border-primary/20">
+                                            {p.price?.toLocaleString()} đ
+                                          </Badge>
                                       </div>
                                     </button>
                                   ))}
                                   {shopProducts.filter(p => !productSearch || p.title.toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
-                                    <p className="col-span-full text-center py-10 text-[10px] font-black uppercase opacity-20 tracking-widest">{t("inbox.no_products")}</p>
+                                    <div className="col-span-full py-20 flex flex-col items-center gap-4 opacity-20">
+                                      <Package size={64} strokeWidth={1} />
+                                      <p className="text-xs font-black uppercase tracking-[0.3em]">{t("inbox.no_products")}</p>
+                                    </div>
                                   )}
                                 </div>
                              </div>
                              
-                             <div className="p-4 md:p-6 bg-muted/20 border-t border-border flex justify-end">
-                                <button onClick={() => setIsAttachingProduct(false)} className="px-8 py-3 bg-muted hover:bg-muted/80 rounded-xl md:rounded-2xl font-black text-xs uppercase transition-all">{t("inbox.close") || "Đóng"}</button>
+                             <div className="p-6 bg-muted/30 border-t border-border/50 flex justify-end">
+                                <Button variant="outline" onClick={() => setIsAttachingProduct(false)} className="px-10 h-14 rounded-2xl font-black text-xs uppercase tracking-widest">{t("inbox.close") || "ĐÓNG LẠI"}</Button>
                              </div>
                           </motion.div>
                         </div>
                       )}
                     </AnimatePresence>
-                 </form>
+                </form>
              </motion.div>
           ) : selectedNotif ? (
-             <motion.div key="notif" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="flex flex-col h-full bg-card overflow-y-auto fixed md:absolute inset-0 md:relative z-[310] md:z-20 p-6 md:p-20">
-                <button onClick={() => setSelectedNotif(null)} className="absolute top-4 md:top-8 left-4 md:left-8 p-2 md:p-3 hover:bg-muted rounded-full transition-all"><ChevronLeft size={24} /></button>
+             <motion.div key="notif" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col h-full bg-background overflow-y-auto fixed md:absolute inset-0 md:relative z-[310] md:z-20 p-6 md:p-20 shadow-inner">
+                {/* Notification Detail */}
+                <Button variant="ghost" size="icon" onClick={() => setSelectedNotif(null)} className="absolute top-8 left-8 w-12 h-12 bg-muted/50 rounded-full active:scale-90">
+                  <ChevronLeft size={24} strokeWidth={3} />
+                </Button>
                 
-                <div className="max-w-2xl mx-auto w-full pt-10 md:pt-0">
-                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl md:rounded-3xl flex items-center justify-center mb-6 md:mb-10 shadow-lg ${getNotifColor(selectedNotif.type || "system")}`}>{getNotifIcon(selectedNotif.type || "system")}</div>
-                  <h1 className="text-2xl md:text-4xl font-black tracking-tight mb-4 md:mb-6">{selectedNotif.data?.title || selectedNotif.title}</h1>
-                  <p className="text-muted-foreground text-[10px] md:text-xs font-black uppercase tracking-widest mb-6 md:mb-10 pb-4 md:pb-6 border-b">{t("inbox.sent_on")} {new Date(selectedNotif.created_at).toLocaleString()}</p>
+                <div className="max-w-2xl mx-auto w-full pt-16 md:pt-0">
+                  <div className={`w-16 h-16 md:w-20 md:h-20 rounded-[2rem] flex items-center justify-center mb-10 shadow-xl border border-white/20 ${getNotifColor(selectedNotif.type || "system")}`}>
+                    {getNotifIcon(selectedNotif.type || "system")}
+                  </div>
+                  <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-foreground leading-tight mb-8">
+                    {selectedNotif.data?.title || selectedNotif.title}
+                  </h1>
+                  <div className="flex items-center gap-3 mb-10 pb-8 border-b border-border/50">
+                    <Badge variant="outline" className="font-black text-[10px] uppercase tracking-widest px-4 py-1.5 opacity-60">
+                      {t("inbox.sent_on")} {new Date(selectedNotif.created_at).toLocaleString()}
+                    </Badge>
+                  </div>
                   
-                  <div className="text-sm md:text-lg leading-relaxed text-foreground/80 font-medium whitespace-pre-wrap mb-10">
+                  <div className="text-lg md:text-xl leading-relaxed text-foreground/70 font-medium whitespace-pre-wrap mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {selectedNotif.data?.message || selectedNotif.message}
                   </div>
 
-
-
                   {(selectedNotif.data?.link || selectedNotif.link) && (
-                    <a href={selectedNotif.data?.link || selectedNotif.link} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-4 bg-foreground text-background rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-xs md:text-sm hover:scale-[1.02] transition-all shadow-xl">
-                      {t("inbox.take_action")} <LinkIcon size={16} />
-                    </a>
+                    <Button asChild className="w-full h-16 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                      <a href={selectedNotif.data?.link || selectedNotif.link} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3">
+                        <span className="font-black uppercase tracking-widest text-sm">{t("inbox.take_action")}</span>
+                        <LinkIcon size={20} strokeWidth={3} />
+                      </a>
+                    </Button>
                   )}
 
                   {isAdmin && (
-                    <div className="mt-10 md:mt-20 pt-6 md:pt-10 border-t border-border/50 flex justify-center gap-3">
+                    <div className="mt-20 pt-10 border-t border-border/50 flex flex-col items-center gap-6">
                        {!isConfirmingDelete ? (
-                         <button onClick={() => setIsConfirmingDelete(true)} className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold text-[10px] md:text-xs uppercase transition-all">
-                           <Trash2 size={14} /> {t("inbox.delete")}
-                         </button>
+                         <Button 
+                           variant="destructive" 
+                           onClick={() => setIsConfirmingDelete(true)} 
+                           className="flex items-center gap-2 px-8 h-12 rounded-xl font-black text-xs uppercase tracking-widest shadow-md"
+                         >
+                           <Trash2 size={16} strokeWidth={3} /> {t("inbox.delete")}
+                         </Button>
                        ) : (
-                         <>
-                           <button onClick={() => handleDeleteNotification(selectedNotif.id)} className="flex items-center gap-2 px-6 py-2.5 bg-red-600 text-white hover:bg-red-700 rounded-xl font-black text-[10px] md:text-xs uppercase transition-all shadow-lg hover:scale-105 active:scale-95">
-                             <CheckCheck size={14} /> {t("inbox.confirm")}
-                           </button>
-                           <button onClick={() => setIsConfirmingDelete(false)} className="px-6 py-2.5 bg-muted text-muted-foreground hover:bg-muted/80 rounded-xl font-bold text-[10px] md:text-xs uppercase transition-all">
-                             {t("inbox.cancel_short")}
-                           </button>
-                         </>
+                         <div className="flex items-center gap-4 animate-in zoom-in-95">
+                           <Button 
+                             variant="destructive"
+                             onClick={() => handleDeleteNotification(selectedNotif.id)} 
+                             className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95"
+                           >
+                              {t("inbox.confirm") || "XÓA QUẢNG BÁ"}
+                           </Button>
+                           <Button 
+                             variant="outline"
+                             onClick={() => setIsConfirmingDelete(false)} 
+                             className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest"
+                           >
+                              {t("inbox.cancel_short") || "HỦY"}
+                           </Button>
+                         </div>
                        )}
                     </div>
                   )}
                 </div>
              </motion.div>
           ) : (
-             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground/20 p-10 select-none">
-                <Store size={100} className="md:w-[150px] md:h-[150px]" />
-                <h2 className="text-xl md:text-3xl font-black mt-4 uppercase tracking-tighter">{t("inbox.unified_title")}</h2>
-                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] mt-2">{t("inbox.selection_required")}</p>
+             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground/10 p-10 select-none animate-in fade-in duration-1000">
+                <Store size={200} strokeWidth={0.5} />
+                <h2 className="text-3xl font-black mt-8 uppercase tracking-widest opacity-40">{t("inbox.unified_title")}</h2>
+                <div className="w-12 h-1 bg-primary/20 rounded-full mt-4"></div>
+                <p className="text-[10px] font-black uppercase tracking-[0.6em] mt-6 opacity-30">{t("inbox.selection_required")}</p>
              </div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* 4. Bottom Tab Control (Mobile Only) - Moved here to stay permanent at bottom */}
-      <div className="md:hidden flex border-t border-border/50 bg-card p-2 gap-2 shrink-0 z-50">
-         <button onClick={() => { setActiveTab("chat"); setSelectedNotif(null); setActiveConv(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+      {/* 4. Bottom Tab Control (Mobile Only) */}
+      <div className="md:hidden grid grid-cols-2 border-t border-border/50 bg-card p-3 gap-3 shrink-0 z-50 sticky bottom-0">
+         <Button 
+           variant={activeTab === "chat" ? "default" : "ghost"}
+           onClick={() => { setActiveTab("chat"); setSelectedNotif(null); setActiveConv(null); }} 
+           className="h-16 flex-col gap-1 rounded-2xl"
+         >
            <div className="relative">
-              <MessageCircle size={20} />
-              {hasUnreadMessages && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
+              <MessageCircle size={22} strokeWidth={activeTab === "chat" ? 3 : 2} />
+              {hasUnreadMessages && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card" />}
            </div>
-           <span className="text-[10px] font-bold uppercase">{t("inbox.messages")}</span>
-         </button>
-         <button onClick={() => { setActiveTab("notifications"); setActiveConv(null); setSelectedNotif(null); }} className={`flex-1 py-3 flex flex-col items-center gap-1 rounded-xl transition-all ${activeTab === "notifications" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+           <span className="text-[9px] font-black uppercase tracking-widest">{t("inbox.messages")}</span>
+         </Button>
+         <Button 
+           variant={activeTab === "notifications" ? "default" : "ghost"}
+           onClick={() => { setActiveTab("notifications"); setActiveConv(null); setSelectedNotif(null); }} 
+           className="h-16 flex-col gap-1 rounded-2xl"
+         >
            <div className="relative">
-              <Bell size={20} />
-              {hasUnreadNotifications && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />}
+              <Bell size={22} strokeWidth={activeTab === "notifications" ? 3 : 2} />
+              {hasUnreadNotifications && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card" />}
            </div>
-           <span className="text-[10px] font-bold uppercase">{t("inbox.notifications")}</span>
-         </button>
+           <span className="text-[9px] font-black uppercase tracking-widest">{t("inbox.notifications")}</span>
+         </Button>
       </div>
 
+      {/* Broadcast Modal - Standardized Flat-Zoom */}
       <AnimatePresence>
         {isAdmin && showCreateModal && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-6 bg-background/80 backdrop-blur-md">
-             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-card w-full max-w-xl border border-border shadow-2xl rounded-3xl md:rounded-[40px] overflow-hidden max-h-[90vh] overflow-y-auto">
-                <div className="p-6 md:p-8 border-b border-border bg-primary/5 flex items-center justify-between">
-                   <h2 className="text-xl md:text-2xl font-black tracking-tight uppercase px-4">{t("inbox.new_broadcast")}</h2>
-                   <button onClick={() => setShowCreateModal(false)} className="p-2 md:p-3 bg-muted rounded-full"><X size={18} /></button>
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-6 bg-background/80 backdrop-blur-2xl">
+             <motion.div initial={{ opacity: 0, scale: 0.9, y: 50 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 50 }} className="bg-card w-full max-w-xl border border-border/50 shadow-2xl rounded-[3rem] overflow-hidden max-h-[90vh] overflow-y-auto">
+                <div className="p-8 border-b border-border/50 bg-primary/5 flex items-center justify-between">
+                   <div>
+                      <h2 className="text-2xl font-black tracking-tight uppercase px-2 text-foreground">{t("inbox.new_broadcast")}</h2>
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 ml-2 mt-1">GỬI THÔNG BÁO CHO HỆ THỐNG</p>
+                   </div>
+                   <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)} className="w-12 h-12 rounded-full active:scale-95"><X size={24} strokeWidth={3} /></Button>
                 </div>
-                <form onSubmit={handleCreateNotification} className="p-6 md:p-8 space-y-4 md:space-y-6">
-                   <div className="space-y-1.5">
-                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.headline")}</label>
-                     <input required value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm" />
+                <form onSubmit={handleCreateNotification} className="p-8 space-y-6">
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.headline")}</label>
+                     <Input required value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="..." className="h-14 bg-muted/20 border-transparent focus:bg-background rounded-2xl text-sm font-bold shadow-none" />
                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.target_role") || "ĐỐI TƯỢNG NHẬN"}</label>
-                      <select 
-                        value={form.role} 
-                        onChange={e => setForm({...form, role: e.target.value})}
-                        className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-sm appearance-none cursor-pointer font-bold"
-                      >
-                         <option value="all">{t("inbox.role_all") || "Tất cả mọi người"}</option>
-                         <option value="customer">{t("inbox.role_customer") || "Khách hàng"}</option>
-                         <option value="seller">{t("inbox.role_seller") || "Người bán / Shop"}</option>
-                      </select>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.target_role") || "ĐỐI TƯỢNG NHẬN"}</label>
+                      <div className="relative">
+                        <select 
+                          value={form.role} 
+                          onChange={e => setForm({...form, role: e.target.value})}
+                          className="w-full h-14 px-6 bg-muted/20 border border-transparent rounded-2xl outline-none focus:bg-background focus:border-primary/20 text-sm appearance-none cursor-pointer font-bold shadow-none transition-all"
+                        >
+                           <option value="all">{t("inbox.role_all") || "🔊 Tất cả mọi người"}</option>
+                           <option value="customer">{t("inbox.role_customer") || "👥 Khách hàng"}</option>
+                           <option value="seller">{t("inbox.role_seller") || "🏪 Người bán / Shop"}</option>
+                        </select>
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-40"><Package size={16} /></div>
+                      </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.action_link")}</label>
-                      <input value={form.link} onChange={e => setForm({...form, link: e.target.value})} placeholder="https://..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none text-sm" />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.action_link")}</label>
+                      <Input value={form.link} onChange={e => setForm({...form, link: e.target.value})} placeholder="https://..." className="h-14 bg-muted/20 border-transparent focus:bg-background rounded-2xl text-sm font-bold shadow-none" />
                     </div>
-                   <div className="space-y-1.5">
-                     <label className="text-[9px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.message_body")}</label>
-                     <textarea required rows={4} value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="..." className="w-full px-5 py-2.5 md:py-3 bg-muted/40 rounded-xl outline-none resize-none text-sm" />
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.message_body")}</label>
+                     <textarea required rows={4} value={form.message} onChange={e => setForm({...form, message: e.target.value})} placeholder="..." className="w-full p-6 bg-muted/20 border border-transparent focus:bg-background focus:border-primary/20 rounded-[2rem] outline-none resize-none text-sm font-medium transition-all shadow-none" />
                    </div>
 
-                   <div className="pt-4 flex gap-3 md:gap-4">
-                      <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3.5 md:py-4 font-bold border rounded-xl md:rounded-2xl hover:bg-muted text-xs uppercase transition-all">{t("inbox.cancel")}</button>
-                       <button disabled={loading || !form.title || !form.message} className="flex-[2] bg-primary text-primary-foreground py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold shadow-lg text-xs uppercase tracking-widest transition-all">
-                        {loading ? t("inbox.sending") : t("inbox.broadcast")}
-                       </button>
+                   <div className="pt-6 flex gap-4">
+                      <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1 h-14 font-black rounded-2xl text-xs uppercase tracking-widest">{t("inbox.cancel")}</Button>
+                       <Button disabled={loading || !form.title || !form.message} className="flex-[2] h-14 font-black rounded-2xl shadow-xl text-xs uppercase tracking-widest transition-all">
+                        {loading ? "SENDING..." : t("inbox.broadcast")}
+                       </Button>
                    </div>
                 </form>
              </motion.div>
@@ -781,13 +863,11 @@ export function UnifiedInbox() {
       </AnimatePresence>
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.1); border-radius: 20px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         body.hide-mobile-menu #mobile-hamburger { display: none !important; }
       `}</style>
     </div>
   );
 }
-
-
-
