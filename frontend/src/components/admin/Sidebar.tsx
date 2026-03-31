@@ -69,7 +69,7 @@ export function AdminSidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-bold border-l-4 transition-all ${active ? "bg-primary/5 text-primary border-primary" : "text-slate-500 hover:bg-slate-50 border-transparent hover:text-foreground"
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-bold border-l-4 transition-all ${active ? "bg-primary/5 text-primary border-primary" : "text-slate-500 hover:bg-muted/50 border-transparent hover:text-primary"
                    }`}
               >
                 <div className="relative shrink-0">
