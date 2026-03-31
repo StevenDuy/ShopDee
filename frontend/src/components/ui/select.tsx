@@ -5,7 +5,7 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDown, Check } from "lucide-react"
 
-function Select({ ...props }: SelectPrimitive.Root.Props) {
+function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
   return <SelectPrimitive.Root {...props} />
 }
 
@@ -13,7 +13,7 @@ function SelectTrigger({
   className,
   children,
   ...props
-}: SelectPrimitive.Trigger.Props) {
+}: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -29,7 +29,7 @@ function SelectTrigger({
   )
 }
 
-function SelectValue({ ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />
 }
 
@@ -39,17 +39,17 @@ function SelectContent({
   position = "popper",
   sideOffset = 4,
   ...props
-}: SelectPrimitive.Popup.Props & { position?: "popper" | "item-aligned" }) {
+}: React.ComponentProps<typeof SelectPrimitive.Popup> & { sideOffset?: number, position?: "popper" | "item-aligned" }) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
-        className="isolate z-50 outline-none"
+        className="isolate z-[201] outline-none"
         sideOffset={sideOffset}
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            "relative z-50 max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-xl ring-1 ring-border/50 duration-200 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            "relative z-[201] max-h-(--available-height) min-w-32 origin-(--transform-origin) overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-xl ring-1 ring-border/50 duration-200 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
             className
           )}
           {...props}
@@ -65,7 +65,7 @@ function SelectItem({
   className,
   children,
   ...props
-}: SelectPrimitive.Item.Props) {
+}: React.ComponentProps<typeof SelectPrimitive.Item>) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -88,7 +88,7 @@ function SelectItem({
 function SelectSeparator({
   className,
   ...props
-}: SelectPrimitive.Separator.Props) {
+}: React.ComponentProps<typeof SelectPrimitive.Separator>) {
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"

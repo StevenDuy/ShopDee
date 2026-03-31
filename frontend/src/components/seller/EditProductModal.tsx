@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { X, Save, Upload, Trash2, Plus, ChevronDown, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { X, Save, Upload, Trash2, Plus, ChevronDown, AlertTriangle, Eye, EyeOff, Edit, Image as ImageIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -287,22 +291,38 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="bg-card w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-xl overflow-hidden border border-border">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-          <h2 className="text-xl font-bold">{t("seller.products_manage.edit_product")}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-muted text-muted-foreground rounded-full transition-colors"><X size={20} /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md p-4 md:p-10">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2, ease: "circOut" }}
+        className="bg-card w-full max-w-4xl max-h-[90vh] flex flex-col rounded-[3rem] shadow-2xl overflow-hidden border border-border/40 relative"
+      >
+        {/* Elite Header */}
+        <div className="flex items-center justify-between px-10 py-8 border-b border-border/5 shrink-0 bg-muted/10">
+          <div className="flex items-center gap-4">
+             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
+                <Edit size={20} strokeWidth={2.5} />
+             </div>
+             <div>
+                <h2 className="text-2xl font-black uppercase tracking-tight leading-none">{t("seller.products_manage.edit_product")}</h2>
+                <p className="text-[10px] font-black uppercase opacity-40 tracking-widest mt-1">PRODUCT IDENTIFIER: #{productId}</p>
+             </div>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-background rounded-2xl text-muted-foreground transition-all hover:scale-110 active:scale-95 border border-transparent hover:border-border/50 shadow-none"><X size={20} strokeWidth={2.5} /></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-10 space-y-12 custom-scrollbar">
           {formData.status === 'banned' && (
-            <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center gap-3 mb-6">
-              <AlertTriangle className="text-red-600" size={20} />
-              <div>
-                <p className="text-xs font-black uppercase text-red-600">{t("seller.products_manage.banned")}</p>
-                {formData.ban_reason && <p className="text-[11px] text-red-500/70 font-bold italic">{formData.ban_reason}</p>}
-                <p className="text-[10px] text-muted-foreground mt-1">{t("seller.products_manage.banned_readonly_hint") || "Sản phẩm này đang bị cấm. Bạn chỉ có thể xem chi tiết."}</p>
+            <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-[2rem] flex items-center gap-6 mb-10">
+              <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600 shrink-0">
+                 <AlertTriangle size={30} strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0">
+                <p className="font-black uppercase text-red-600 tracking-widest text-[11px] mb-1">{t("seller.products_manage.banned")}</p>
+                {formData.ban_reason && <p className="text-[13px] text-red-500/80 font-bold leading-tight">{formData.ban_reason}</p>}
+                <p className="text-[10px] font-black uppercase opacity-40 tracking-wider mt-2">{t("seller.products_manage.banned_readonly_hint") || "READ-ONLY: PRODUCT VIOLATION"}</p>
               </div>
             </div>
           )}
@@ -310,25 +330,25 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
             <fieldset disabled={formData.status === 'banned'} className="space-y-6 contents">
               {error && <div className="p-4 bg-destructive/10 text-destructive text-sm rounded-xl border border-destructive/20">{error}</div>}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">{t("seller.products_manage.product_title")}</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="md:col-span-2 space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-4">{t("seller.products_manage.product_title")}</label>
                 <input type="text" name="title" value={formData.title} onChange={handleChange} required
-                  className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  className="w-full h-14 px-6 bg-muted/20 border-transparent rounded-[1.5rem] font-bold text-sm shadow-none focus:outline-none focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all placeholder:opacity-30" />
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">{t("seller.products_manage.description")}</label>
+              <div className="md:col-span-2 space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-4">{t("seller.products_manage.description")}</label>
                 <textarea name="description" value={formData.description} onChange={handleChange} required rows={3}
-                  className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                  className="w-full px-6 py-4 bg-muted/20 border-transparent rounded-[1.5rem] font-bold text-sm shadow-none focus:outline-none focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all placeholder:opacity-30 min-h-[120px]" />
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium">{t("seller.products_manage.category")}</label>
-                  <button type="button" onClick={() => setShowAddCategory(true)} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus size={10} /> {t("seller.products_manage.new")}</button>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest opacity-60">{t("seller.products_manage.category")}</label>
+                  <button type="button" onClick={() => setShowAddCategory(true)} className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-primary hover:text-black transition-colors"><Plus size={12} strokeWidth={3} /> {t("seller.products_manage.new")}</button>
                 </div>
-                <div className="relative">
+                <div className="relative group">
                   <select name="category_id" value={formData.category_id} onChange={handleChange} required
-                    className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50 pr-8">
+                    className="w-full h-14 px-6 bg-muted/20 border-transparent rounded-[1.5rem] font-bold text-sm appearance-none focus:outline-none focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all pr-12 relative z-10">
                     <option value="">{t("seller.products_manage.select_category")}</option>
                     {categories.map(cat => (
                       <optgroup key={cat.id} label={cat.name}>
@@ -337,31 +357,34 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                       </optgroup>
                     ))}
                   </select>
-                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <ChevronDown size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-20 opacity-40 group-focus-within:opacity-100 transition-opacity" />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t("seller.orders.status")}</label>
-                <select name="status" value={formData.status} onChange={handleChange}
-                  disabled={formData.status === 'banned'}
-                  className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50">
-                  {formData.status === 'banned' ? (
-                    <option value="banned">{t("seller.products_manage.banned")}</option>
-                  ) : (
-                    <>
-                      <option value="active">{t("seller.products_manage.active")}</option>
-                      <option value="hide">{t("seller.products_manage.hide")}</option>
-                      <option value="out_of_stock">{t("seller.products_manage.out_of_stock")}</option>
-                    </>
-                  )}
-                </select>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-4">{t("seller.orders.status")}</label>
+                <div className="relative group">
+                  <select name="status" value={formData.status} onChange={handleChange}
+                    disabled={formData.status === 'banned'}
+                    className="w-full h-14 px-6 bg-muted/20 border-transparent rounded-[1.5rem] font-bold text-sm appearance-none focus:outline-none focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all pr-12 relative z-10 disabled:opacity-30">
+                    {formData.status === 'banned' ? (
+                      <option value="banned">{t("seller.products_manage.banned")}</option>
+                    ) : (
+                      <>
+                        <option value="active">{t("seller.products_manage.active")}</option>
+                        <option value="hide">{t("seller.products_manage.hide")}</option>
+                        <option value="out_of_stock">{t("seller.products_manage.out_of_stock")}</option>
+                      </>
+                    )}
+                  </select>
+                  <ChevronDown size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-20 opacity-40 group-focus-within:opacity-100 transition-opacity" />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t("seller.products_manage.base_price")}</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-4">{t("seller.products_manage.base_price")}</label>
                 {options.length > 0 ? (
-                  <div className="w-full px-3 py-2 bg-muted border border-dashed border-border rounded-xl text-sm font-medium">
-                    <span className="text-muted-foreground">{t("seller.products_manage.cheapest_price")}: </span>
-                    <span className="text-primary">
+                  <div className="h-14 px-6 bg-primary/5 border-2 border-dashed border-primary/20 rounded-[1.5rem] flex items-center justify-between text-sm font-black overflow-hidden relative group transition-all hover:bg-primary/[0.08]">
+                    <span className="text-primary/60 text-[9px] uppercase tracking-widest">{t("seller.products_manage.cheapest_price")}: </span>
+                    <span className="text-primary tracking-tighter text-lg tabular-nums">
                       {(() => {
                         let minAdj = Infinity;
                         options.forEach(o => o.values.forEach(v => {
@@ -374,9 +397,9 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                         }));
                         const base = Number(formData.price) || 0;
                         const finalMin = minAdj === Infinity ? base : base + minAdj;
-                        return new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(finalMin);
+                        return new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code"), minimumFractionDigits: 0 }).format(finalMin);
                       })()}
-                      </span>
+                    </span>
                   </div>
                 ) : (
                   <input type="text" name="price" value={formatPrice(formData.price)} 
@@ -387,15 +410,15 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                       }
                     }}
                     required
-                    className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    className="w-full h-14 px-6 bg-muted/20 border-transparent rounded-[1.5rem] font-black text-lg shadow-none focus:outline-none focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all tabular-nums" />
                 )}
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">{t("seller.products_manage.stock")}</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-4">{t("seller.products_manage.stock")}</label>
                 {options.length > 0 ? (
-                  <div className="w-full px-3 py-2 bg-muted border border-dashed border-border rounded-xl text-sm">
-                    <span className="text-muted-foreground">{t("seller.products_manage.total_from_options")} </span>
-                    <span className="font-bold text-foreground">
+                  <div className="h-14 px-6 bg-muted/20 border-2 border-dashed border-border rounded-[1.5rem] flex items-center justify-between text-sm font-black transition-all hover:bg-muted/40">
+                    <span className="text-muted-foreground/60 text-[9px] uppercase tracking-widest leading-none">{t("seller.products_manage.total_from_options")} </span>
+                    <span className="text-foreground tracking-tighter text-lg tabular-nums">
                       {options.reduce((total, opt) =>
                         total + opt.values.reduce((vs, v) => {
                           const hasSubs = v.sub_values.some(s => s.option_value.trim() !== '');
@@ -407,7 +430,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                   </div>
                 ) : (
                   <input type="number" name="stock_quantity" value={formData.stock_quantity} onChange={handleChange} required min="0"
-                    className="w-full px-3 py-2 bg-input border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    className="w-full h-14 px-6 bg-muted/20 border-transparent rounded-[1.5rem] font-black text-lg shadow-none focus:outline-none focus:bg-background focus:ring-2 focus:ring-primary/10 transition-all tabular-nums" />
                 )}
               </div>
             </div>
@@ -415,33 +438,52 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
             <hr className="border-border" />
 
             {/* Media */}
-            <div>
-              <h3 className="text-sm font-bold mb-3">{t("seller.products_manage.media")}</h3>
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 pt-3 pl-3">
+            {/* Media Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <ImageIcon size={18} strokeWidth={2.5} />
+                 </div>
+                 <h3 className="text-base font-black uppercase tracking-tight">{t("seller.products_manage.media")}</h3>
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-6 pt-2">
                 {formData.media?.map(m => (
-                  <div key={m.id} className="relative aspect-square border border-border rounded-xl overflow-hidden group">
+                  <div key={m.id} className="relative aspect-square border-2 border-border/40 rounded-[1.2rem] overflow-hidden group shadow-sm transition-transform hover:scale-105 active:scale-95">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={m.full_url} alt="" className="object-cover w-full h-full" />
-                    <button type="button" onClick={() => deleteExistingMedia(m.id)}
-                      className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
-                    {m.is_primary && <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[8px] uppercase font-bold rounded-sm">{t("seller.products_manage.primary")}</span>}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                       <button type="button" onClick={() => deleteExistingMedia(m.id)}
+                         className="p-2 bg-red-600 text-white rounded-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">
+                         <Trash2 size={16} strokeWidth={2.5} />
+                       </button>
+                    </div>
+                    {m.is_primary && (
+                       <Badge className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-primary-foreground text-[7px] tracking-widest font-black uppercase rounded-lg border-none shadow-lg">
+                          {t("seller.products_manage.primary")}
+                       </Badge>
+                    )}
                   </div>
                 ))}
                 {newFiles.map((file, i) => (
-                  <div key={`new-${i}`} className="relative aspect-square border-2 border-primary/50 rounded-xl overflow-hidden group">
+                  <div key={`new-${i}`} className="relative aspect-square border-2 border-primary/20 bg-primary/5 rounded-[1.2rem] overflow-hidden group shadow-inner transition-transform hover:scale-105 active:scale-95">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={URL.createObjectURL(file)} alt="" className="object-cover w-full h-full opacity-70" />
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white bg-black/30 text-center px-1 uppercase">{t("seller.products_manage.new")}</span>
-                    <button type="button" onClick={() => setNewFiles(prev => prev.filter((_, idx) => idx !== i))}
-                      className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
+                    <img src={URL.createObjectURL(file)} alt="" className="object-cover w-full h-full opacity-60" />
+                    <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black tracking-widest text-primary bg-primary/10 text-center px-1 uppercase">{t("seller.products_manage.new")}</div>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                       <button type="button" onClick={() => setNewFiles(prev => prev.filter((_, idx) => idx !== i))}
+                         className="p-2 bg-red-600 text-white rounded-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">
+                         <Trash2 size={16} strokeWidth={2.5} />
+                       </button>
+                    </div>
                   </div>
                 ))}
-                <label className="aspect-square border border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors group">
+                <label className="aspect-square border-2 border-dashed border-border rounded-[1.2rem] flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 hover:border-primary/40 transition-all group relative overflow-hidden active:scale-95">
                   <input type="file" multiple accept="image/*,video/mp4" className="hidden" onChange={handleFileChange} />
-                  <div className="p-2 rounded-full bg-muted group-hover:bg-primary/10 transition-colors mb-1">
-                    <Upload size={14} className="text-muted-foreground group-hover:text-primary" />
+                  <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="p-3 rounded-2xl bg-muted group-hover:bg-primary/10 transition-colors mb-2 relative z-10">
+                    <Upload size={20} className="text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2.5} />
                   </div>
-                  <span className="text-[8px] font-bold uppercase tracking-tighter text-muted-foreground group-hover:text-primary">{t("seller.products_manage.add_media")}</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors relative z-10">{t("seller.products_manage.add_media")}</span>
                 </label>
               </div>
             </div>
@@ -663,38 +705,40 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
             </form>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-border bg-muted/20 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        {/* Elite Footer */}
+        <div className="px-10 py-8 border-t border-border/5 bg-muted/10 flex flex-wrap items-center justify-between gap-6 shrink-0 relative z-50">
           {!confirmDelete ? (
             <button type="button" onClick={() => { setError(null); setConfirmDelete(true); }} disabled={saving || deleting || formData.status === 'banned'}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50">
-              <Trash2 size={16} /> {t("seller.products_manage.delete_product") || "Xóa sản phẩm"}
+              className="flex items-center gap-3 px-6 h-12 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all border border-transparent hover:border-destructive/20 disabled:opacity-30 active:scale-95">
+              <Trash2 size={18} strokeWidth={2.5} /> {t("seller.products_manage.delete_product") || "DESTROY ENTRY"}
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-destructive/10 border border-border rounded-xl px-3 py-2">
-              <AlertTriangle size={16} className="text-destructive shrink-0" />
-              <span className="text-xs font-medium text-destructive">{t("confirm_delete")}</span>
-              <button type="button" onClick={handleDelete} disabled={deleting}
-                className="px-3 py-1 bg-destructive text-white rounded-lg text-xs font-bold hover:opacity-90 disabled:opacity-50">
-                {deleting ? t("loading") : t("seller.products_manage.yes_delete")}
-              </button>
-              <button type="button" onClick={() => setConfirmDelete(false)} disabled={deleting}
-                className="px-3 py-1 border border-border rounded-lg text-xs font-medium hover:bg-accent transition-colors">
-                {t("profile_page.cancel")}
-              </button>
-            </div>
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4 bg-destructive/10 border border-destructive/20 rounded-[1.5rem] px-6 py-3 shadow-sm">
+              <AlertTriangle size={20} className="text-destructive shrink-0" strokeWidth={2.5} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-destructive leading-none">{t("confirm_delete")}</span>
+              <div className="flex gap-2">
+                <button type="button" onClick={handleDelete} disabled={deleting}
+                  className="px-5 h-9 bg-destructive text-white rounded-xl text-[10px] font-black h uppercase tracking-widest hover:opacity-90 shadow-lg shadow-destructive/20 transition-all active:scale-95">
+                  {deleting ? t("loading") : t("seller.products_manage.yes_delete")}
+                </button>
+                <button type="button" onClick={() => setConfirmDelete(false)} disabled={deleting}
+                  className="px-5 h-9 bg-background border border-border/60 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-all active:scale-95">
+                  {t("profile_page.cancel")}
+                </button>
+              </div>
+            </motion.div>
           )}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button type="button" onClick={onClose} disabled={saving || deleting}
-              className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50">{t("inbox.cancel")}</button>
+              className="px-8 h-12 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:bg-muted transition-all disabled:opacity-30 active:scale-95">{t("inbox.cancel")}</button>
             <button type="submit" form="edit-product-form" disabled={saving || deleting || formData.status === 'banned'}
-              className="bg-primary text-primary-foreground flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {saving ? <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> : <Save size={16} />}
+              className={cn(buttonVariants(), "h-12 px-10 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 active:scale-95 transition-all flex items-center gap-3")}>
+              {saving ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> : <Save size={18} strokeWidth={2.5} />}
               {t("seller.products_manage.save")}
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Add Category Modal */}
       {showAddCategory && (

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Image as ImageIcon, Trash2, Plus, X, ChevronDown } from "lucide-react";
@@ -9,7 +10,14 @@ import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
 import { motion, AnimatePresence } from "framer-motion";
-
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue,
+  SelectSeparator
+} from "@/components/ui/select";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -148,7 +156,7 @@ export default function NewProductPage() {
   const computedParentStock = (val: OptionValue): number => {
     const filled = val.sub_values.filter(s => s.option_value.trim() !== '');
     if (filled.length === 0) return 0;
-    return filled.reduce((sum, s) => sum + s.stock_quantity, 0); // SUM
+    return filled.reduce((sum: number, s: SubValue) => sum + s.stock_quantity, 0); // SUM
   };
 
   // stock_option = SUM(stock tất cả values)
@@ -652,17 +660,29 @@ export default function NewProductPage() {
             <div>
               <label className="block text-sm font-medium mb-2">{t("seller.products_manage.category")} <span className="text-destructive">*</span></label>
               <div className="relative">
-                <select name="categoryId" required value={formData.categoryId} onChange={handleChange}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50 pr-10">
-                  <option value="">{t("seller.products_manage.select_category")}</option>
-                  {categories.map(cat => (
-                    <optgroup key={cat.id} label={cat.name}>
-                      <option value={cat.id}>{cat.name}</option>
-                      {cat.children?.map(ch => <option key={ch.id} value={ch.id}>-- {ch.name}</option>)}
-                    </optgroup>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <Select 
+                  value={formData.categoryId?.toString() || ""} 
+                  onValueChange={(val: string) => setFormData({ ...formData, categoryId: val })}
+                >
+                  <SelectTrigger className="w-full h-12 bg-input border border-border rounded-xl text-sm appearance-none focus:ring-2 focus:ring-primary/50 pr-10 font-bold">
+                    <SelectValue placeholder={t("seller.products_manage.select_category")} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
+                    {categories.map(cat => (
+                      <React.Fragment key={cat.id}>
+                        <SelectItem value={cat.id.toString()} className="font-black uppercase text-[10px] tracking-widest bg-muted/20">
+                          {cat.name.toUpperCase()}
+                        </SelectItem>
+                        {cat.children?.map(ch => (
+                          <SelectItem key={ch.id} value={ch.id.toString()} className="font-bold text-[11px] pl-8">
+                            {ch.name}
+                          </SelectItem>
+                        ))}
+                        <SelectSeparator />
+                      </React.Fragment>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -784,7 +804,3 @@ export default function NewProductPage() {
     </div>
   );
 }
-
-
-
-
