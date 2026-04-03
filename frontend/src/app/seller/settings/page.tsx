@@ -5,10 +5,11 @@ import axios from "axios";
 import { 
   Store, MapPin, Phone, User, Save, Plus, Edit2, 
   Trash2, ShieldCheck, Settings, Package, Layout,
-  AlertCircle
+  AlertCircle, Mail, Clock
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import AddressModal from "@/components/profile/AddressModal";
+import EmailUpdateModal from "@/components/profile/EmailUpdateModal";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -21,7 +22,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function SellerSettingsPage() {
   const { t } = useTranslation();
-  const { token, fetchUser } = useAuthStore();
+  const { token, fetchUser, user: authUser } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
@@ -29,14 +30,16 @@ export default function SellerSettingsPage() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
   });
 
   const [addresses, setAddresses] = useState<any[]>([]);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Address Modal State
+  // Modal States
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const fetchData = async () => {
     if (!token) return;
@@ -49,6 +52,7 @@ export default function SellerSettingsPage() {
       setFormData({
         name: data.name || "",
         phone: data.profile?.phone || "",
+        email: data.email || "",
       });
       setAddresses(data.addresses || []);
     } catch (err) {
@@ -68,7 +72,10 @@ export default function SellerSettingsPage() {
     try {
       setSaving(true);
       setMessage({ type: "", text: "" });
-      await axios.put(`${API_URL}/profile`, formData, {
+      await axios.put(`${API_URL}/profile`, {
+        name: formData.name,
+        phone: formData.phone
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage({ type: "success", text: t("seller.settings.update_success") });
@@ -77,6 +84,7 @@ export default function SellerSettingsPage() {
       setMessage({ type: "error", text: t("seller.settings.update_error") });
     } finally {
       setSaving(false);
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     }
   };
 
@@ -88,14 +96,13 @@ export default function SellerSettingsPage() {
   const handleDeleteAddress = async (id: number) => {
     if (!token) return;
     try {
-      console.log(`[FINANCE TERMINAL] Attempting administrative removal of address ID: ${id}`);
       await axios.delete(`${API_URL}/profile/addresses/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDeletingId(null);
       fetchData();
     } catch (err) {
-      console.error("[FINANCE TERMINAL] Failed to delete address", err);
+      console.error("Failed to delete address", err);
     }
   };
 
@@ -139,7 +146,7 @@ export default function SellerSettingsPage() {
               </div>
 
               <Card className="rounded-[3rem] border-border/30 bg-card/40 backdrop-blur-sm p-10 shadow-sm relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-8 opacity-5 -translate-y-8 translate-x-8 rotate-12 scale-150">
+                 <div className="absolute top-0 right-0 p-8 opacity-5 -translate-y-8 translate-x-8 rotate-12 scale-150 pointer-events-none">
                     <Layout size={200} strokeWidth={1} />
                  </div>
 
@@ -173,6 +180,28 @@ export default function SellerSettingsPage() {
                              required
                           />
                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">
+                            Email
+                        </label>
+                        <div className="relative group">
+                            <Clock className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30" size={20} />
+                            <Input
+                                value={formData.email}
+                                disabled
+                                className="h-16 pl-16 bg-black/20 border-border/50 rounded-2xl font-black text-sm tracking-tight opacity-60 cursor-not-allowed"
+                            />
+                            <button 
+                                type="button"
+                                onClick={() => setIsEmailModalOpen(true)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 hover:bg-white/10 rounded-xl text-primary transition-all active:scale-95"
+                                title="Change Email"
+                            >
+                                <Edit2 size={18} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
@@ -328,6 +357,18 @@ export default function SellerSettingsPage() {
           onSuccess={() => fetchData()}
           token={token}
           address={editingAddress}
+        />
+
+        <EmailUpdateModal
+            isOpen={isEmailModalOpen}
+            onClose={() => setIsEmailModalOpen(false)}
+            currentEmail={formData.email}
+            token={token}
+            onSuccess={(newEmail) => {
+                setFormData({ ...formData, email: newEmail });
+                setMessage({ type: "success", text: "Cập nhật email thành công!" });
+                fetchUser();
+            }}
         />
       </motion.div>
 

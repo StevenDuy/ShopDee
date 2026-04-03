@@ -42,12 +42,11 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex bg-white dark:bg-slate-900 h-screen overflow-hidden">
       <CustomerHeader />
-      <div className="flex-1 flex flex-col overflow-hidden bg-background/50 dark:bg-slate-950/50">
-        <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto w-full relative bg-background/50 dark:bg-slate-950/50 p-6 md:p-10 pb-24 md:pb-10">
+        <div className="max-w-7xl mx-auto">
           {children}
-        </main>
-        <CustomerFooter />
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

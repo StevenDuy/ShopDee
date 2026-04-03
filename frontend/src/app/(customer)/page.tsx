@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Star, TrendingUp, Sparkles } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-
+import { Star, TrendingUp, Sparkles, ArrowRight, Zap, Sidebar } from "lucide-react";
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Product {
   id: number;
@@ -25,69 +24,84 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 function ProductCard({ product }: { product: Product }) {
   const { formatPrice } = useCurrencyStore();
   const img = product.media.find((m) => m.is_primary)?.full_url ?? product.media[0]?.full_url ?? "https://picsum.photos/300/300";
-
+ 
   return (
-    <Link href={`/products/${product.slug}`} className="block h-full">
-      <Card className="h-full border-border/50 shadow-sm hover:border-primary/30">
-        <div className="relative aspect-square overflow-hidden bg-muted border-b border-border/30">
+    <Link href={`/products/${product.slug}`} className="block group h-full">
+      <div className="h-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-slate-800/20 rounded-[2rem] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 flex flex-col">
+        <div className="relative aspect-square overflow-hidden bg-muted/20">
           <img
             src={img}
             alt={product.title}
             loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
           {product.sale_price && (
-            <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-black px-2 py-1 uppercase scale-90 origin-top-left">
+            <div className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase shadow-lg rotate-[-5deg]">
               -{Math.round((1 - product.sale_price / product.price) * 100)}%
-            </span>
+            </div>
           )}
+          <div className="absolute bottom-0 inset-x-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
-        <CardContent className="p-3 flex-1 flex flex-col gap-1">
-          {product.category && <p className="text-[10px] uppercase font-black text-primary/60 tracking-wider transition-colors group-hover/card:text-primary">{product.category.name}</p>}
-          <h3 className="font-bold text-xs line-clamp-2 leading-tight uppercase transition-colors group-hover/card:text-primary">{product.title}</h3>
-
-          <div className="mt-auto flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="font-black text-sm text-primary">{formatPrice(product.sale_price ?? product.price)}</span>
+        <div className="p-5 flex-1 flex flex-col gap-2">
+          {product.category && (
+            <p className="text-[10px] uppercase font-black text-primary/60 tracking-[0.2em]">
+              {product.category.name}
+            </p>
+          )}
+          <h3 className="font-bold text-sm line-clamp-2 leading-tight uppercase transition-colors group-hover:text-primary">
+            {product.title}
+          </h3>
+ 
+          <div className="mt-auto pt-2 space-y-3">
+            <div className="flex items-baseline gap-2">
+              <span className="font-black text-base text-primary tracking-tighter">
+                {formatPrice(product.sale_price ?? product.price)}
+              </span>
               {product.sale_price && (
-                <span className="text-[10px] text-muted-foreground line-through font-medium opacity-50">{formatPrice(product.price)}</span>
+                <span className="text-[10px] text-muted-foreground line-through font-medium opacity-40">
+                  {formatPrice(product.price)}
+                </span>
               )}
             </div>
-            <div className="flex items-center gap-1 opacity-80">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} size={10} className={s <= 4 ? "fill-primary text-primary" : "fill-muted text-muted"} />
-              ))}
-              <span className="text-[10px] font-black ml-1 text-muted-foreground">4.0</span>
+            <div className="flex items-center justify-between border-t border-border/10 pt-3">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} size={10} className={s <= 4 ? "fill-primary text-primary" : "fill-muted text-muted"} />
+                ))}
+                <span className="text-[10px] font-black ml-1.5 text-muted-foreground">4.0</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                <ArrowRight size={14} strokeWidth={3} />
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }
-
-function Section({ title, icon: Icon, products, href }: { title: string; icon: React.ElementType; products: Product[]; href: string }) {
+ 
+function Section({ title, products, href }: { title: string; products: Product[]; href: string }) {
   const { t } = useTranslation();
   return (
-    <section className="mb-12">
-      <div className="flex items-center justify-between mb-6 border-b border-border/50 pb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary">
-            <Icon size={22} strokeWidth={2.5} />
-          </div>
-          <h2 className="text-xl font-bold uppercase tracking-tight">{title}</h2>
+    <section className="mb-20">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-black uppercase tracking-tight leading-none mb-1">{title}</h2>
+          <div className="h-1 w-12 bg-primary rounded-full" />
         </div>
-        <Link href={href} className="text-xs font-black uppercase flex items-center gap-1 text-primary hover:opacity-70 transition-opacity">
-          {t("view_all")} <ArrowRight size={14} strokeWidth={3} />
+        <Link href={href} className="group flex items-center gap-2 px-5 py-2.5 bg-muted/50 hover:bg-primary hover:text-white rounded-full text-xs font-black uppercase tracking-widest transition-all duration-300">
+          {t("view_all")} 
+          <ArrowRight size={14} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
         {products.slice(0, 10).map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
     </section>
   );
 }
-
+ 
 export default function CustomerHomePage() {
   const { t } = useTranslation();
   const [bannerIdx, setBannerIdx] = useState(0);
@@ -95,21 +109,21 @@ export default function CustomerHomePage() {
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-
+ 
   const getFullImageUrl = (path: string | null) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
     const baseUrl = API.replace("/api", "");
     return `${baseUrl}${path}`;
   };
-
+ 
   useEffect(() => {
     if (banners.length > 0) {
       const timer = setInterval(() => setBannerIdx((i) => (i + 1) % banners.length), 5000);
       return () => clearInterval(timer);
     }
   }, [banners.length]);
-
+ 
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -118,7 +132,7 @@ export default function CustomerHomePage() {
           axios.get(`${API}/products?sort=newest&limit=10&status=active`),
           axios.get(`${API}/products?sort=best_sellers&limit=10&status=active`)
         ]);
-
+ 
         setBanners(bannersRes.data);
         setNewArrivals(newArrivalsRes.data.data ?? newArrivalsRes.data ?? []);
         setBestSellers(bestSellersRes.data.data ?? bestSellersRes.data ?? []);
@@ -130,59 +144,68 @@ export default function CustomerHomePage() {
     };
     fetchData();
   }, []);
-
-  // Removed blocking loader for faster perceived performance
-  // 
-
+ 
   return (
-    <div className="min-h-screen bg-background text-foreground animate-in fade-in duration-500">
-      {/* Mobile Sticky Header */}
-      <div className="lg:hidden sticky top-0 z-[100] bg-background border-b-2 border-primary flex h-[74px] items-stretch">
-        <div className="w-14 shrink-0" />
-        <div className="flex-1 flex items-center justify-center font-black text-sm uppercase tracking-[0.2em]">
-          {t("home")}
-        </div>
-        <div className="w-14 shrink-0" />
-      </div>
-
-      {/* 2D Hero Banner */}
+    <div className="space-y-12 animate-in fade-in duration-700">
+      {/* Premium Swippable Hero Banner (Sharp Edges) */}
       {banners.length > 0 && (
-        <div className="w-full border-b border-border/50">
-          <Link href={`/products/${banners[bannerIdx].product?.slug || ""}`} className="block relative aspect-[21/9] md:aspect-[21/7] overflow-hidden group">
-            <img
-              src={getFullImageUrl(banners[bannerIdx].image_path)!}
-              alt={banners[bannerIdx].title}
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-black/30 flex flex-col justify-center px-10">
-              <div className="border-l-4 border-primary pl-6 py-4 self-start">
-                <h1 className="text-3xl md:text-5xl font-bold text-white uppercase tracking-tight mb-2 drop-shadow-lg">
-                  {banners[bannerIdx].title}
-                </h1>
-                <p className="text-white font-medium text-sm md:text-xl opacity-90 drop-shadow">
-                  {banners[bannerIdx].subtitle}
-                </p>
-              </div>
-            </div>
-            
-            {/* Banner Control */}
-            <div className="absolute bottom-4 right-6 flex gap-1">
-              {banners.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={(e) => { e.preventDefault(); setBannerIdx(i); }}
-                  className={`w-8 h-2 border border-white ${i === bannerIdx ? "bg-primary" : "bg-white/20"}`}
+        <div className="relative w-full overflow-hidden shadow-2xl group/banner">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={bannerIdx}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ ease: "easeInOut", duration: 0.4 }}
+              className="block relative aspect-[21/9] md:aspect-[21/7] overflow-hidden"
+            >
+              <Link href={`/products/${banners[bannerIdx].product?.slug || ""}`}>
+                <img
+                  src={getFullImageUrl(banners[bannerIdx].image_path)!}
+                  alt={banners[bannerIdx].title}
+                  className="w-full h-full object-cover"
                 />
-              ))}
-            </div>
-          </Link>
+                {/* Minimalist Overlay (No Background) */}
+                <div className="absolute inset-x-8 bottom-8 md:inset-x-12 md:bottom-12 flex flex-col items-start gap-4 pointer-events-none drop-shadow-2xl">
+                  <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-primary text-white text-[8px] font-black uppercase tracking-widest rounded-full">
+                    <Sparkles size={10} /> {t("customer_home.new_arrivals")}
+                  </div>
+                  <h1 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter leading-none [text-shadow:_0_4px_8px_rgb(0_0_0_/_40%)]">
+                    {banners[bannerIdx].title}
+                  </h1>
+                  <p className="text-white/80 font-bold text-[10px] md:text-xs uppercase tracking-wide max-w-sm [text-shadow:_0_2px_4px_rgb(0_0_0_/_40%)]">
+                    {banners[bannerIdx].subtitle}
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
+          </AnimatePresence>
+            
+          {/* Banner Control - Premium Dots */}
+          <div className="absolute bottom-12 right-12 flex gap-3 z-10">
+            {banners.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.preventDefault(); setBannerIdx(i); }}
+                className={`h-2 transition-all duration-500 rounded-full ${i === bannerIdx ? "w-12 bg-primary shadow-lg shadow-primary/40" : "w-3 bg-white/40 hover:bg-white/60"}`}
+              />
+            ))}
+          </div>
         </div>
       )}
+ 
+      {/* Main Content Sections */}
+      <div className="space-y-16 py-4">
+        <Section title={t("customer_home.best_sellers")} products={bestSellers} href="/products?sort=best_sellers" />
+        
+        {/* Mid-Page Promo / Divider */}
+        <div className="py-12 border-y-4 border-primary/10 flex flex-col items-center text-center space-y-4">
+          <div className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Limited Collection</div>
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">Experience ShopDee Elite</h2>
+          <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest">Premium Quality // Professional Delivery</p>
+        </div>
 
-      {/* Main Content */}
-      <div className="container-2d py-10">
-        <Section title={t("customer_home.best_sellers")} icon={TrendingUp} products={bestSellers} href="/products?sort=best_sellers" />
-        <Section title={t("customer_home.new_arrivals")} icon={Sparkles} products={newArrivals} href="/products?sort=newest" />
+        <Section title={t("customer_home.new_arrivals")} products={newArrivals} href="/products?sort=newest" />
       </div>
     </div>
   );

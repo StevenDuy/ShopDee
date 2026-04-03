@@ -21,35 +21,54 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 function ProductCard({ product }: { product: Product }) {
   const { formatPrice } = useCurrencyStore();
   const img = product.media.find((m) => m.is_primary)?.full_url ?? product.media[0]?.full_url ?? `https://picsum.photos/seed/${product.id}/300/300`;
-
+ 
   return (
-    <Link href={`/products/${product.slug}`} className="block h-full group">
-      <div className="bg-card border border-border h-full flex flex-col group-hover:border-primary transition-colors">
-        <div className="relative aspect-square overflow-hidden bg-muted border-b border-border">
+    <Link href={`/products/${product.slug}`} className="block group h-full">
+      <div className="h-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-slate-800/20 rounded-[2rem] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-2 flex flex-col">
+        <div className="relative aspect-square overflow-hidden bg-muted/20">
           <img
             src={img}
             alt={product.title}
             loading="lazy"
-            className="w-full h-full object-contain p-2"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
           {product.sale_price && (
-            <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 border border-white">
+            <div className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase shadow-lg rotate-[-5deg] z-10">
               -{Math.round((1 - product.sale_price / product.price) * 100)}%
-            </span>
+            </div>
           )}
         </div>
-        <div className="p-3 flex-1 flex flex-col">
-          {product.category && <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{product.category.name}</p>}
-          <h3 className="font-bold text-xs line-clamp-2 mb-2 leading-tight uppercase">{product.title}</h3>
-
-          <div className="mt-auto flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-primary">{formatPrice(product.sale_price ?? product.price)}</span>
-              {product.sale_price && <span className="text-[10px] text-muted-foreground line-through">{formatPrice(product.price)}</span>}
+        <div className="p-5 flex-1 flex flex-col gap-2">
+          {product.category && (
+            <p className="text-[10px] uppercase font-black text-primary/60 tracking-[0.2em]">
+              {product.category.name}
+            </p>
+          )}
+          <h3 className="font-bold text-sm line-clamp-2 leading-tight uppercase transition-colors group-hover:text-primary">
+            {product.title}
+          </h3>
+ 
+          <div className="mt-auto pt-2 space-y-3">
+            <div className="flex items-baseline gap-2">
+              <span className="font-black text-base text-primary tracking-tighter">
+                {formatPrice(product.sale_price ?? product.price)}
+              </span>
+              {product.sale_price && (
+                <span className="text-[10px] text-muted-foreground line-through font-medium opacity-40">
+                  {formatPrice(product.price)}
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((s) => <Star key={s} size={10} className={s <= 4 ? "fill-primary text-primary" : "fill-muted text-muted"} />)}
-              <span className="text-[10px] font-mono ml-1">4.0</span>
+            <div className="flex items-center justify-between border-t border-border/10 pt-3 opacity-60 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} size={10} className={s <= 4 ? "fill-primary text-primary" : "fill-muted text-muted"} />
+                ))}
+                <span className="text-[10px] font-black ml-1.5">4.0</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                <ChevronRight size={14} strokeWidth={3} />
+              </div>
             </div>
           </div>
         </div>
@@ -57,12 +76,12 @@ function ProductCard({ product }: { product: Product }) {
     </Link>
   );
 }
-
+ 
 export default function ProductsPage() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
-
+ 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,20 +89,20 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
-
+ 
   const search = searchParams.get("search") ?? "";
   const category = searchParams.get("category") ?? "";
   const sort = searchParams.get("sort") ?? "newest";
   const minPrice = searchParams.get("min_price") ?? "";
   const maxPrice = searchParams.get("max_price") ?? "";
-
+ 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value); else params.delete(key);
     params.delete("page");
     router.push(`/products?${params.toString()}`);
   };
-
+ 
   const toggleSort = (type: "newest" | "best_sellers" | "price") => {
     let nextSort = "";
     if (type === "newest") {
@@ -95,7 +114,7 @@ export default function ProductsPage() {
     }
     updateParam("sort", nextSort);
   };
-
+ 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
@@ -111,136 +130,105 @@ export default function ProductsPage() {
     } catch { setProducts([]); }
     finally { setLoading(false); }
   }, [search, category, sort, minPrice, maxPrice, currentPage]);
-
+ 
   useEffect(() => {
     fetchProducts();
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [fetchProducts]);
-
+ 
   useEffect(() => { 
     axios.get(`${API}/products/categories`).then(r => setCategories(r.data)).catch(() => { }); 
   }, []);
-
+ 
   const filteredCategories = categories.filter(c => {
     const matchParent = c.name.toLowerCase().includes(categorySearch.toLowerCase());
     const matchChildren = c.children?.some(child => child.name.toLowerCase().includes(categorySearch.toLowerCase()));
     return matchParent || matchChildren;
   });
-
-  const activeCategoryName = categories.find(c => c.slug === category)?.name || 
-    categories.flatMap(c => c.children || []).find(c => c?.slug === category)?.name || 
-    "Tất cả danh mục";
-
+ 
   return (
-    <div className="min-h-screen bg-background text-foreground relative">
+    <div className="min-h-screen bg-background text-foreground relative animate-in fade-in duration-700">
       
-      {/* Mobile Sticky Header - Standardized and Synchronized */}
-      <div className="lg:hidden sticky top-0 z-[100] bg-background border-b-2 border-primary flex h-[74px] items-stretch">
-        <div className="w-14 shrink-0" /> {/* Menu Button Space */}
-        <div className="flex-1 flex items-center px-2">
-          <div className="relative w-full">
-            <Search size={16} strokeWidth={3} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      {/* Search Header Row */}
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50 h-[80px]">
+        <div className="max-w-7xl mx-auto w-full h-full flex items-center px-6 gap-4">
+          <div className="relative flex-1">
+            <Search size={18} strokeWidth={2.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               defaultValue={search}
               placeholder={t("products_page.search_placeholder")}
               onChange={(e) => updateParam("search", e.target.value)}
-              className="w-full pl-9 pr-4 h-11 bg-muted border-2 border-border font-bold text-xs uppercase focus:outline-none focus:border-primary"
+              className="w-full pl-12 pr-4 h-12 bg-muted/30 border-2 border-border/50 rounded-2xl font-black uppercase text-xs tracking-widest focus:outline-none focus:border-primary transition-all focus:bg-background h-14"
             />
           </div>
-        </div>
-        <button 
-          onClick={() => setShowFilters(true)}
-          className="w-14 shrink-0 flex items-center justify-center text-primary hover:opacity-80 transition-opacity"
-          title="Filter"
-        >
-          <SlidersHorizontal size={24} strokeWidth={2.5} />
-        </button>
-      </div>
-
-      {/* Desktop Header for Filter/Search */}
-      <div className="hidden lg:block sticky top-0 z-30 bg-background border-b-4 border-primary h-[74px]">
-        <div className="max-w-7xl mx-auto w-full h-full">
-          {/* Main Top Row (Matches Menu Button 74px) */}
-          <div className="h-full flex items-center px-6 pl-14 lg:pl-6 gap-3">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                defaultValue={search}
-                placeholder={t("products_page.search_placeholder")}
-                onChange={(e) => updateParam("search", e.target.value)}
-                className="w-full pl-9 pr-4 h-11 bg-muted border-2 border-border font-bold text-sm focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <button 
-              onClick={() => setShowFilters(true)}
-              className="flex items-center justify-center gap-2 h-11 px-6 text-primary font-black uppercase text-xs tracking-widest hover:opacity-80 transition-opacity"
-            >
-              <SlidersHorizontal size={20} strokeWidth={2.5} />
-              <span className="hidden md:inline">LỌC</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* FILTER SIDEBAR (RIGHT) */}
-      <div 
-        className={`fixed inset-0 z-[100] cursor-pointer transition-opacity duration-300 ${showFilters ? "opacity-100 visible" : "opacity-0 invisible"}`}
-        onClick={() => setShowFilters(false)}
-      >
-        <div className="absolute inset-0 bg-black/60 pointer-events-none" />
-      </div>
-
-      <aside className={`fixed top-0 right-0 h-full w-[300px] bg-card border-l-4 border-primary z-[101] shadow-2xl transition-transform duration-300 flex flex-col ${showFilters ? "translate-x-0" : "translate-x-full"}`}>
-        <div className="h-[74px] shrink-0 border-b-4 border-primary bg-muted/50 flex items-center justify-between px-6">
-          <h2 className="text-xl font-black uppercase tracking-tighter text-primary">Bộ lọc</h2>
+ 
           <button 
-            onClick={() => setShowFilters(false)}
-            className="p-2 border-2 border-primary text-primary hover:bg-primary hover:text-white"
+            onClick={() => setShowFilters(true)}
+            className="flex items-center justify-center gap-2 h-14 px-8 bg-primary text-white font-black uppercase text-[10px] tracking-[0.3em] rounded-2xl hover:scale-105 transition-transform shadow-xl shadow-primary/20"
           >
-            <X size={20} />
+            <SlidersHorizontal size={18} strokeWidth={3} />
+            <span className="hidden md:inline">LỌC</span>
           </button>
         </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      </div>
+ 
+      {/* FILTER DRAWER */}
+      <div 
+        className={`fixed inset-0 z-[200] transition-opacity duration-500 ${showFilters ? "opacity-100 visible" : "opacity-0 invisible"}`}
+        onClick={() => setShowFilters(false)}
+      >
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-none" />
+      </div>
+ 
+      <aside className={`fixed top-0 right-0 h-full w-[340px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl z-[201] shadow-2xl transition-all duration-500 flex flex-col ${showFilters ? "translate-x-0" : "translate-x-full"}`}>
+        <div className="h-[80px] shrink-0 border-b border-border/10 flex items-center justify-between px-8">
+          <h2 className="text-2xl font-black uppercase tracking-tighter text-primary">Bộ lọc</h2>
+          <button 
+            onClick={() => setShowFilters(false)}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:bg-primary hover:text-white transition-all"
+          >
+            <X size={20} strokeWidth={3} />
+          </button>
+        </div>
+ 
+        <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
           {/* Category Section */}
-          <div>
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4">Danh mục</h3>
-            <div className="relative mb-3">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Danh mục</h3>
+            <div className="relative">
+              <Search size={14} strokeWidth={3} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input 
                 type="text" 
                 placeholder="Tìm danh mục..." 
                 value={categorySearch}
                 onChange={(e) => setCategorySearch(e.target.value)}
-                className="w-full pl-9 pr-2 py-2 bg-muted border-2 border-border font-bold text-[10px] uppercase focus:outline-none focus:border-primary"
+                className="w-full pl-9 pr-2 py-3 bg-muted/30 border border-border/50 rounded-xl font-black text-[10px] uppercase focus:outline-none focus:border-primary transition-all"
               />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-2">
               <button 
-                onClick={() => { updateParam("category", ""); }}
-                className={`w-full text-left px-3 py-2 border-2 text-[10px] font-bold uppercase transition-colors ${!category ? "bg-primary text-white border-black" : "bg-muted border-transparent hover:border-border"}`}
+                onClick={() => updateParam("category", "")}
+                className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!category ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground hover:bg-muted"}`}
               >
                 Tất cả danh mục
               </button>
-              <div className="max-h-[200px] overflow-y-auto space-y-1 custom-scrollbar pr-1">
+              <div className="space-y-2">
                 {filteredCategories.map(c => (
-                  <div key={c.id} className="space-y-1">
+                  <div key={c.id} className="space-y-2">
                     <button 
-                      onClick={() => { updateParam("category", c.slug); }}
-                      className={`w-full text-left px-3 py-2 border-2 text-[10px] font-bold uppercase transition-colors ${category === c.slug ? "bg-primary text-white border-black" : "bg-muted border-transparent hover:border-border"}`}
+                      onClick={() => updateParam("category", c.slug)}
+                      className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${category === c.slug ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground hover:bg-muted"}`}
                     >
                       {c.name}
                     </button>
                     {c.children && c.children.length > 0 && category === c.slug && (
-                      <div className="ml-4 space-y-1 border-l-2 border-primary pl-2 pt-1 pb-1">
+                      <div className="ml-4 space-y-2 border-l-2 border-primary/20 pl-4 py-1">
                         {c.children.map(child => (
                           <button 
                             key={child.id}
-                            onClick={() => { updateParam("category", child.slug); }}
-                            className={`w-full text-left px-3 py-1.5 border-2 text-[10px] font-bold uppercase transition-colors ${category === child.slug ? "bg-primary text-white border-black" : "bg-muted border-transparent hover:border-border"}`}
+                            onClick={() => updateParam("category", child.slug)}
+                            className={`w-full text-left px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${category === child.slug ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground"}`}
                           >
                             {child.name}
                           </button>
@@ -252,90 +240,83 @@ export default function ProductsPage() {
               </div>
             </div>
           </div>
-
+ 
           {/* Sort Section */}
-          <div>
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4">Sắp xếp</h3>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                onClick={() => toggleSort("newest")}
-                className={`flex items-center justify-between px-3 py-3 border-2 font-bold text-[10px] uppercase ${sort === "newest" || sort === "oldest" ? "bg-primary text-white border-black" : "bg-muted border-transparent hover:border-border"}`}
-              >
-                <div className="flex items-center gap-2">
-                  <Clock size={14} /> {sort === "oldest" ? "Cũ nhất" : "Mới nhất"}
-                </div>
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Sắp xếp</h3>
+            <div className="grid grid-cols-1 gap-3">
+              <button onClick={() => toggleSort("newest")}
+                className={`flex items-center justify-between px-4 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${sort === "newest" || sort === "oldest" ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground"}`}>
+                <div className="flex items-center gap-3"><Clock size={16} /> {sort === "oldest" ? "Cũ nhất" : "Mới nhất"}</div>
                 {sort === "oldest" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
               </button>
-
-              <button
-                onClick={() => toggleSort("best_sellers")}
-                className={`flex items-center justify-between px-3 py-3 border-2 font-bold text-[10px] uppercase ${sort === "best_sellers" || sort === "worst_sellers" ? "bg-primary text-white border-black" : "bg-muted border-transparent hover:border-border"}`}
-              >
-                <div className="flex items-center gap-2">
-                  <TrendingUp size={14} /> {sort === "worst_sellers" ? "Bán chậm" : "Bán chạy"}
-                </div>
+ 
+              <button onClick={() => toggleSort("best_sellers")}
+                className={`flex items-center justify-between px-4 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${sort === "best_sellers" || sort === "worst_sellers" ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground"}`}>
+                <div className="flex items-center gap-3"><TrendingUp size={16} /> {sort === "worst_sellers" ? "Bán chậm" : "Bán chạy"}</div>
                 {sort === "worst_sellers" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
               </button>
-
-              <button
-                onClick={() => toggleSort("price")}
-                className={`flex items-center justify-between px-3 py-3 border-2 font-bold text-[10px] uppercase ${sort.startsWith("price") ? "bg-primary text-white border-black" : "bg-muted border-transparent hover:border-border"}`}
-              >
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown size={14} /> Giá: {sort === "price_desc" ? "Cao -> Thấp" : "Thấp -> Cao"}
-                </div>
+ 
+              <button onClick={() => toggleSort("price")}
+                className={`flex items-center justify-between px-4 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${sort.startsWith("price") ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground"}`}>
+                <div className="flex items-center gap-3"><ArrowUpDown size={16} /> Giá: {sort === "price_desc" ? "Cao -> Thấp" : "Thấp -> Cao"}</div>
                 {sort === "price_desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
               </button>
             </div>
           </div>
-
+ 
           {/* Price Range Section */}
-          <div>
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-4">Khoảng giá ($)</h3>
-            <div className="flex items-center gap-2">
+          <div className="space-y-4">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Khoảng giá ($)</h3>
+            <div className="flex items-center gap-3">
               <input type="number" placeholder="MIN" defaultValue={minPrice}
                 onChange={(e) => updateParam("min_price", e.target.value)}
-                className="w-full px-3 py-3 bg-muted border-2 border-border font-bold text-xs focus:outline-none focus:border-primary" />
-              <span className="font-bold">-</span>
+                className="w-full px-4 py-4 bg-muted/30 border border-border/50 rounded-xl font-black text-xs focus:outline-none focus:border-primary h-14" />
+              <div className="w-4 h-0.5 bg-border/50 shrink-0" />
               <input type="number" placeholder="MAX" defaultValue={maxPrice}
                 onChange={(e) => updateParam("max_price", e.target.value)}
-                className="w-full px-3 py-3 bg-muted border-2 border-border font-bold text-xs focus:outline-none focus:border-primary" />
+                className="w-full px-4 py-4 bg-muted/30 border border-border/50 rounded-xl font-black text-xs focus:outline-none focus:border-primary h-14" />
             </div>
           </div>
-
+ 
           {/* Clear Button */}
           {(search || category || sort !== "newest" || minPrice || maxPrice) && (
             <button 
               onClick={() => { router.push("/products"); setShowFilters(false); }}
-              className="w-full py-4 border-2 border-destructive text-destructive font-black text-xs uppercase hover:bg-destructive hover:text-white"
+              className="w-full py-5 bg-red-600/10 text-red-600 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all shadow-lg shadow-red-600/10"
             >
-              <X size={14} className="inline mr-1" /> Xóa toàn bộ lọc
+              <X size={14} strokeWidth={3} className="inline mr-2" /> Xóa toàn bộ lọc
             </button>
           )}
         </div>
       </aside>
-
+ 
       {/* Main Content Area */}
-      <div className="container-2d py-8">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         {products.length === 0 && !loading ? (
-          <div className="text-center py-24 border-4 border-dashed border-border bg-muted/50">
-            <Search size={48} className="mx-auto mb-4 opacity-10" />
-            <p className="text-xl font-black uppercase tracking-widest">Không tìm thấy sản phẩm</p>
+          <div className="text-center py-32 bg-muted/20 border-2 border-dashed border-border/50 rounded-[3rem]">
+            <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Search size={32} className="text-muted-foreground opacity-30" />
+            </div>
+            <p className="text-2xl font-black uppercase tracking-tighter text-muted-foreground italic">Không tìm thấy sản phẩm</p>
+            <button onClick={() => router.push("/products")} className="mt-8 px-8 py-4 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-2xl">
+              Thử lại ngay
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {products.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
-
-        {/* Pagination */}
+ 
+        {/* Elite Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center flex-wrap gap-1 mt-12 pt-8 border-t-4 border-border">
+          <div className="flex justify-center items-center gap-3 mt-20 pt-10 border-t border-border/10">
             {[...Array(totalPages)].map((_, i) => (
               <button 
                 key={i} 
-                onClick={() => setCurrentPage(i + 1)}
-                className={`min-w-[40px] h-10 border-2 font-black text-xs ${currentPage === i + 1 ? "bg-primary text-primary-foreground border-black" : "bg-card border-border hover:border-black"}`}
+                onClick={() => { setCurrentPage(i + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                className={`w-12 h-12 rounded-2xl font-black text-xs transition-all duration-300 ${currentPage === i + 1 ? "bg-primary text-white shadow-xl shadow-primary/30 scale-110" : "bg-muted/50 text-muted-foreground hover:bg-primary/20 hover:text-primary"}`}
               >
                 {i + 1}
               </button>

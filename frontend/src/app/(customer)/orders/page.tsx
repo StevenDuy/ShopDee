@@ -3,14 +3,17 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import axios from "axios";
-import { Package, Truck, CheckCircle, Clock, XCircle, AlertCircle, Star } from "lucide-react";
+import { 
+  Package, Truck, CheckCircle, Clock, XCircle, AlertCircle, 
+  ArrowRight, ExternalLink, ReceiptText, ChevronRight 
+} from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { toast } from "sonner";
 import ReviewModal from "@/components/customer/ReviewModal";
 import { useTranslation } from "react-i18next";
-
 
 interface Order {
   id: number;
@@ -39,16 +42,6 @@ interface Order {
 
 export default function MyOrdersPage() {
   const { t } = useTranslation();
-
-  const STATUS_MAP: Record<string, { label: string, color: string, icon: any }> = {
-    pending: { label: t("customer_orders.status_pending"), color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400", icon: Clock },
-    processing: { label: t("customer_orders.status_processing"), color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: Package },
-    shipped: { label: t("customer_orders.status_shipped"), color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", icon: Truck },
-    delivered: { label: t("customer_orders.status_delivered"), color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", icon: CheckCircle },
-    completed: { label: t("customer_orders.status_completed"), color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", icon: CheckCircle },
-    cancelled: { label: t("customer_orders.status_cancelled"), color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: XCircle },
-    returned: { label: t("customer_orders.status_returned"), color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", icon: AlertCircle },
-  };
   const router = useRouter();
   const { token } = useAuthStore();
   const { formatPrice } = useCurrencyStore();
@@ -57,10 +50,19 @@ export default function MyOrdersPage() {
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [confirmId, setConfirmId] = useState<number | null>(null);
 
-  // Review Modal State
   const [reviewItem, setReviewItem] = useState<any | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+  const STATUS_MAP: Record<string, { label: string, color: string, glow: string, icon: any }> = {
+    pending: { label: t("customer_orders.status_pending"), color: "text-yellow-600 bg-yellow-500/10 border-yellow-500/20", glow: "shadow-yellow-500/20", icon: Clock },
+    processing: { label: t("customer_orders.status_processing"), color: "text-blue-600 bg-blue-500/10 border-blue-500/20", glow: "shadow-blue-500/20", icon: Package },
+    shipped: { label: t("customer_orders.status_shipped"), color: "text-purple-600 bg-purple-500/10 border-purple-500/20", glow: "shadow-purple-500/20", icon: Truck },
+    delivered: { label: t("customer_orders.status_delivered"), color: "text-indigo-600 bg-indigo-500/10 border-indigo-500/20", glow: "shadow-indigo-500/20", icon: CheckCircle },
+    completed: { label: t("customer_orders.status_completed"), color: "text-green-600 bg-green-500/10 border-green-500/20", glow: "shadow-green-500/20", icon: CheckCircle },
+    cancelled: { label: t("customer_orders.status_cancelled"), color: "text-red-600 bg-red-500/10 border-red-500/20", glow: "shadow-red-500/20", icon: XCircle },
+    returned: { label: t("customer_orders.status_returned"), color: "text-orange-600 bg-orange-500/10 border-orange-500/20", glow: "shadow-orange-500/20", icon: AlertCircle },
+  };
 
   const fetchOrders = async () => {
     try {
@@ -80,25 +82,16 @@ export default function MyOrdersPage() {
 
   useEffect(() => {
     if (paymentStatus === "success") {
-      toast.success(t("checkout_page.order_success") || "Thanh toán thành công!", {
-        description: "Đơn hàng của bạn đã được xác nhận và đang chờ xử lý.",
-        duration: 5000,
-      });
-      // Cleanup URL
+      toast.success(t("checkout_page.order_success") || "Payment Successful!", { duration: 5000 });
       window.history.replaceState({}, '', window.location.pathname);
     } else if (paymentStatus === "failed") {
-      toast.error("Thanh toán chưa hoàn tất", {
-        description: "Giao dịch đã bị hủy hoặc gặp lỗi. Vui lòng thử lại sau.",
-      });
+      toast.error("Payment Failed", { description: "The transaction was cancelled or encountered an error." });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [paymentStatus, t]);
 
   useEffect(() => {
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
+    if (!token) { router.replace("/login"); return; }
     fetchOrders();
   }, [token, router]);
 
@@ -108,12 +101,11 @@ export default function MyOrdersPage() {
       await axios.put(`${API_URL}/orders/${orderId}/cancel`, {}, {
         headers: { Authorization: (token as string).startsWith('Bearer ') ? token : `Bearer ${token}` }
       });
-      toast.success(t("customer_orders.success_cancel") || "Order cancelled successfully");
+      toast.success(t("customer_orders.success_cancel"));
       setConfirmId(null);
       fetchOrders();
     } catch (err: any) {
-      console.error("Cancel order error:", err);
-      toast.error(err.response?.data?.message || t("customer_orders.error_cancel") || "Failed to cancel order");
+      toast.error(err.response?.data?.message || t("customer_orders.error_cancel"));
     } finally {
       setProcessingId(null);
     }
@@ -129,250 +121,136 @@ export default function MyOrdersPage() {
       setConfirmId(null);
       fetchOrders();
     } catch (err: any) {
-      console.error("Confirm received error:", err);
-      toast.error(err.response?.data?.message || t("common.error_occurred") || "Error occurred");
+      toast.error(err.response?.data?.message || t("common.error_occurred"));
     } finally {
       setProcessingId(null);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground animate-in fade-in duration-500">
-      {/* Mobile Sticky Header */}
-      <div className="lg:hidden sticky top-0 z-[100] bg-background border-b-2 border-primary flex h-[74px] items-stretch">
-        <div className="w-14 shrink-0" />
-        <div className="flex-1 flex items-center justify-center font-black text-sm uppercase tracking-[0.2em]">
-          {t("my_orders")}
+    <div className="min-h-screen bg-background text-foreground animate-in fade-in duration-700 pb-20 overflow-x-hidden">
+      
+      {/* Precision Header */}
+      <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-b border-border/10 mb-8 sticky top-0 z-[100]">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+           <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary border border-primary/20">
+                 <ReceiptText size={16} strokeWidth={3} />
+              </div>
+              <h1 className="text-[12px] font-black uppercase tracking-[0.3em]">{t("my_orders")}</h1>
+           </div>
+           <button onClick={() => router.push("/products")} className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:bg-primary/5 px-4 py-2 rounded-lg transition-all flex items-center gap-2 group">
+              {t("customer_orders.shop_now")} <ArrowRight size={14} className="group-hover:translate-x-1" />
+           </button>
         </div>
-        <div className="w-14 shrink-0" />
       </div>
 
-      <AnimatePresence>
-        
-      </AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: loading ? 0 : 1 }}
-        transition={{ duration: 0.5 }}
-        className="px-6 md:px-10 py-8 max-w-5xl mx-auto"
-      >
-        <div className="hidden lg:flex items-center gap-4 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-            <Package size={24} />
-          </div>
-          <h1 className="text-2xl font-bold">{t("my_orders")}</h1>
-        </div>
-
+      <div className="max-w-5xl mx-auto px-4 md:px-6">
         <AnimatePresence mode="wait">
-          {orders.length === 0 ? (
-            <motion.div
-              key="empty"
+          {orders.length === 0 && !loading ? (
+             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-24 text-muted-foreground bg-card border border-border rounded-2xl shadow-sm"
+              className="bg-white/30 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/20 rounded-3xl p-16 text-center shadow-2xl relative overflow-hidden"
             >
-              <Package size={64} className="mx-auto mb-4 opacity-20" />
-              <p className="text-lg">{t("customer_orders.no_orders_yet")}</p>
-              <button
-                onClick={() => router.push("/products")}
-                className="mt-4 px-6 py-2 bg-primary text-white rounded-xl hover:opacity-90 transition-opacity"
-              >
-                {t("customer_orders.shop_now")}
-              </button>
+               <h2 className="text-xl font-black uppercase tracking-tighter mb-2">{t("customer_orders.no_orders_yet")}</h2>
+               <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-40 mb-8 italic">Your shopping record is currently empty.</p>
+               <button onClick={() => router.push("/products")} className="px-10 py-3 bg-primary text-white rounded-xl font-black uppercase text-[10px] tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">
+                  START TRADING
+               </button>
             </motion.div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-3">
               {orders.map((order) => {
-                const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", icon: Clock };
+                const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: "text-muted-foreground bg-muted border-border", glow: "", icon: Clock };
                 const StatusIcon = statusInfo.icon;
-
+                const hasBanned = order.items.some(i => i.product?.status === 'banned') && order.status !== 'cancelled';
+                
                 return (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    layout
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     key={order.id}
-                    className={`bg-card border ${order.items.some(i => i.product?.status === 'banned') && order.status !== 'cancelled' ? 'border-red-500/50 shadow-red-500/5' : 'border-border'} rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow`}
+                    className={`bg-white/30 dark:bg-slate-900/40 backdrop-blur-3xl border ${hasBanned ? 'border-red-500/40' : 'border-white/20 dark:border-slate-800/10'} rounded-2xl shadow-lg hover:shadow-xl transition-all group relative overflow-hidden`}
                   >
-                    {/* Header */}
-                    <div className="p-5 border-b border-border/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-muted rounded-xl">
-                          <Package size={22} className="text-primary" />
-                        </div>
-                         <div>
-                          <p className="font-bold text-lg">{t("seller.orders.order_id")} #{order.id}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {t("seller.orders.date")}: {new Date(order.created_at).toLocaleDateString(t("locale"))}
-                          </p>
-                          {order.items.some(i => i.product?.status === 'banned') && order.status !== 'cancelled' && (
-                            <div className="flex items-center gap-1.5 text-red-500 mt-1 animate-pulse">
-                              <AlertCircle size={14} />
-                              <span className="text-[10px] font-black uppercase tracking-widest">{t("customer_orders.banned_item_warning") || "Có sản phẩm đang bị cấm kinh doanh"}</span>
-                            </div>
-                          )}
-                        </div>
+                    {/* Golden Ratio Horizontal Precision Layout */}
+                    <div className="flex items-center gap-6 p-4 md:p-5">
+                      
+                      {/* Fixed Col 1: Administrative Identity (~140px) */}
+                      <div className="w-[140px] shrink-0 border-r border-border/10 pr-6">
+                        <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">RECORD ID</span>
+                        <p className="text-[11px] font-black uppercase tracking-tight text-primary">#{order.id}</p>
+                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-0.5 leading-none">{new Date(order.created_at).toLocaleDateString()}</p>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className={`text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider ${statusInfo.color}`}>
-                          <StatusIcon size={14} />
-                          {statusInfo.label}
-                        </span>
-                        <div className="hidden md:block w-px h-8 bg-border" />
-                        <div className="text-right">
-                          <p className="text-[10px] text-muted-foreground uppercase font-black opacity-50 tracking-tighter">{t("customer_orders.total_payment")}</p>
-                          <p className="font-black text-xl text-primary leading-tight">{formatPrice(order.total_amount)}</p>
-                        </div>
+                      {/* Fixed Col 2: Status Chip (~130px) */}
+                      <div className="w-[130px] shrink-0 border-r border-border/10 pr-6">
+                         <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">STATUS</span>
+                         <span className={`text-[8px] font-black px-2 py-1 rounded-lg border flex items-center gap-1.5 uppercase tracking-widest whitespace-nowrap ${statusInfo.color} ${statusInfo.glow}`}>
+                            <StatusIcon size={10} strokeWidth={3} /> {statusInfo.label}
+                         </span>
                       </div>
-                    </div>
 
-                    {/* Items */}
-                    <div className="p-5 bg-muted/5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {order.items.map((item) => (
-                          <div key={item.id} className="flex items-center gap-3 bg-card border border-border/50 rounded-xl p-3 hover:border-primary/20 transition-colors">
-                            <div className="w-20 h-20 rounded-2xl overflow-hidden border border-border bg-muted shrink-0 relative">
-                              <OrderImageItem src={item.product?.media?.[0]?.full_url} alt={item.product?.title} />
-                              {item.product?.status === 'banned' && (
-                                <div className="absolute inset-0 bg-red-600/80 flex flex-col items-center justify-center p-1 text-center backdrop-blur-[2px]">
-                                  <AlertCircle size={16} className="text-white mb-0.5" />
-                                  <span className="text-[8px] font-black text-white uppercase leading-none">{t("common.banned") || "BỊ CẤM"}</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold line-clamp-1">
-                                {item.product.title}
-                              </p>
-                              <div className="flex items-center justify-between mt-1.5">
-                                <p className="text-xs text-muted-foreground font-medium bg-muted px-1.5 py-0.5 rounded">x{item.quantity}</p>
-                                <p className="text-sm font-bold text-foreground/80">{formatPrice(item.unit_price)}</p>
-                              </div>
-                              {item.selected_options && Object.keys(item.selected_options).length > 0 && (
-                                <div className="mt-1.5 flex flex-wrap gap-1">
-                                  {Object.entries(item.selected_options).map(([k, v]) => (
-                                    <span key={k} className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded border border-border/50 uppercase font-bold">
-                                      {k}: {v}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            {order.status === 'completed' && (
-                              <div className="shrink-0 flex items-center gap-2">
-                                {item.review ? (
-                                  <div className="flex flex-col items-center">
-                                    <div className="flex items-center gap-0.5 mb-1">
-                                      {[1, 2, 3, 4, 5].map(s => (
-                                        <Star key={s} size={10} className={s <= item.review!.rating ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted"} />
-                                      ))}
-                                    </div>
-                                    <span className="text-[10px] font-bold text-green-600 uppercase">{t("customer_orders.reviewed")}</span>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => {
-                                      setReviewItem(item);
-                                      setIsReviewModalOpen(true);
-                                    }}
-                                    className="p-2.5 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all group"
-                                    title={t("customer_orders.review_product")}
-                                  >
-                                    <Star size={18} className="group-hover:fill-current" />
-                                  </button>
-                                )}
-                              </div>
+                      {/* Flexible Col 3: Visual Content Detail */}
+                      <div className="flex-1 flex items-center gap-3 min-w-0">
+                         <div className="flex -space-x-4">
+                            {order.items.slice(0, 3).map((item, idx) => (
+                               <div key={`${order.id}-img-${item.id}`} className="w-9 h-9 rounded-xl border-2 border-white/20 bg-white shadow-xl flex-shrink-0" style={{ zIndex: 10 - idx }}>
+                                  <OrderImageItem src={item.product?.media?.[0]?.full_url} alt={item.product?.title} />
+                               </div>
+                            ))}
+                         </div>
+                         <div className="flex flex-col min-w-0">
+                            <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">PRODUCTS</span>
+                            <p className="text-[10px] font-black uppercase tracking-tight truncate opacity-80">{order.items[0].product.title}</p>
+                            {order.items.length > 1 && (
+                               <p className="text-[8px] font-black text-primary/60 uppercase tracking-widest leading-none mt-0.5">+ {order.items.length - 1} more items</p>
                             )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="p-4 px-5 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <div className="text-sm text-muted-foreground italic">
-                        {order.status === 'pending' && t("customer_orders.status_msg.pending")}
-                        {order.status === 'processing' && t("customer_orders.status_msg.processing")}
-                        {order.status === 'shipped' && t("customer_orders.status_msg.shipped")}
-                        {order.status === 'delivered' && t("customer_orders.status_msg.delivered")}
-                        {order.status === 'completed' && t("customer_orders.status_msg.completed")}
+                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                      {/* Fixed Col 4: Financial Summary (~120px) */}
+                      <div className="w-[120px] shrink-0 border-l border-border/10 pl-6 flex flex-col items-end">
+                         <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1 leading-none">TOTAL VALUE</span>
+                         <p className="text-[16px] font-black text-primary tracking-tighter leading-none">{formatPrice(order.total_amount)}</p>
+                         <p className="text-[7px] font-black uppercase text-muted-foreground/40 mt-1">{order.payment_method.toUpperCase()}</p>
+                      </div>
+
+                      {/* Fixed Col 5: Global Actions (~200px) */}
+                      <div className="w-[200px] shrink-0 border-l border-border/10 pl-6 flex items-center justify-end gap-2">
                         {(order.status === 'pending' || order.status === 'processing') && (
-                          <div className="flex items-center gap-2 flex-1 sm:flex-none">
-                            {confirmId === order.id ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCancelOrder(order.id)}
-                                  disabled={processingId === order.id}
-                                  className="px-4 py-2 text-sm font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all disabled:opacity-50"
-                                >
-                                  {processingId === order.id ? "..." : t("customer_orders.confirm_cancel")}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmId(null)}
-                                  className="px-4 py-2 text-sm font-bold bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 transition-all"
-                                >
-                                  {t("customer_orders.back")}
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setConfirmId(order.id)}
-                                className="flex-1 sm:flex-none px-5 py-2 text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl transition-all"
-                              >
-                                {t("customer_orders.cancel_order")}
+                           confirmId === order.id ? (
+                              <div className="flex gap-1 animate-in zoom-in whitespace-nowrap">
+                                 <button onClick={() => handleCancelOrder(order.id)} disabled={processingId === order.id} className="px-3 py-1.5 text-[8px] font-black uppercase bg-red-600 text-white rounded-lg">OK</button>
+                                 <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 text-[8px] font-black uppercase bg-white/10 text-white/50 rounded-lg">X</button>
+                              </div>
+                           ) : (
+                              <button onClick={() => setConfirmId(order.id)} className="px-4 py-2 text-[8px] font-black uppercase text-red-600 border border-red-500/10 hover:bg-red-500/5 rounded-xl transition-all whitespace-nowrap">
+                                 {t("customer_orders.cancel_order")}
                               </button>
-                            )}
-                          </div>
+                           )
                         )}
 
                         {order.status === 'delivered' && (
-                          <div className="flex items-center gap-2 flex-1 sm:flex-none">
-                            {confirmId === order.id ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleConfirmReceived(order.id)}
-                                  disabled={processingId === order.id}
-                                  className="px-4 py-2 text-sm font-bold bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all disabled:opacity-50"
-                                >
-                                  {processingId === order.id ? "..." : t("customer_orders.confirm_received")}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmId(null)}
-                                  className="px-4 py-2 text-sm font-bold bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 transition-all"
-                                >
-                                  {t("customer_orders.back")}
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setConfirmId(order.id)}
-                                className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-bold bg-primary text-white hover:opacity-90 rounded-xl shadow-sm shadow-primary/20 transition-all"
-                              >
-                                {t("customer_orders.received_order")}
+                           confirmId === order.id ? (
+                              <div className="flex gap-1 whitespace-nowrap">
+                                 <button onClick={() => handleConfirmReceived(order.id)} className="px-4 py-1.5 text-[8px] font-black uppercase bg-green-600 text-white rounded-lg">ACK</button>
+                                 <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 text-[8px] font-black uppercase bg-white/10 text-white/50 rounded-lg">X</button>
+                              </div>
+                           ) : (
+                              <button onClick={() => setConfirmId(order.id)} className="px-5 py-2 text-[8px] font-black uppercase bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all whitespace-nowrap">
+                                 CONFIRM
                               </button>
-                            )}
-                          </div>
+                           )
                         )}
 
-                        <button
-                          onClick={() => router.push(`/orders/${order.id}`)}
-                          className="flex-1 sm:flex-none px-5 py-2 text-sm font-bold bg-white dark:bg-zinc-800 border border-border hover:bg-muted rounded-xl transition-all"
-                        >
-                          {t("customer_orders.details")}
-                        </button>
+                        <Link href={`/orders/${order.id}`} className="px-4 py-2 text-[8px] font-black uppercase bg-white/10 border border-border/10 hover:bg-primary hover:text-white rounded-xl transition-all flex items-center gap-2 group/btn whitespace-nowrap">
+                           {t("customer_orders.details")} <ChevronRight size={10} className="group-hover/btn:translate-x-1 transition-transform" />
+                        </Link>
                       </div>
+
                     </div>
                   </motion.div>
                 );
@@ -380,14 +258,11 @@ export default function MyOrdersPage() {
             </div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
 
       <ReviewModal
         isOpen={isReviewModalOpen}
-        onClose={() => {
-          setIsReviewModalOpen(false);
-          setReviewItem(null);
-        }}
+        onClose={() => { setIsReviewModalOpen(false); setReviewItem(null); }}
         orderItem={reviewItem}
         onSuccess={fetchOrders}
       />
@@ -398,31 +273,22 @@ export default function MyOrdersPage() {
 function OrderImageItem({ src, alt }: { src: string | null | undefined, alt: string }) {
   const [loaded, setLoaded] = useState(false);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
   const getFullImageUrl = (path: string | null | undefined) => {
-    if (!path) return `https://picsum.photos/seed/${alt}/80/80`;
+    if (!path) return `https://picsum.photos/seed/${alt}/50/50`;
     if (path.startsWith("http") || path.startsWith("blob:") || path.startsWith("data:")) return path;
     const baseUrl = API_URL.replace("/api", "");
     return `${baseUrl}${path}`;
   };
-
   const fullSrc = getFullImageUrl(src);
-
   return (
-    <div className="w-full h-full bg-muted flex items-center justify-center relative">
+    <div className="w-full h-full flex items-center justify-center relative">
       <img
         src={fullSrc}
         alt={alt}
         onLoad={() => setLoaded(true)}
-        className={`w-full h-full object-cover transition-all duration-500 ${loaded ? "opacity-100 scale-100" : "opacity-0 scale-110"}`}
+        className={`w-full h-full object-cover transition-all duration-700 ${loaded ? "opacity-100 scale-100" : "opacity-0 scale-110"}`}
       />
-      {!loaded && (
-        <div className="absolute inset-0 bg-muted animate-pulse" />
-      )}
+      {!loaded && <div className="absolute inset-0 bg-white/5 animate-pulse rounded-lg" />}
     </div>
   );
 }
-
-
-
-

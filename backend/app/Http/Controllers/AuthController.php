@@ -96,7 +96,7 @@ class AuthController extends Controller
         // 2. Xác thực OTP email mới
         $otpNew = \App\Models\OtpVerification::where('email', $request->new_email)
             ->where('code', $request->new_email_code)
-            ->where('purpose', 'change_email') // Vẫn dùng chung purpose nhưng cho mail mới
+            ->where('purpose', 'change_email')
             ->where('expires_at', '>', now())
             ->first();
 
@@ -110,7 +110,7 @@ class AuthController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        // Cập nhật lại profie nếu cần
+        // Cập nhật lại profile nếu cần
         if ($user->profile) {
             $user->profile->update(['contact_email' => $request->new_email]);
         }

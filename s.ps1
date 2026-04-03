@@ -38,7 +38,7 @@ Write-Host "[3/4] Khoi dong Frontend Next.js (port 3000)..." -ForegroundColor Ye
 Start-Process powershell -ArgumentList @(
     "-NoExit",
     "-Command",
-    "& { `$Host.UI.RawUI.WindowTitle = 'ShopDee Frontend :3000'; Set-Location '$ROOT\frontend'; npm run dev }"
+    "& { `$Host.UI.RawUI.WindowTitle = 'ShopDee Frontend :3000'; Set-Location '$ROOT\frontend';npx kill-port 3000; npm run dev }"
 )
 Start-Sleep -Seconds 2
 Write-Host "      OK - http://localhost:3000" -ForegroundColor Green

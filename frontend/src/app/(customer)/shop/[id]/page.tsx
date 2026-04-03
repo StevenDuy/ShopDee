@@ -3,12 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Store, Star, Package, Calendar, MessageCircle, ArrowLeft, Search } from "lucide-react";
+import { Store, Star, Package, Calendar, MessageCircle, ArrowLeft, Search, ShieldCheck } from "lucide-react";
 import axios from "axios";
 import Link from "next/link";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import FullPageLoader from "@/components/FullPageLoader";
+import { useTranslation } from "react-i18next";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface SellerInfo {
   id: number;
@@ -36,6 +40,7 @@ interface Product {
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function SellerShopPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { formatPrice } = useCurrencyStore();
@@ -72,125 +77,173 @@ export default function SellerShopPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      <AnimatePresence>
-        {loading && <FullPageLoader key="loader" />}
-      </AnimatePresence>
-
+    <div className="min-h-screen bg-muted/20 pb-20">
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: loading ? 0 : 1 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         {seller && (
           <>
-            {/* Header / Cover */}
-      <div className="bg-card border-b border-border pt-8 pb-12 px-6 md:px-10">
-        <div className="max-w-7xl mx-auto">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
-            <ArrowLeft size={16} /> Quay lại
-          </button>
+            {/* Header / Cover (Restored Old Layout) */}
+            <div className="bg-card border-b border-border/50 pt-8 pb-12 px-6 md:px-10 shadow-sm relative overflow-hidden">
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <button 
+                        onClick={() => router.back()} 
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all mb-8 active:scale-95 group"
+                    >
+                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> {t?.("common.back") || "Quay lại"}
+                    </button>
 
-          <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-primary/10 flex items-center justify-center text-primary text-4xl font-black shrink-0 border border-primary/20 shadow-inner overflow-hidden">
-               {seller.profile?.profile_image ? (
-                 <img src={seller.profile.profile_image} className="w-full h-full object-cover" alt={seller.name} />
-               ) : (
-                 seller.name.charAt(0)
-               )}
+                    <motion.div 
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="flex flex-col md:flex-row gap-8 items-start md:items-center"
+                    >
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-4xl font-black shrink-0 border border-primary/20 shadow-inner overflow-hidden relative group">
+                            {seller.profile?.profile_image ? (
+                                <img src={seller.profile.profile_image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={seller.name} />
+                            ) : (
+                                seller.name.charAt(0)
+                            )}
+                            <div className="absolute top-1 right-1">
+                                <ShieldCheck size={16} className="text-emerald-500 fill-emerald-500/20" />
+                            </div>
+                        </div>
+                        
+                        <div className="flex-1 space-y-5">
+                            <div>
+                                <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase leading-none">{seller.name}</h1>
+                                <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed font-bold opacity-70">
+                                    {seller.profile?.bio || "Chào mừng bạn đến với cửa hàng của tôi! Chúc bạn mua sắm vui vẻ."}
+                                </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-4 md:gap-8 border-t border-border/5 pt-4">
+                                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                                    <Package size={16} strokeWidth={2.5} className="text-primary" />
+                                    <span>{seller.products_count} sản phẩm</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                                    <Star size={16} strokeWidth={2.5} className="text-yellow-500 fill-yellow-500/20" />
+                                    <span>{seller.avg_rating || "N/A"} Đánh giá</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                                    <Calendar size={16} strokeWidth={2.5} />
+                                    <span>Tham gia {new Date(seller.created_at).getFullYear()}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 w-full md:w-auto">
+                            <Button 
+                                onClick={handleChat}
+                                className="flex-1 md:flex-none h-14 px-10 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.03] active:scale-95 transition-all text-[11px]"
+                            >
+                                <MessageCircle size={20} className="mr-3" /> Chat ngay
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+                {/* Decorative Pattern */}
+                <div className="absolute -bottom-20 -right-20 opacity-[0.03] pointer-events-none rotate-12">
+                   <Store size={400} />
+                </div>
             </div>
-            
-            <div className="flex-1 space-y-4">
-              <div>
-                <h1 className="text-3xl font-black tracking-tight">{seller.name}</h1>
-                <p className="text-muted-foreground mt-1 max-w-2xl text-sm leading-relaxed">
-                  {seller.profile?.bio || "Chào mừng bạn đến với cửa hàng của tôi! Chúc bạn mua sắm vui vẻ."}
-                </p>
-              </div>
 
-              <div className="flex flex-wrap gap-4 md:gap-8">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Package size={18} className="text-primary" />
-                  <span>{seller.products_count} sản phẩm</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Star size={18} className="text-yellow-500 fill-yellow-500" />
-                  <span>{seller.avg_rating || "N/A"} Đánh giá</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Calendar size={18} className="text-muted-foreground" />
-                  <span>Tham gia {new Date(seller.created_at).toLocaleDateString()}</span>
-                </div>
-              </div>
+            {/* Product List Section (Restored Old Layout) */}
+            <div className="px-6 md:px-10 py-12 max-w-7xl mx-auto space-y-10">
+                <motion.div 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-col md:flex-row items-center justify-between gap-6 flex-wrap"
+                >
+                    <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
+                            <Package size={18} strokeWidth={2.5} />
+                        </div>
+                        Tất cả sản phẩm
+                    </h2>
+                    
+                    <div className="relative w-full md:w-80 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" size={18} />
+                        <Input 
+                            type="text" 
+                            placeholder="TÌM TRONG CỬA HÀNG..." 
+                            value={search}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setSearch(val);
+                                fetchProducts(val);
+                            }}
+                            className="h-14 pl-12 pr-4 bg-card border-border/50 rounded-2xl font-black text-[11px] tracking-widest outline-none transition-all shadow-sm focus-visible:ring-primary/10"
+                        />
+                    </div>
+                </motion.div>
+
+                {products.length === 0 ? (
+                    <Card className="rounded-[3rem] border-dashed border-2 border-border/30 bg-muted/5 p-20 text-center grayscale opacity-40">
+                        <Package size={64} className="mx-auto mb-4 opacity-10" />
+                        <p className="text-[12px] font-black uppercase tracking-widest leading-none">
+                            Không có sản phẩm nào
+                        </p>
+                    </Card>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 md:gap-8">
+                        {products.map((p, idx) => (
+                            <motion.div
+                                key={p.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.1 + idx * 0.05 }}
+                            >
+                                <Link 
+                                    href={`/products/${p.slug}`} 
+                                    className="group block bg-card border border-border/40 rounded-3xl overflow-hidden hover:border-primary/50 hover:shadow-2xl transition-all duration-500 h-full flex flex-col relative"
+                                >
+                                    <div className="aspect-square overflow-hidden bg-muted relative">
+                                        <img 
+                                            src={p.media[0]?.full_url || `https://picsum.photos/seed/${p.id}/400/400`} 
+                                            alt={p.title} 
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
+                                        />
+                                        {p.sale_price && (
+                                            <div className="absolute top-4 left-4 bg-red-600/90 backdrop-blur-md text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-tighter shadow-xl">
+                                                Sale
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+                                        <h3 className="text-[11px] font-black uppercase tracking-tight line-clamp-2 leading-none group-hover:text-primary transition-colors duration-300">
+                                            {p.title}
+                                        </h3>
+                                        <div className="pt-2 border-t border-border/5">
+                                            <p className="text-primary font-black text-base md:text-lg tracking-tighter leading-none">
+                                                {formatPrice(p.sale_price ?? p.price)}
+                                            </p>
+                                            {p.sale_price && (
+                                                <p className="text-[10px] text-muted-foreground line-through font-bold opacity-40">
+                                                    {formatPrice(p.price)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
             </div>
-
-            <div className="flex gap-3 w-full md:w-auto">
-              <button 
-                onClick={handleChat}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all uppercase tracking-wider text-sm"
-              >
-                <MessageCircle size={20} /> Chat ngay
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Product List */}
-      <div className="px-6 md:px-10 py-10 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-          <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-             <Store size={24} className="text-primary" />
-             Tất cả sản phẩm
-          </h2>
-          
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-            <input 
-              type="text" 
-              placeholder="Tìm trong cửa hàng này..." 
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                fetchProducts(e.target.value);
-              }}
-              className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-2xl outline-none focus:border-primary/50 transition-all text-sm font-medium shadow-sm"
-            />
-          </div>
-        </div>
-
-        {products.length === 0 ? (
-          <div className="bg-card border border-border rounded-[40px] py-20 text-center flex flex-col items-center gap-4">
-             <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center text-muted-foreground/30">
-               <Package size={40} />
-             </div>
-             <p className="text-muted-foreground font-bold">Không tìm thấy sản phẩm nào.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-            {products.map((p) => (
-              <Link key={p.id} href={`/products/${p.slug}`} className="group bg-card border border-border rounded-3xl overflow-hidden hover:border-primary/30 transition-all shadow-sm flex flex-col">
-                <div className="aspect-square overflow-hidden bg-muted relative">
-                  <img src={p.media[0]?.full_url || `https://picsum.photos/seed/${p.id}/400/400`} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  {p.sale_price && (
-                    <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-full uppercase">Sale</div>
-                  )}
-                </div>
-                <div className="p-4 space-y-2 flex-1 flex flex-col">
-                  <h3 className="text-sm font-bold line-clamp-2 leading-snug flex-1 group-hover:text-primary transition-colors">{p.title}</h3>
-                  <div>
-                    <p className="text-primary font-black text-base">{formatPrice(p.sale_price ?? p.price)}</p>
-                    {p.sale_price && <p className="text-[10px] text-muted-foreground line-through">{formatPrice(p.price)}</p>}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
           </>
         )}
       </motion.div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      `}</style>
     </div>
   );
 }

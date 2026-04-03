@@ -5,7 +5,7 @@ import { X, Send, Mail, ShieldCheck, CheckCircle, ArrowRight } from "lucide-reac
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -28,7 +28,6 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
   const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
@@ -39,6 +38,7 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
       setNewOtp("");
       setError(null);
       setSuccess(null);
+      setCountdown(0);
     }
   }, [isOpen]);
 
@@ -75,6 +75,7 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
 
   const handleVerifyOld = async () => {
     setLoading(true);
+    setError(null);
     try {
       await axios.post(`${API_URL}/auth/otp/verify`, {
         email: currentEmail,
@@ -85,7 +86,7 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
       setSuccess("Đã xác thực email cũ. Hãy nhập email mới.");
       setCountdown(0);
     } catch (err: any) {
-      setError("Mã xác thực không đúng.");
+      setError("Mã xác thực không đúng hoặc đã hết hạn.");
     } finally {
       setLoading(false);
     }
@@ -114,123 +115,183 @@ export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEm
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/40 backdrop-blur-md">
       <motion.div 
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        initial={{ scale: 0.9, opacity: 0, y: 30 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="w-full max-w-md relative"
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="w-full max-w-[520px] relative"
       >
-        <Card className="backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-border/50 shadow-2xl p-8 hover:scale-100">
-        <button onClick={onClose} className="absolute top-4 right-4 hover:rotate-90 transition-transform">
-          <X size={24} />
-        </button>
+        <Card className="rounded-[3rem] border-border/30 bg-card/60 backdrop-blur-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] p-10 md:p-12 overflow-hidden relative">
+            {/* Background Icon */}
+            <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none -translate-y-8 translate-x-8 rotate-12 scale-150">
+                <Mail size={240} strokeWidth={1} />
+            </div>
 
-        <h2 className="text-2xl font-black uppercase tracking-tighter mb-6 flex items-center gap-2">
-          <Mail className="text-primary" /> Thay đổi Email
-        </h2>
+            <button 
+                onClick={onClose} 
+                className="absolute top-8 right-8 w-10 h-10 flex items-center justify-center rounded-xl bg-muted/20 text-muted-foreground hover:bg-muted transition-all active:scale-90 z-20"
+            >
+                <X size={20} />
+            </button>
 
-        {/* Steps header */}
-        <div className="flex gap-2 mb-8 items-center">
-          <div className={`h-1.5 rounded-full flex-1 transition-colors duration-500 ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
-          <ArrowRight size={14} className="text-muted-foreground opacity-50" />
-          <div className={`h-1.5 rounded-full flex-1 transition-colors duration-500 ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
-        </div>
-
-        <AnimatePresence mode="wait">
-          {step === 1 ? (
-            <motion.div key="step1" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="space-y-5">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Bước 1: Xác thực email hiện tại ({currentEmail})
-              </p>
-              
-              <Button 
-                onClick={() => handleSendOtp(currentEmail)}
-                disabled={loading || countdown > 0}
-                variant="outline"
-                className="w-full h-12 text-[10px] tracking-widest font-black uppercase border-border/50"
-              >
-                {countdown > 0 ? `Gửi lại sau ${countdown}s` : <><Send size={16} className="mr-2" /> Gửi mã đến email cũ</>}
-              </Button>
-
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nhập mã xác thực</label>
-                <Input
-                  type="text"
-                  value={oldOtp}
-                  onChange={(e) => setOldOtp(e.target.value)}
-                  className="h-14 font-black text-center text-xl tracking-[10px] focus:ring-primary/20 bg-primary/5 border-primary/30"
-                  placeholder="000000"
-                  maxLength={6}
-                />
-              </div>
-
-              <Button 
-                onClick={handleVerifyOld}
-                disabled={loading || oldOtp.length < 6}
-                size="lg"
-                className="w-full h-14 text-xs tracking-widest"
-              >
-                Tiếp tục
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div key="step2" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 20, opacity: 0 }} className="space-y-4">
-               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Bước 2: Xác thực email mới
-              </p>
-              
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email mới</label>
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    className="flex-1 h-12"
-                    placeholder="new-email@example.com"
-                  />
-                  <Button 
-                    onClick={() => handleSendOtp(newEmail)}
-                    disabled={loading || countdown > 0 || !newEmail}
-                    variant="outline"
-                    className="px-4 h-12 text-[10px] font-black uppercase border-border/50"
-                  >
-                    {countdown > 0 ? `${countdown}s` : "Gửi mã"}
-                  </Button>
+            <div className="relative z-10 space-y-8">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                            <ShieldCheck size={24} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">Cập nhật Email</h2>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-2 opacity-60">Xác thực 2 lớp bảo mật</p>
+                        </div>
+                    </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mã xác thực email mới</label>
-                <Input
-                  type="text"
-                  value={newOtp}
-                  onChange={(e) => setNewOtp(e.target.value)}
-                  className="h-14 font-black text-center text-xl tracking-[10px] focus:ring-primary/20 bg-primary/5 border-primary/30"
-                  placeholder="000000"
-                  maxLength={6}
-                />
-              </div>
+                {/* Step Indicator */}
+                <div className="flex items-center gap-3 px-1">
+                    <div className={cn("h-1.5 flex-1 rounded-full transition-all duration-700", step >= 1 ? "bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" : "bg-muted")} />
+                    <ArrowRight size={14} className={cn("transition-opacity", step === 2 ? "opacity-100" : "opacity-20")} />
+                    <div className={cn("h-1.5 flex-1 rounded-full transition-all duration-700", step === 2 ? "bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" : "bg-muted")} />
+                </div>
 
-              <Button 
-                onClick={handleFinalUpdate}
-                disabled={loading || newOtp.length < 6 || !newEmail}
-                size="lg"
-                className="w-full h-14 text-xs tracking-widest"
-              >
-                <CheckCircle size={18} className="mr-2" /> CẬP NHẬT NGAY
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <div className="min-h-[280px] flex flex-col justify-center">
+                    <AnimatePresence mode="wait">
+                        {step === 1 ? (
+                            <motion.div 
+                                key="step1"
+                                initial={{ x: -20, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: 20, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-8"
+                            >
+                                <div className="space-y-4">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-center text-muted-foreground">
+                                        Bước 1: Xác thực email cũ <br/>
+                                        <span className="text-foreground/60 break-all">({currentEmail})</span>
+                                    </p>
+                                    
+                                    <Button 
+                                        onClick={() => handleSendOtp(currentEmail)}
+                                        disabled={loading || countdown > 0}
+                                        variant="outline"
+                                        className="w-full h-16 rounded-2xl font-black text-[10px] uppercase tracking-widest border-border/50 active:scale-95 transition-all"
+                                    >
+                                        {countdown > 0 ? `Gửi lại sau ${countdown}s` : <><Send size={16} className="mr-2" /> Gửi mã đến email cũ</>}
+                                    </Button>
 
-        {error && <p className="mt-4 text-[10px] font-black uppercase text-destructive bg-destructive/10 p-3 border border-destructive/20 rounded-lg text-center tracking-widest">{error}</p>}
-        {success && <p className="mt-4 text-[10px] font-black uppercase text-green-600 bg-green-500/10 p-3 border border-green-500/20 rounded-lg text-center tracking-widest">{success}</p>}
+                                    <div className="space-y-4 pt-4">
+                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Mã xác thực</label>
+                                        <div className="relative group">
+                                            <ShieldCheck className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30" size={20} />
+                                            <Input
+                                                type="text"
+                                                value={oldOtp}
+                                                onChange={(e) => setOldOtp(e.target.value)}
+                                                className="h-20 pl-16 text-center text-3xl font-black tracking-[0.5em] bg-primary/5 border-primary/20 rounded-2xl focus-visible:ring-primary/20 transition-all font-mono"
+                                                placeholder="000000"
+                                                maxLength={6}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Button 
+                                    onClick={handleVerifyOld}
+                                    disabled={loading || oldOtp.length < 6}
+                                    className="w-full h-18 py-8 rounded-[1.5rem] text-[13px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all active:scale-95"
+                                >
+                                    TIẾP TỤC <ArrowRight size={18} className="ml-2" />
+                                </Button>
+                            </motion.div>
+                        ) : (
+                            <motion.div 
+                                key="step2"
+                                initial={{ x: -20, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: 20, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-8"
+                            >
+                                <div className="space-y-6">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-center text-muted-foreground">
+                                        Bước 2: Xác thực email mới
+                                    </p>
+
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Email mới</label>
+                                        <div className="flex gap-3">
+                                            <div className="relative flex-1 group">
+                                                <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30" size={20} />
+                                                <Input
+                                                    type="email"
+                                                    value={newEmail}
+                                                    onChange={(e) => setNewEmail(e.target.value)}
+                                                    className="h-16 pl-16 bg-muted/10 border-border/50 rounded-2xl font-black text-sm tracking-tight focus-visible:ring-primary/10 transition-all"
+                                                    placeholder="new@example.com"
+                                                />
+                                            </div>
+                                            <Button 
+                                                onClick={() => handleSendOtp(newEmail)}
+                                                disabled={loading || countdown > 0 || !newEmail}
+                                                variant="outline"
+                                                className="h-16 px-6 font-black text-[10px] uppercase tracking-widest border-border/50 rounded-2xl active:scale-95 transition-all shadow-sm shrink-0"
+                                            >
+                                                {countdown > 0 ? `${countdown}s` : <Send size={16} />}
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Mã xác thực email mới</label>
+                                        <div className="relative group">
+                                            <ShieldCheck className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30" size={20} />
+                                            <Input
+                                                type="text"
+                                                value={newOtp}
+                                                onChange={(e) => setNewOtp(e.target.value)}
+                                                className="h-20 pl-16 text-center text-3xl font-black tracking-[0.5em] bg-primary/5 border-primary/20 rounded-2xl focus-visible:ring-primary/20 transition-all font-mono"
+                                                placeholder="000000"
+                                                maxLength={6}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Button 
+                                    onClick={handleFinalUpdate}
+                                    disabled={loading || newOtp.length < 6 || !newEmail}
+                                    className="w-full h-18 py-8 rounded-[1.5rem] text-[13px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-500 border-emerald-400/20"
+                                >
+                                    <CheckCircle size={20} className="mr-3" /> HOÀN TẤT CẬP NHẬT
+                                </Button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                <AnimatePresence mode="wait">
+                    {error && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-destructive/5 border border-destructive/20 text-destructive text-[11px] font-black uppercase tracking-widest text-center shadow-inner">
+                            {error}
+                        </motion.div>
+                    )}
+                    {success && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-emerald-600 text-[11px] font-black uppercase tracking-widest text-center shadow-inner">
+                            {success}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </Card>
       </motion.div>
     </div>
   );
 }
 
-
-
+// Helper function
+function cn(...inputs: any[]) {
+    return inputs.filter(Boolean).join(" ");
+}
