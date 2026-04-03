@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { 
-  Settings, Save, Percent, Truck, Power, 
-  Globe, Database, CreditCard, Bell, 
-  ShieldCheck, Layout, Info, ChevronRight,
+  Settings, Save, Globe, Shield, CreditCard, 
+  Mail, Bell, Truck, Scale, Percent, Zap,
   RefreshCcw, Terminal, HardDrive
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,8 @@ import { cn } from "@/lib/utils";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function AdminSettingsPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { formatPrice, fromBaseCurrency, toBaseCurrency, currency: currentCurrency } = useCurrencyStore();
   const { token } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -145,22 +146,22 @@ export default function AdminSettingsPage() {
                    active={activeTab === 'finance'} 
                    onClick={() => setActiveTab('finance')} 
                    icon={CreditCard} 
-                   label="Financial Logic" 
-                   desc="Fees, Tax, Rates"
+                   label={t("admin.settings.node_finance") || "Financial Logic"} 
+                   desc={t("admin.settings.node_finance_desc") || "Fees, Tax, Rates"}
                  />
                  <ConfigNodeButton 
                    active={activeTab === 'platform'} 
                    onClick={() => setActiveTab('platform')} 
                    icon={HardDrive} 
-                   label="Platform Core" 
-                   desc="Behaviors & Modes"
+                   label={t("admin.settings.node_platform") || "Platform Core"} 
+                   desc={t("admin.settings.node_platform_desc") || "Behaviors & Modes"}
                  />
                  <ConfigNodeButton 
                    active={activeTab === 'localization'} 
                    onClick={() => setActiveTab('localization')} 
                    icon={Globe} 
-                   label="Global Identity" 
-                   desc="SEO & Contact"
+                   label={t("admin.settings.node_identity") || "Global Identity"} 
+                   desc={t("admin.settings.node_identity_desc") || "SEO & Contact"}
                  />
               </div>
 
@@ -193,22 +194,28 @@ export default function AdminSettingsPage() {
                                 <SectionHeader icon={Percent} title="Financial Parameters" sub="Management of fees, taxation, and shipping baselines" />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                    <ConfigInput 
-                                     label="Platform Service Fee (%)" 
+                                     label={t("admin.settings.service_fee_label") || "Phí dịch vụ (%)"} 
                                      value={settings.platform_fee} 
-                                     onChange={(v) => setSettings({...settings, platform_fee: v})} 
-                                     desc="Cước dịch vụ thu trên mỗi đơn hàng thành công"
+                                     onChange={(v: string) => setSettings({...settings, platform_fee: v})} 
+                                     icon={Scale}
+                                     desc={t("admin.settings.service_fee_desc")}
                                    />
                                    <ConfigInput 
-                                     label="Standard Tax Rate (%)" 
+                                     label={t("admin.settings.vat_label") || "VAT (%)"} 
                                      value={settings.tax_rate} 
-                                     onChange={(v) => setSettings({...settings, tax_rate: v})} 
-                                     desc="Thuế giá trị gia tăng áp dụng mặc định"
+                                     onChange={(v: string) => setSettings({...settings, tax_rate: v})} 
+                                     desc={t("admin.settings.vat_desc")}
                                    />
                                    <ConfigInput 
-                                     label="Base Shipping Rate (VND)" 
-                                     value={settings.shipping_base_rate} 
-                                     onChange={(v) => setSettings({...settings, shipping_base_rate: v})} 
-                                     desc="Cước phí vận chuyển cơ bản cho 1km đầu tiên"
+                                     label={(t("admin.settings.shipping_fee_label") || "Phí ship cơ bản") + ` (${t("currency_code")})`} 
+                                     value={fromBaseCurrency(Number(settings.shipping_base_rate) || 0)} 
+                                     onChange={(v: string) => {
+                                       const raw = v.replace(/[^\d.]/g, "");
+                                       if (!isNaN(Number(raw)) || raw === "") {
+                                         setSettings({...settings, shipping_base_rate: toBaseCurrency(parseFloat(raw) || 0).toString()});
+                                       }
+                                     }} 
+                                     desc={t("admin.settings.shipping_fee_desc")}
                                    />
                                 </div>
                              </div>
@@ -216,7 +223,7 @@ export default function AdminSettingsPage() {
 
                           {activeTab === 'platform' && (
                              <div className="space-y-10">
-                                <SectionHeader icon={Power} title="System Protocols" sub="Core operational modes and platform-wide states" />
+                                <SectionHeader icon={HardDrive} title="System Protocols" sub="Core operational modes and platform-wide states" />
                                 <div className="space-y-8">
                                    <div className="flex flex-col md:flex-row md:items-center justify-between p-8 bg-muted/20 border border-border/50 rounded-[2.5rem] gap-6 group/item hover:bg-muted/30 transition-all">
                                       <div className="max-w-md">
@@ -227,7 +234,7 @@ export default function AdminSettingsPage() {
                                       </div>
                                       <div className="flex items-center gap-4 bg-background px-6 py-4 rounded-[1.5rem] border border-border/40 shadow-sm">
                                          <span className={cn("text-[10px] font-black uppercase tracking-widest", settings.maintenance_mode === '1' ? "text-primary" : "text-muted-foreground")}>
-                                            {settings.maintenance_mode === '1' ? "ENABLED" : "OFFLINE"}
+                                            {settings.maintenance_mode === '1' ? t("admin.settings.mode_enabled") || "ENABLED" : t("admin.settings.mode_disabled") || "OFFLINE"}
                                          </span>
                                          <label className="relative inline-flex items-center cursor-pointer">
                                             <input 
@@ -249,22 +256,22 @@ export default function AdminSettingsPage() {
                                 <SectionHeader icon={Globe} title="Global Positioning" sub="Public identity parameters and SEO metadata" />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                    <ConfigInput 
-                                     label="System Store Name" 
+                                     label={t("admin.settings.site_name_label") || "Site Name"} 
                                      value={settings.store_name} 
-                                     onChange={(v) => setSettings({...settings, store_name: v})} 
-                                     desc="Tên hiển thị chính thức của toàn bộ nền tảng"
+                                     onChange={(v: string) => setSettings({...settings, store_name: v})} 
+                                     desc={t("admin.settings.site_name_desc")}
                                    />
                                    <ConfigInput 
-                                     label="Global Contact Email" 
+                                     label={t("admin.settings.site_email_label") || "Support Email"} 
                                      value={settings.contact_email} 
-                                     onChange={(v) => setSettings({...settings, contact_email: v})} 
-                                     desc="Địa chỉ nhận thông báo và hỗ trợ site-wide"
+                                     onChange={(v: string) => setSettings({...settings, contact_email: v})} 
+                                     desc={t("admin.settings.site_email_desc")}
                                    />
                                    <ConfigInput 
-                                     label="System Currency Code" 
+                                     label={t("admin.settings.currency_label") || "Tiền tệ"} 
                                      value={settings.currency} 
-                                     onChange={(v) => setSettings({...settings, currency: v})} 
-                                     desc="Mã tiền tệ cơ sở cho toàn bộ giao dịch"
+                                     onChange={(v: string) => setSettings({...settings, currency: v})} 
+                                     desc={t("admin.settings.currency_desc")}
                                    />
                                 </div>
                              </div>

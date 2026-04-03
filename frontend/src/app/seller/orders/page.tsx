@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from "@/store/useAuthStore";
 import { OrderDetailsModal } from "@/components/seller/OrderDetailsModal";
 import { useTranslation } from "react-i18next";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -98,13 +99,7 @@ export default function SellerOrdersPage() {
     }
   };
 
-  const formatPrice = (val: number) =>
-    new Intl.NumberFormat(t("locale"), { 
-      style: 'currency', 
-      currency: t("currency_code"),
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0 
-    }).format(val);
+  const { formatPrice } = useCurrencyStore();
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-10">
@@ -122,7 +117,7 @@ export default function SellerOrdersPage() {
                     <Box size={22} strokeWidth={2.5} />
                  </div>
                  <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-1 px-3 bg-background border-border/50">
-                    ORDER // MANAGEMENT
+                    {t("seller.orders.order_management")}
                  </Badge>
               </div>
               <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-foreground leading-none">
@@ -137,7 +132,7 @@ export default function SellerOrdersPage() {
         {/* 2. LIVE SEARCH & QUICK STATS (Matching Products Layout with Premium Select) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
            <div className="lg:col-span-4 space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Order Search</label>
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">{t("seller.orders.order_search")}</label>
               <div className="relative group">
                  <div className="absolute inset-0 bg-primary/5 rounded-[1.5rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" size={20} />
@@ -152,17 +147,17 @@ export default function SellerOrdersPage() {
            </div>
 
            <div className="lg:col-span-8 flex flex-wrap lg:justify-end gap-4 pb-1">
-              <QuickStat icon={ShoppingBag} label="Total Orders" value={orders.length.toString()} />
-              <QuickStat icon={Clock} label="Pending Action" value={orders.filter(o => o.status === 'pending').length.toString()} />
+              <QuickStat icon={ShoppingBag} label={t("seller.orders.total_orders")} value={orders.length.toString()} />
+              <QuickStat icon={Clock} label={t("seller.orders.pending_action")} value={orders.filter(o => o.status === 'pending').length.toString()} />
               
               <div className="relative group h-14 min-w-[200px]">
                 <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-primary/60 z-20" size={18} strokeWidth={2.5} />
                 <Select 
                    value={filter} 
-                   onValueChange={(val) => { setFilter(val); setCurrentPage(1); }}
+                   onValueChange={(val: any) => { setFilter(val); setCurrentPage(1); }}
                 >
                    <SelectTrigger className="w-full h-full pl-14 pr-10 bg-muted/20 border border-border/50 rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] appearance-none focus:ring-0 focus:border-primary/50 transition-all cursor-pointer relative z-10 shadow-sm focus:bg-background">
-                      <SelectValue placeholder="FILTER STATUS" />
+                      <SelectValue placeholder={t("seller.orders.filter_status")} />
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
                       <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.orders.all_orders")}</SelectItem>
@@ -254,7 +249,7 @@ export default function SellerOrdersPage() {
            {totalPages > 1 && (
               <div className="p-8 border-t border-border/20 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-6">
                  <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
-                    Page {currentPage} of {totalPages}
+                    {t("seller.orders.pagination_page_of", { current: currentPage, total: totalPages })}
                  </p>
                  <div className="flex items-center gap-2">
                     <Button 

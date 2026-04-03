@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CreditCard, ArrowLeft, CheckCircle, MapPin, ClipboardList, Package, ShoppingBag, Store, Wallet, Banknote, ShieldCheck } from "lucide-react";
 import axios from "axios";
 import { useCart } from "@/store/useCartStore";
@@ -20,10 +21,10 @@ export default function CheckoutPage() {
   const { formatPrice } = useCurrencyStore();
 
   const PAYMENT_METHODS = [
-    { value: "cod",           label: t("checkout_page.payment_methods.cod"),  emoji: "💵", desc: "Pay when you receive" },
-    { value: "bank_transfer", label: t("checkout_page.payment_methods.bank_transfer"),      emoji: "🏦", desc: "Direct bank transfer" },
-    { value: "momo",          label: t("checkout_page.payment_methods.momo"),        emoji: "📱", desc: "MoMo E-wallet" },
-    { value: "vnpay",         label: t("checkout_page.payment_methods.vnpay"),              emoji: "💳", desc: "VNPay QR/Card" },
+    { value: "cod",           label: t("checkout_page.payment_methods.cod"),           emoji: "💵", desc: t("checkout_page.payment_methods.cod_desc") },
+    { value: "bank_transfer", label: t("checkout_page.payment_methods.bank_transfer"), emoji: "🏦", desc: t("checkout_page.payment_methods.bank_transfer_desc") },
+    { value: "momo",          label: t("checkout_page.payment_methods.momo"),          emoji: "📱", desc: t("checkout_page.payment_methods.momo_desc") },
+    { value: "vnpay",         label: t("checkout_page.payment_methods.vnpay"),         emoji: "💳", desc: t("checkout_page.payment_methods.vnpay_desc") },
   ];
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -98,7 +99,7 @@ export default function CheckoutPage() {
       setTimeout(() => router.push("/orders"), 3000);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
-      alert(e.response?.data?.message ?? "Failed to place order. Please try again.");
+      alert(e.response?.data?.message ?? t("checkout_page.failed_to_place"));
     } finally {
       setLoading(false);
     }
@@ -138,15 +139,15 @@ export default function CheckoutPage() {
                 <ShoppingBag size={20} strokeWidth={3} />
              </div>
              <div>
-                <h1 className="text-sm font-black uppercase tracking-[0.3em] font-black">{t("checkout_page.title") || "THANH TOÁN"}</h1>
+                <h1 className="text-sm font-black uppercase tracking-[0.3em] font-black">{t("checkout_page.title")}</h1>
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                   KIỂM TRA VÀ XÁC NHẬN ĐƠN HÀNG
+                   {t("checkout_page.confirm_subtitle")}
                 </p>
              </div>
           </div>
           <button onClick={() => router.back()} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-all flex items-center gap-2 group">
             <ArrowLeft size={14} strokeWidth={3} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="border-b border-transparent group-hover:border-primary transition-all">QUAY LẠI GIỎ HÀNG</span>
+            <span className="border-b border-transparent group-hover:border-primary transition-all">{t("checkout_page.back_to_cart")}</span>
           </button>
         </div>
       </div>
@@ -161,8 +162,8 @@ export default function CheckoutPage() {
                    <MapPin size={22} />
                 </div>
                 <div>
-                   <h2 className="text-sm font-black uppercase tracking-[0.2em]">ĐỊA CHỈ NHẬN HÀNG</h2>
-                   <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest opacity-40">CHỌN ĐỊA CHỈ GIAO HÀNG</p>
+                   <h2 className="text-sm font-black uppercase tracking-[0.2em]">{t("checkout_page.shipping_address")}</h2>
+                   <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest opacity-40">{t("checkout_page.choose_address_subtitle")}</p>
                 </div>
               </div>
               
@@ -207,8 +208,8 @@ export default function CheckoutPage() {
                    <CreditCard size={22} />
                 </div>
                 <div>
-                   <h2 className="text-sm font-black uppercase tracking-[0.2em]">PHƯƠNG THỨC THANH TOÁN</h2>
-                   <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest opacity-40">CHỌN CÁCH THỨC CHI TRẢ</p>
+                   <h2 className="text-sm font-black uppercase tracking-[0.2em]">{t("checkout_page.payment_method")}</h2>
+                   <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest opacity-40">{t("checkout_page.choose_payment_subtitle")}</p>
                 </div>
               </div>
               
@@ -257,7 +258,7 @@ export default function CheckoutPage() {
                
                <div className="space-y-1 relative z-10 border-b border-border/5 pb-4">
                   <h2 className="text-2xl font-black uppercase tracking-tighter">{t("cart_page.summary")}</h2>
-                  <p className="text-[9px] font-black uppercase text-muted-foreground tracking-[0.3em] opacity-40">XÁC NHẬN SẢN PHẨM</p>
+                  <p className="text-[9px] font-black uppercase text-muted-foreground tracking-[0.3em] opacity-40">{t("checkout_page.confirm_items")}</p>
                </div>
               
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -268,7 +269,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-black uppercase line-clamp-1 tracking-tight text-foreground/80">{item.title}</p>
-                      <p className="text-[9px] font-black text-primary uppercase opacity-60">QTY: {item.quantity}</p>
+                      <p className="text-[9px] font-black text-primary uppercase opacity-60">{t("checkout_page.qty")}: {item.quantity}</p>
                     </div>
                     <p className="text-[11px] font-black tracking-tighter shrink-0">{formatPrice((item.salePrice ?? item.price) * item.quantity)}</p>
                   </div>
@@ -283,14 +284,14 @@ export default function CheckoutPage() {
                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
                   <span className="text-muted-foreground opacity-60">{t("cart_page.shipping")}</span>
                   <span className={!shipping ? "text-primary font-black" : "text-foreground"}>
-                    {shipping ? formatPrice(shipping) : "FREE"}
+                    {shipping ? formatPrice(shipping) : t("cart_page.free")}
                   </span>
                 </div>
               </div>
 
               <div className="pt-6 border-t border-border/10">
                 <div className="flex justify-between items-end mb-8">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60">TỔNG THANH TOÁN</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60">{t("cart_page.grand_total")}</span>
                   <span className="text-3xl font-black text-primary tracking-tighter leading-none">{formatPrice(total)}</span>
                 </div>
 
@@ -299,14 +300,14 @@ export default function CheckoutPage() {
                   disabled={loading || !selectedAddr}
                   className="group w-full py-5 bg-primary text-white font-black uppercase text-[11px] tracking-[0.4em] flex items-center justify-center gap-3 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-primary/30 relative overflow-hidden disabled:opacity-20 disabled:grayscale"
                 >
-                  <span className="relative z-10">{loading ? "PROCESSING..." : "XÁC NHẬN ĐẶT HÀNG"}</span>
+                  <span className="relative z-10">{loading ? t("auth.processing") : t("checkout_page.place_order")}</span>
                   {!loading && <CreditCard size={20} strokeWidth={3} className="relative z-10 group-hover:rotate-12 transition-transform" />}
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                 </button>
                 
                 {!selectedAddr && (
                    <p className="text-[8px] font-black uppercase text-destructive text-center mt-3 tracking-widest animate-pulse">
-                      VUI LÒNG CHỌN ĐỊA CHỈ GIAO HÀNG
+                      {t("checkout_page.select_address_warning")}
                    </p>
                 )}
               </div>

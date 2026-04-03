@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import AddressModal from "@/components/profile/AddressModal";
-import EmailUpdateModal from "@/components/profile/EmailUpdateModal";
+import { EmailUpdateModal } from "@/components/profile/EmailUpdateModal";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -122,7 +122,7 @@ export default function SellerSettingsPage() {
                     <Settings size={22} strokeWidth={2.5} />
                  </div>
                  <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-1 px-3 bg-background border-border/50">
-                    SHOP // CONFIGURATION
+                    {t("seller.settings.shop_configuration")}
                  </Badge>
               </div>
               <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-foreground leading-none">
@@ -176,7 +176,7 @@ export default function SellerSettingsPage() {
                              value={formData.name}
                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                              className="h-16 pl-16 bg-muted/20 border-border/50 rounded-2xl font-black text-sm tracking-tight focus-visible:ring-primary/10 transition-all"
-                             placeholder="SHOP NAME"
+                             placeholder={t("seller.settings.store_name_placeholder")}
                              required
                           />
                        </div>
@@ -184,7 +184,7 @@ export default function SellerSettingsPage() {
 
                     <div className="space-y-4">
                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">
-                            Email
+                            {t("auth.email")}
                         </label>
                         <div className="relative group">
                             <Clock className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30" size={20} />
@@ -197,7 +197,7 @@ export default function SellerSettingsPage() {
                                 type="button"
                                 onClick={() => setIsEmailModalOpen(true)}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 p-3 hover:bg-white/10 rounded-xl text-primary transition-all active:scale-95"
-                                title="Change Email"
+                                title={t("profile_page.change_email")}
                             >
                                 <Edit2 size={18} />
                             </button>
@@ -215,7 +215,7 @@ export default function SellerSettingsPage() {
                              value={formData.phone}
                              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                              className="h-16 pl-16 bg-muted/20 border-border/50 rounded-2xl font-black text-sm tracking-tight focus-visible:ring-primary/10 transition-all"
-                             placeholder="PHONE NUMBER"
+                             placeholder={t("profile_page.phone_placeholder")}
                           />
                        </div>
                     </div>
@@ -295,14 +295,14 @@ export default function SellerSettingsPage() {
                                                   onClick={() => handleDeleteAddress(addr.id)}
                                                   className="px-3 py-1.5 bg-destructive text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-destructive/90 transition-all shadow-sm"
                                                >
-                                                  CONFIRM
+                                                  {t("inbox.confirm")}
                                                </button>
                                                <button 
                                                   type="button" 
                                                   onClick={() => setDeletingId(null)}
                                                   className="px-3 py-1.5 bg-background text-muted-foreground text-[9px] font-black uppercase tracking-widest rounded-lg border border-border/50 hover:bg-muted transition-all"
                                                >
-                                                  CANCEL
+                                                  {t("inbox.cancel_short")}
                                                </button>
                                             </motion.div>
                                          ) : (
@@ -364,9 +364,9 @@ export default function SellerSettingsPage() {
             onClose={() => setIsEmailModalOpen(false)}
             currentEmail={formData.email}
             token={token}
-            onSuccess={(newEmail) => {
+            onSuccess={(newEmail: string) => {
                 setFormData({ ...formData, email: newEmail });
-                setMessage({ type: "success", text: "Cập nhật email thành công!" });
+                setMessage({ type: "success", text: t("profile_page.email_update_success") });
                 fetchUser();
             }}
         />

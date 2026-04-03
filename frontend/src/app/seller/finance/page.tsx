@@ -128,7 +128,7 @@ export default function SellerFinancePage() {
                     <Wallet size={22} strokeWidth={2.5} />
                  </div>
                  <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-1 px-3 bg-background border-border/50">
-                    FINANCIAL // TERMINAL
+                    {t("seller.finance.financial_terminal")}
                  </Badge>
               </div>
               <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-foreground leading-none">
@@ -159,21 +159,21 @@ export default function SellerFinancePage() {
                    icon={TrendingUp} 
                    label={t("seller.finance.available_balance")} 
                    value={formatPrice(overview?.available_balance || 0)}
-                   trend="Available for payout"
+                   trend={t("seller.finance.available_payout")}
                    color="emerald"
                  />
                  <PremiumStat 
                    icon={Clock} 
                    label={t("seller.finance.pending_clearance")} 
                    value={formatPrice(overview?.pending_clearance || 0)}
-                   trend="Awaiting verification"
+                   trend={t("seller.finance.awaiting_verification")}
                    color="amber"
                  />
                  <PremiumStat 
                    icon={DollarSign} 
                    label={t("seller.finance.total_revenue")} 
                    value={formatPrice(overview?.total_revenue || 0)}
-                   trend="Lifetime earnings"
+                   trend={t("seller.finance.lifetime_earnings")}
                    color="primary"
                  />
                  <PremiumStat 
@@ -181,8 +181,8 @@ export default function SellerFinancePage() {
                    label={t("seller.finance.total_withdrawn")} 
                    value={formatPrice(overview?.total_withdrawn || 0)}
                    trend={overview?.pending_withdrawal && overview.pending_withdrawal > 0 
-                     ? `+${formatPrice(overview.pending_withdrawal)} pending` 
-                     : "Total payouts"}
+                     ? `+${formatPrice(overview.pending_withdrawal)} ${t("seller.finance.pending_suffix")}` 
+                     : t("seller.finance.total_payouts")}
                    color="slate"
                  />
               </>
@@ -284,7 +284,7 @@ export default function SellerFinancePage() {
                     <div className="px-10 py-8 border-b border-border/10 flex items-center justify-between">
                        <div>
                           <h3 className="text-xl font-black uppercase tracking-tighter">{t("seller.finance.withdraw_modal.title")}</h3>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-50">Transfer funds to bank account</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-50">{t("seller.finance.withdraw_modal.subtitle")}</p>
                        </div>
                        <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:bg-destructive hover:text-white transition-all">
                           <Plus className="rotate-45" size={20} />
@@ -329,7 +329,7 @@ export default function SellerFinancePage() {
                                 value={bankName}
                                 onChange={(e) => setBankName(e.target.value)}
                                 className="w-full h-14 px-6 bg-muted/20 border border-border/50 rounded-2xl font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-                                placeholder="e.g. Vietcombank"
+                                placeholder={t("seller.finance.withdraw_modal.bank_placeholder")}
                                 required
                              />
                           </div>
@@ -341,7 +341,7 @@ export default function SellerFinancePage() {
                                 value={bankAccount}
                                 onChange={(e) => setBankAccount(e.target.value)}
                                 className="w-full h-14 px-6 bg-muted/20 border border-border/50 rounded-2xl font-bold text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-                                placeholder="Account Number & Name"
+                                placeholder={t("seller.finance.withdraw_modal.account_placeholder")}
                                 required
                              />
                           </div>

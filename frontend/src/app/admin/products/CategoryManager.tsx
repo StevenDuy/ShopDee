@@ -157,7 +157,7 @@ export default function CategoryManager({ isOpen, onClose, token, api }: Categor
                  </div>
                  <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-50">{t("admin.banners.categories.title")}</p>
-                    <h2 className="text-xl font-black uppercase tracking-tight">System Directories</h2>
+                    <h2 className="text-xl font-black uppercase tracking-tight">{t("admin.banners.categories.system_directories")}</h2>
                  </div>
               </div>
               <Button variant="ghost" size="icon-lg" onClick={onClose} className="rounded-full hover:bg-destructive/10 hover:text-destructive transition-all">

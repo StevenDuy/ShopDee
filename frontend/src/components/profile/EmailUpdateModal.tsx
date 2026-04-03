@@ -1,297 +1,250 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Send, Mail, ShieldCheck, CheckCircle, ArrowRight } from "lucide-react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { 
+  ShieldCheck, Send, Mail, X, 
+  ArrowRight, ShieldAlert, CheckCircle2, 
+  History, Sparkles, Key, Zap
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-import { Card } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import axios from "axios";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface EmailUpdateModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: (newEmail: string) => void;
-  currentEmail: string;
-  token: string | null;
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess?: (newEmail: string) => void;
+    currentEmail?: string;
+    token?: string | null;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function EmailUpdateModal({ isOpen, onClose, onSuccess, currentEmail, token }: EmailUpdateModalProps) {
-  const [step, setStep] = useState(1); // 1: Verify Old, 2: Verify New
-  const [oldOtp, setOldOtp] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [newOtp, setNewOtp] = useState("");
-  
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(0);
+export function EmailUpdateModal({ isOpen, onClose, onSuccess }: EmailUpdateModalProps) {
+    const { t } = useTranslation();
+    const { user, token, setAuth } = useAuthStore();
+    const [step, setStep] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [countdown, setCountdown] = useState(0);
+    
+    // Step 1: Verify Old Email
+    const [oldOtp, setOldOtp] = useState("");
+    
+    // Step 2: New Email Setup
+    const [newEmail, setNewEmail] = useState("");
+    const [newEmailOtp, setNewEmailOtp] = useState("");
 
-  useEffect(() => {
-    if (!isOpen) {
-      setStep(1);
-      setOldOtp("");
-      setNewEmail("");
-      setNewOtp("");
-      setError(null);
-      setSuccess(null);
-      setCountdown(0);
-    }
-  }, [isOpen]);
-
-  const startCountdown = () => {
-    setCountdown(60);
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
+    useEffect(() => {
+        let timer: any;
+        if (countdown > 0) {
+            timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
         }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+        return () => clearInterval(timer);
+    }, [countdown]);
 
-  const handleSendOtp = async (targetEmail: string) => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      await axios.post(`${API_URL}/auth/otp/send`, {
-        email: targetEmail,
-        purpose: "change_email"
-      });
-      setSuccess(`Mã xác thực đã gửi đến ${targetEmail}`);
-      startCountdown();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Lỗi gửi mã.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleSendOldOtp = async () => {
+        setLoading(true);
+        try {
+            await axios.post(`${API}/profile/email/send-code-old`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success(t("auth.check_email_otp"));
+            setCountdown(60);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || t("common.error_occurred"));
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleVerifyOld = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await axios.post(`${API_URL}/auth/otp/verify`, {
-        email: currentEmail,
-        code: oldOtp,
-        purpose: "change_email"
-      });
-      setStep(2);
-      setSuccess("Đã xác thực email cũ. Hãy nhập email mới.");
-      setCountdown(0);
-    } catch (err: any) {
-      setError("Mã xác thực không đúng hoặc đã hết hạn.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleVerifyOld = async () => {
+        if (!oldOtp) return;
+        setLoading(true);
+        try {
+            const res = await axios.post(`${API}/profile/email/verify-old`, { code: oldOtp }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.status === "success") {
+                setStep(2);
+                setCountdown(0);
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || t("common.error_occurred"));
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleFinalUpdate = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await axios.post(`${API_URL}/profile/change-email`, {
-        old_email_code: oldOtp,
-        new_email: newEmail,
-        new_email_code: newOtp
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      onSuccess(newEmail);
-      onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Lỗi cập nhật email.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleSendNewOtp = async () => {
+        if (!newEmail) return;
+        setLoading(true);
+        try {
+            await axios.post(`${API}/profile/email/send-code-new`, { email: newEmail }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success(t("auth.check_email_otp"));
+            setCountdown(60);
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || t("common.error_occurred"));
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  if (!isOpen) return null;
+    const handleUpdateEmail = async () => {
+        if (!newEmail || !newEmailOtp) return;
+        setLoading(true);
+        try {
+            const res = await axios.post(`${API}/profile/email/update`, { 
+                email: newEmail,
+                code: newEmailOtp 
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.status === "success") {
+                setAuth(res.data.user, token ?? "");
+                toast.success(t("profile_update.update_success"));
+                if (onSuccess) onSuccess(newEmail);
+                onClose();
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || t("common.error_occurred"));
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/40 backdrop-blur-md">
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0, y: 30 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 30 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="w-full max-w-[520px] relative"
-      >
-        <Card className="rounded-[3rem] border-border/30 bg-card/60 backdrop-blur-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] p-10 md:p-12 overflow-hidden relative">
-            {/* Background Icon */}
-            <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none -translate-y-8 translate-x-8 rotate-12 scale-150">
-                <Mail size={240} strokeWidth={1} />
-            </div>
+    if (!isOpen) return null;
 
-            <button 
-                onClick={onClose} 
-                className="absolute top-8 right-8 w-10 h-10 flex items-center justify-center rounded-xl bg-muted/20 text-muted-foreground hover:bg-muted transition-all active:scale-90 z-20"
-            >
-                <X size={20} />
-            </button>
-
-            <div className="relative z-10 space-y-8">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                            <ShieldCheck size={24} strokeWidth={2.5} />
+    return (
+        <AnimatePresence>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-background/40 backdrop-blur-md" />
+                
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+                    animate={{ opacity: 1, scale: 1, y: 0 }} 
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    className="relative w-full max-w-2xl bg-card/60 backdrop-blur-2xl border border-white/20 rounded-[3rem] shadow-[0_50px_100px_rgba(0,0,0,0.3)] overflow-hidden flex"
+                >
+                    {/* Left Sidebar Info */}
+                    <div className="hidden md:flex w-56 bg-primary/10 border-r border-white/10 p-8 flex-col justify-between relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-10"><Mail size={80} /></div>
+                        <div className="relative z-10 space-y-6">
+                            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/20">
+                                <ShieldCheck size={28} strokeWidth={2.5} />
+                            </div>
+                            <div className="space-y-4">
+                                <div className={`h-1.5 w-12 rounded-full transition-all duration-500 ${step === 1 ? 'bg-primary w-16' : 'bg-primary/20'}`} />
+                                <div className={`h-1.5 w-12 rounded-full transition-all duration-500 ${step === 2 ? 'bg-primary w-16' : 'bg-primary/20'}`} />
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">Cập nhật Email</h2>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-2 opacity-60">Xác thực 2 lớp bảo mật</p>
+                        <div className="relative z-10">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-primary/60 mb-2">Security Note</p>
+                            <p className="text-[9px] font-bold leading-relaxed opacity-40 uppercase tracking-tighter italic">
+                                Protecting your identity ensures total transaction safety.
+                            </p>
                         </div>
                     </div>
-                </div>
 
-                {/* Step Indicator */}
-                <div className="flex items-center gap-3 px-1">
-                    <div className={cn("h-1.5 flex-1 rounded-full transition-all duration-700", step >= 1 ? "bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" : "bg-muted")} />
-                    <ArrowRight size={14} className={cn("transition-opacity", step === 2 ? "opacity-100" : "opacity-20")} />
-                    <div className={cn("h-1.5 flex-1 rounded-full transition-all duration-700", step === 2 ? "bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" : "bg-muted")} />
-                </div>
+                    {/* Main Content Area */}
+                    <div className="flex-1 flex flex-col">
+                        <button onClick={onClose} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-muted-foreground hover:bg-red-500/10 hover:text-red-500 transition-all active:scale-95 z-20">
+                            <X size={20} />
+                        </button>
 
-                <div className="min-h-[280px] flex flex-col justify-center">
-                    <AnimatePresence mode="wait">
-                        {step === 1 ? (
-                            <motion.div 
-                                key="step1"
-                                initial={{ x: -20, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                exit={{ x: 20, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="space-y-8"
-                            >
-                                <div className="space-y-4">
-                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-center text-muted-foreground">
-                                        Bước 1: Xác thực email cũ <br/>
-                                        <span className="text-foreground/60 break-all">({currentEmail})</span>
-                                    </p>
-                                    
-                                    <Button 
-                                        onClick={() => handleSendOtp(currentEmail)}
-                                        disabled={loading || countdown > 0}
-                                        variant="outline"
-                                        className="w-full h-16 rounded-2xl font-black text-[10px] uppercase tracking-widest border-border/50 active:scale-95 transition-all"
+                        <div className="flex-1 p-8 md:p-12">
+                            <div className="space-y-1 mb-10">
+                                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none">{t("profile_update.email_title")}</h1>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-40 tracking-widest mt-2">{t("profile_update.two_factor")}</p>
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                                {step === 1 ? (
+                                    <motion.form 
+                                        key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                                        onSubmit={(e) => { e.preventDefault(); handleVerifyOld(); }}
+                                        className="space-y-6"
                                     >
-                                        {countdown > 0 ? `Gửi lại sau ${countdown}s` : <><Send size={16} className="mr-2" /> Gửi mã đến email cũ</>}
-                                    </Button>
-
-                                    <div className="space-y-4 pt-4">
-                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Mã xác thực</label>
-                                        <div className="relative group">
-                                            <ShieldCheck className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30" size={20} />
-                                            <Input
-                                                type="text"
-                                                value={oldOtp}
-                                                onChange={(e) => setOldOtp(e.target.value)}
-                                                className="h-20 pl-16 text-center text-3xl font-black tracking-[0.5em] bg-primary/5 border-primary/20 rounded-2xl focus-visible:ring-primary/20 transition-all font-mono"
-                                                placeholder="000000"
-                                                maxLength={6}
-                                            />
+                                        <div className="bg-white/5 p-5 rounded-[2rem] border border-white/10 group hover:bg-white/10 transition-all">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-primary/60 mb-1">Old Identity</p>
+                                            <p className="font-bold text-base truncate">{user?.email}</p>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <Button 
-                                    onClick={handleVerifyOld}
-                                    disabled={loading || oldOtp.length < 6}
-                                    className="w-full h-18 py-8 rounded-[1.5rem] text-[13px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all active:scale-95"
-                                >
-                                    TIẾP TỤC <ArrowRight size={18} className="ml-2" />
-                                </Button>
-                            </motion.div>
-                        ) : (
-                            <motion.div 
-                                key="step2"
-                                initial={{ x: -20, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                exit={{ x: 20, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="space-y-8"
-                            >
-                                <div className="space-y-6">
-                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-center text-muted-foreground">
-                                        Bước 2: Xác thực email mới
-                                    </p>
+                                        <div className="space-y-3">
+                                            <Button 
+                                                type="button" variant="outline" onClick={handleSendOldOtp} disabled={countdown > 0 || loading}
+                                                className="w-full h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5 group"
+                                            >
+                                                {countdown > 0 ? t("profile_update.resend_in", { seconds: countdown }) : <><Send size={16} className="mr-2 group-hover:translate-x-1 transition-transform" /> {t("profile_update.send_to_old")}</>}
+                                            </Button>
 
-                                    <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Email mới</label>
-                                        <div className="flex gap-3">
-                                            <div className="relative flex-1 group">
-                                                <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30" size={20} />
-                                                <Input
-                                                    type="email"
-                                                    value={newEmail}
-                                                    onChange={(e) => setNewEmail(e.target.value)}
-                                                    className="h-16 pl-16 bg-muted/10 border-border/50 rounded-2xl font-black text-sm tracking-tight focus-visible:ring-primary/10 transition-all"
-                                                    placeholder="new@example.com"
+                                            <div className="relative group">
+                                                <label className="absolute left-6 top-1 text-[8px] font-black uppercase tracking-[0.2em] text-primary transition-all opacity-0 group-focus-within:opacity-100 group-focus-within:top-2">{t("profile_update.auth_code")}</label>
+                                                <Input 
+                                                    value={oldOtp} onChange={(e) => setOldOtp(e.target.value)} 
+                                                    placeholder="OTP CODE" required 
+                                                    className="h-16 bg-white/5 border-2 border-transparent rounded-[2rem] text-center text-xl font-black tracking-[0.8em] focus:bg-background focus:border-primary/20 placeholder:tracking-widest placeholder:text-[10px] transition-all"
                                                 />
                                             </div>
+                                        </div>
+
+                                        <Button disabled={loading || !oldOtp} className="w-full h-16 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20 transition-all active:scale-[0.98] flex gap-2">
+                                            {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>{t("common.continue")} <ArrowRight size={18} strokeWidth={3} /></>}
+                                        </Button>
+                                    </motion.form>
+                                ) : (
+                                    <motion.form 
+                                        key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                                        onSubmit={(e) => { e.preventDefault(); handleUpdateEmail(); }}
+                                        className="space-y-6"
+                                    >
+                                        <div className="space-y-3">
+                                            <div className="relative group">
+                                                <label className="absolute left-6 top-1 text-[8px] font-black uppercase tracking-[0.2em] text-primary transition-all opacity-0 group-focus-within:opacity-100 group-focus-within:top-2">{t("profile_update.new_email")}</label>
+                                                <Input 
+                                                    type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} 
+                                                    placeholder="NEW EMAIL ADDRESS" required
+                                                    className="h-16 bg-white/5 border-2 border-transparent rounded-[2rem] px-8 font-bold text-sm focus:bg-background focus:border-primary/20 placeholder:text-[10px] placeholder:tracking-widest transition-all"
+                                                />
+                                            </div>
+
                                             <Button 
-                                                onClick={() => handleSendOtp(newEmail)}
-                                                disabled={loading || countdown > 0 || !newEmail}
-                                                variant="outline"
-                                                className="h-16 px-6 font-black text-[10px] uppercase tracking-widest border-border/50 rounded-2xl active:scale-95 transition-all shadow-sm shrink-0"
+                                                type="button" variant="outline" onClick={handleSendNewOtp} disabled={countdown > 0 || !newEmail || loading}
+                                                className="w-full h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5 group"
                                             >
-                                                {countdown > 0 ? `${countdown}s` : <Send size={16} />}
+                                                {countdown > 0 ? t("profile_update.resend_in", { seconds: countdown }) : <><Sparkles size={16} className="mr-2 group-hover:rotate-12 transition-transform" /> {t("profile_update.auth_code")}</>}
                                             </Button>
-                                        </div>
-                                    </div>
 
-                                    <div className="space-y-4">
-                                        <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Mã xác thực email mới</label>
-                                        <div className="relative group">
-                                            <ShieldCheck className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30" size={20} />
-                                            <Input
-                                                type="text"
-                                                value={newOtp}
-                                                onChange={(e) => setNewOtp(e.target.value)}
-                                                className="h-20 pl-16 text-center text-3xl font-black tracking-[0.5em] bg-primary/5 border-primary/20 rounded-2xl focus-visible:ring-primary/20 transition-all font-mono"
-                                                placeholder="000000"
-                                                maxLength={6}
-                                            />
+                                            <div className="relative group">
+                                                <label className="absolute left-6 top-1 text-[8px] font-black uppercase tracking-[0.2em] text-primary transition-all opacity-0 group-focus-within:opacity-100 group-focus-within:top-2">{t("profile_update.new_email_code")}</label>
+                                                <Input 
+                                                    value={newEmailOtp} onChange={(e) => setNewEmailOtp(e.target.value)} 
+                                                    placeholder="OTP CODE" required
+                                                    className="h-16 bg-white/5 border-2 border-transparent rounded-[2rem] text-center text-xl font-black tracking-[0.8em] focus:bg-background focus:border-primary/20 placeholder:tracking-widest placeholder:text-[10px] transition-all"
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <Button 
-                                    onClick={handleFinalUpdate}
-                                    disabled={loading || newOtp.length < 6 || !newEmail}
-                                    className="w-full h-18 py-8 rounded-[1.5rem] text-[13px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-500 border-emerald-400/20"
-                                >
-                                    <CheckCircle size={20} className="mr-3" /> HOÀN TẤT CẬP NHẬT
-                                </Button>
-                            </motion.div>
+                                        <Button disabled={loading || !newEmailOtp} className="w-full h-16 rounded-[2rem] bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-500/20 transition-all active:scale-[0.98] flex gap-2">
+                                            {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <>{t("common.save")} <Zap size={18} strokeWidth={3} className="fill-white" /></>}
+                                        </Button>
+                                    </motion.form>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                        
+                        {/* Decorative Background for Step 2 */}
+                        {step === 2 && (
+                            <div className="absolute inset-0 bg-indigo-500/5 pointer-events-none -z-10 animate-in fade-in duration-700" />
                         )}
-                    </AnimatePresence>
-                </div>
-
-                <AnimatePresence mode="wait">
-                    {error && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-destructive/5 border border-destructive/20 text-destructive text-[11px] font-black uppercase tracking-widest text-center shadow-inner">
-                            {error}
-                        </motion.div>
-                    )}
-                    {success && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-emerald-600 text-[11px] font-black uppercase tracking-widest text-center shadow-inner">
-                            {success}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                    </div>
+                </motion.div>
             </div>
-        </Card>
-      </motion.div>
-    </div>
-  );
-}
-
-// Helper function
-function cn(...inputs: any[]) {
-    return inputs.filter(Boolean).join(" ");
+        </AnimatePresence>
+    );
 }

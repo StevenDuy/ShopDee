@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { formatDistanceToNow } from "date-fns";
 import { vi, enUS } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,13 +48,7 @@ export default function SellerDashboard() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  const formatPrice = (val: number) =>
-    new Intl.NumberFormat(t("locale"), { 
-      style: 'currency', 
-      currency: t("currency_code"),
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(val);
+  const { formatPrice } = useCurrencyStore();
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-10">
@@ -70,16 +65,16 @@ export default function SellerDashboard() {
                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
                     <Store size={22} strokeWidth={2.5} />
                  </div>
-                 <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-1 px-3 bg-background border-border/50">
-                    SELLER // OVERVIEW
-                 </Badge>
+                  <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-1 px-3 bg-background border-border/50">
+                   <span className="text-white/40">{t("seller.center")}</span>
+                  </Badge>
               </div>
-              <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-foreground leading-none">
-                {t("seller.dashboard")}
+              <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                {user?.name?.toUpperCase() || t("seller.store_label")}
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 border border-primary/30 text-primary font-medium">
+                  {t("dashboard_v2.performance")}
+                </span>
               </h1>
-              <p className="text-muted-foreground font-bold text-[11px] uppercase opacity-60 tracking-[0.2em] mt-3">
-                {user?.name?.toUpperCase() || "STORE"} // PERFORMANCE V4.2
-              </p>
            </div>
            
            <div className="hidden lg:flex items-center gap-6 bg-muted/20 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-sm">
@@ -103,6 +98,7 @@ export default function SellerDashboard() {
               icon={DollarSign}
               trend="+12.5%"
               delay={0}
+              t={t}
            />
            <StatsCard 
               label={t("seller.total_orders")}
@@ -110,6 +106,7 @@ export default function SellerDashboard() {
               icon={ShoppingCart}
               trend="+4.1%"
               delay={0.1}
+              t={t}
            />
            <StatsCard 
               label={t("seller.total_products")}
@@ -117,6 +114,7 @@ export default function SellerDashboard() {
               icon={Package}
               subLabel={t("seller.manage_inventory")}
               delay={0.2}
+              t={t}
            />
         </div>
 
@@ -201,38 +199,38 @@ export default function SellerDashboard() {
                        <div className="w-16 h-16 rounded-[1.5rem] bg-background border border-border shadow-sm flex items-center justify-center text-primary/20 transition-transform group-hover:rotate-12">
                           <Box size={32} />
                        </div>
-                       <div>
+                        <div>
                           <p className="text-xs font-black uppercase tracking-tight text-foreground">{t("seller.stock_sufficient")}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground opacity-60 mt-1 uppercase tracking-widest">Inventory is healthy</p>
-                       </div>
+                          <p className="text-[10px] font-bold text-muted-foreground opacity-60 mt-1 uppercase tracking-widest">{t("dashboard_v2.inventory_healthy")}</p>
+                        </div>
                     </div>
                  </div>
 
-                 <div className="pt-8 border-t border-primary/10 flex items-center gap-4 group/tip">
+                  <div className="pt-8 border-t border-primary/10 flex items-center gap-4 group/tip">
                     <Sparkles className="text-primary shrink-0 opacity-40 group-hover/tip:opacity-100 transition-opacity" size={24} />
                     <p className="text-[11px] font-black text-muted-foreground uppercase leading-relaxed italic opacity-70">
-                       &quot;Maximize visibility by optimizing product images for high-DPI displays.&quot;
+                       &quot;{t("dashboard_v2.tip_highlight")}&quot;
                     </p>
-                 </div>
+                  </div>
               </div>
 
               <Card className="rounded-[3rem] border-border/30 bg-muted/40 p-8 space-y-6">
-                 <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Operational Status</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{t("dashboard_v2.operational_status")}</p>
                     <div className="flex items-center gap-2">
                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                       <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Store Online</span>
+                       <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">{t("dashboard_v2.store_online")}</span>
                     </div>
-                 </div>
+                  </div>
                  
                  <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-background border border-border rounded-2xl flex flex-col items-center gap-2 text-center group active:scale-95 transition-all cursor-pointer">
                         <Activity className="text-primary opacity-40 group-hover:opacity-100" size={20} />
-                        <span className="text-[9px] font-black uppercase opacity-60">Analytics</span>
+                        <span className="text-[9px] font-black uppercase opacity-60">{t("dashboard_v2.analytics")}</span>
                     </div>
                     <div className="p-4 bg-background border border-border rounded-2xl flex flex-col items-center gap-2 text-center group active:scale-95 transition-all cursor-pointer">
                         <BarChart3 className="text-primary opacity-40 group-hover:opacity-100" size={20} />
-                        <span className="text-[9px] font-black uppercase opacity-60">Reports</span>
+                        <span className="text-[9px] font-black uppercase opacity-60">{t("dashboard_v2.reports")}</span>
                     </div>
                  </div>
               </Card>
@@ -251,7 +249,7 @@ export default function SellerDashboard() {
 
 // --- Support Components ---
 
-function StatsCard({ label, value, icon: Icon, trend, subLabel, delay }: any) {
+function StatsCard({ label, value, icon: Icon, trend, subLabel, delay, t }: any) {
    return (
       <motion.div
          initial={{ opacity: 0, y: 10 }}
@@ -279,7 +277,7 @@ function StatsCard({ label, value, icon: Icon, trend, subLabel, delay }: any) {
                         <div className="flex items-center px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-[10px] font-black">
                            <ArrowUpRight size={14} className="mr-0.5" /> {trend}
                         </div>
-                        <span className="text-[10px] font-black uppercase opacity-20 tracking-widest tracking-tighter">vs last month</span>
+                         <span className="text-[10px] font-black uppercase opacity-20 tracking-widest tracking-tighter">{t("dashboard_v2.vs_last_month")}</span>
                      </div>
                   )}
                   {subLabel && (

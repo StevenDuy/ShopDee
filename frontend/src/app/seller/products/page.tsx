@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { EditProductModal } from "@/components/seller/EditProductModal";
 import { useTranslation } from "react-i18next";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,13 +78,7 @@ export default function SellerProductsPage() {
     fetchProducts(1, val, statusFilter);
   };
 
-  const formatPrice = (val: number) =>
-    new Intl.NumberFormat(t("locale"), { 
-      style: 'currency', 
-      currency: t("currency_code"),
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0 
-    }).format(val);
+  const { formatPrice } = useCurrencyStore();
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-10">
@@ -101,7 +96,7 @@ export default function SellerProductsPage() {
                     <Package size={22} strokeWidth={2.5} />
                  </div>
                  <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-1 px-3 bg-background border-border/50">
-                    INVENTORY // MASTER LIST
+                    {t("seller.products_manage.inventory_master_list")}
                  </Badge>
               </div>
               <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-foreground leading-none">
@@ -126,7 +121,7 @@ export default function SellerProductsPage() {
         {/* 2. LIVE SEARCH & QUICK STATS */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
            <div className="lg:col-span-4 space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">Global Search</label>
+              <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">{t("seller.products_manage.global_search")}</label>
               <div className="relative group">
                  <div className="absolute inset-0 bg-primary/5 rounded-[1.5rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
                  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50" size={20} />
@@ -141,8 +136,8 @@ export default function SellerProductsPage() {
            </div>
 
            <div className="lg:col-span-8 flex flex-wrap lg:justify-end gap-4 pb-1">
-              <QuickStat icon={Box} label="Active Listings" value={products.length.toString()} />
-              <QuickStat icon={BarChart3} label="Total Stock" value={products.reduce((acc, p) => acc + p.stock_quantity, 0).toString()} />
+              <QuickStat icon={Box} label={t("seller.products_manage.active_listings")} value={products.length.toString()} />
+              <QuickStat icon={BarChart3} label={t("seller.products_manage.total_stock")} value={products.reduce((acc, p) => acc + p.stock_quantity, 0).toString()} />
               
               <div className="relative group h-14 min-w-[200px]">
                 <ListFilter className="absolute left-5 top-1/2 -translate-y-1/2 text-primary/60 z-20" size={18} strokeWidth={2.5} />
@@ -151,13 +146,13 @@ export default function SellerProductsPage() {
                   onValueChange={(val: any) => { setStatusFilter(val); setCurrentPage(1); }}
                 >
                    <SelectTrigger className="w-full h-full pl-14 pr-10 bg-muted/20 border border-border/50 rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] appearance-none focus:ring-0 focus:border-primary/50 transition-all cursor-pointer relative z-10 shadow-sm focus:bg-background">
-                      <SelectValue placeholder="STATUS" />
+                      <SelectValue placeholder={t("seller.products_manage.status_filter")} />
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
-                      <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none">ALL LISTINGS</SelectItem>
-                      <SelectItem value="active" className="font-bold uppercase text-[10px] tracking-widest leading-none">ACTIVE</SelectItem>
-                      <SelectItem value="hide" className="font-bold uppercase text-[10px] tracking-widest leading-none">HIDDEN</SelectItem>
-                      <SelectItem value="out_of_stock" className="font-bold uppercase text-[10px] tracking-widest leading-none">OUT OF STOCK</SelectItem>
+                      <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.all_listings")}</SelectItem>
+                      <SelectItem value="active" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.active").toUpperCase()}</SelectItem>
+                      <SelectItem value="hide" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.hide").toUpperCase()}</SelectItem>
+                      <SelectItem value="out_of_stock" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.out_of_stock").toUpperCase()}</SelectItem>
                    </SelectContent>
                 </Select>
               </div>
@@ -219,7 +214,7 @@ export default function SellerProductsPage() {
                                 </td>
                                 <td className="px-8 py-4 hidden sm:table-cell">
                                    <Badge variant="outline" className="px-3 py-1 rounded-xl font-black text-[9px] tracking-widest uppercase border-border/40 bg-background/50">
-                                      {p.category?.name || "UNCLASSIFIED"}
+                                      {p.category?.name || t("seller.products_manage.unclassified")}
                                    </Badge>
                                 </td>
                                 <td className="px-8 py-4 font-black text-[14px] text-foreground/90 tabular-nums">
@@ -229,7 +224,7 @@ export default function SellerProductsPage() {
                                    {p.stock_quantity > 0 ? (
                                       <div className="flex flex-col items-center">
                                          <span className="text-[13px] font-black">{p.stock_quantity}</span>
-                                         <span className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">UNITS AVAILABLE</span>
+                                         <span className="text-[9px] font-bold opacity-40 uppercase tracking-tighter">{t("seller.products_manage.units_available")}</span>
                                       </div>
                                    ) : (
                                       <Badge className="bg-red-500/10 text-red-600 border-red-500/20 font-black text-[9px] tracking-widest uppercase px-3">
@@ -252,7 +247,7 @@ export default function SellerProductsPage() {
            {totalPages > 1 && (
               <div className="p-8 border-t border-border/20 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-6">
                  <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
-                    Page {currentPage} of {totalPages}
+                    {t("seller.products_manage.pagination_page_of", { current: currentPage, total: totalPages })}
                  </p>
                  <div className="flex items-center gap-2">
                     <Button 
@@ -349,16 +344,16 @@ function StatusBadge({ status, t, reason }: any) {
       case 'out_of_stock':
          return (
             <Badge className="bg-slate-500/10 text-slate-600 border-slate-500/20 font-black text-[9px] tracking-widest uppercase px-3 h-6">
-               OUT OF STOCK
+               {t("seller.products_manage.out_of_stock").toUpperCase()}
             </Badge>
          );
       case 'banned':
          return (
             <div className="flex flex-col items-end gap-1">
                <Badge className="bg-red-500/10 text-red-600 border-red-500/20 font-black text-[9px] tracking-widest uppercase px-3 h-6">
-                  {t("admin_products.product_banned", { defaultValue: "BỊ CẤM" })}
+                  {t("seller.products_manage.banned")}
                </Badge>
-               {reason && <span className="text-[8px] font-bold text-red-500 opacity-60 uppercase italic tracking-tighter">Violation Recorded</span>}
+               {reason && <span className="text-[8px] font-bold text-red-500 opacity-60 uppercase italic tracking-tighter">{t("seller.products_manage.violation_recorded")}</span>}
             </div>
          );
       default:

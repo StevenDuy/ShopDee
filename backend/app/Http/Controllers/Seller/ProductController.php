@@ -28,6 +28,14 @@ class ProductController extends Controller
             $query->where('title', 'like', '%' . $request->search . '%');
         }
 
+        if ($request->has('status') && $request->status !== 'all') {
+            if ($request->status === 'out_of_stock') {
+                $query->where('stock_quantity', '<=', 0);
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
         return response()->json($query->orderBy('created_at', 'desc')->paginate(10));
     }
 

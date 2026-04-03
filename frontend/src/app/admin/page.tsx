@@ -55,11 +55,11 @@ export default function AdminDashboardPage() {
          <Card className="max-w-md w-full p-12 text-center border-destructive/20 bg-destructive/5 space-y-6">
             <ShieldAlert size={64} className="mx-auto text-destructive opacity-50" />
             <div className="space-y-2">
-               <h2 className="text-2xl font-black uppercase text-destructive tracking-tight">{t("admin.system_error") || "LỖI KẾT NỐI HỆ THỐNG"}</h2>
-               <p className="text-xs text-destructive/60 font-medium uppercase tracking-widest">Vui lòng kiểm tra lại kết nối máy chủ API</p>
+               <h2 className="text-2xl font-black uppercase text-destructive tracking-tight">{t("admin.system_error")}</h2>
+               <p className="text-xs text-destructive/60 font-medium uppercase tracking-widest">{t("admin.system_error_desc")}</p>
             </div>
             <Button variant="destructive" size="lg" onClick={() => window.location.reload()} className="w-full font-black uppercase tracking-widest text-[10px]">
-               {t("admin.retry") || "THỬ LẠI"}
+               {t("admin.retry")}
             </Button>
          </Card>
       </div>
@@ -131,17 +131,17 @@ export default function AdminDashboardPage() {
             <Card className="xl:col-span-2 border-border/50">
                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-8 gap-4">
                   <div className="space-y-1">
-                     <CardTitle className="text-xl font-black uppercase tracking-tight">{t("admin.performance_visual") || "Hiệu Suất Hệ Thống"}</CardTitle>
-                     <p className="text-[10px] font-black text-muted-foreground uppercase opacity-70 tracking-widest">7 {t("admin.days_history") || "ngày gần nhất"}</p>
+                     <CardTitle className="text-xl font-black uppercase tracking-tight">{t("admin.performance_visual")}</CardTitle>
+                     <p className="text-[10px] font-black text-muted-foreground uppercase opacity-70 tracking-widest">{t("admin.days_history")}</p>
                   </div>
                   <div className="flex gap-6">
                      <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 bg-primary rounded-full shadow-[0_0_10px_rgba(255,77,0,0.3)]" />
-                        <span className="text-[10px] font-black uppercase tracking-widest opacity-70">{t("admin.gross_revenue") || "Revenue"}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-70">{t("admin.gross_revenue")}</span>
                      </div>
                      <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(0,102,255,0.3)]" />
-                        <span className="text-[10px] font-black uppercase tracking-widest opacity-70">{t("admin.platform_earnings") || "Profit"}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-70">{t("admin.platform_earnings")}</span>
                      </div>
                   </div>
                </CardHeader>
@@ -192,9 +192,9 @@ export default function AdminDashboardPage() {
                <CardHeader>
                   <CardTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
                      <Shield size={20} className="text-destructive" />
-                     {t("admin.risk_analysis") || "Phân Tích Rủi Ro"}
+                     {t("admin.risk_analysis")}
                   </CardTitle>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase opacity-70 tracking-widest">{t("admin.risk_analysis_desc") || "Tần suất báo lỗi hệ thống"}</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase opacity-70 tracking-widest">{t("admin.risk_analysis_desc")}</p>
                </CardHeader>
 
                <CardContent className="h-[250px] md:h-[300px] w-full">
@@ -237,11 +237,11 @@ export default function AdminDashboardPage() {
                <div className="flex items-center justify-between gap-6">
                   <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter flex items-center gap-3 text-destructive">
                      <AlertTriangle className="size-6 md:size-8" />
-                     <span className="truncate">{t("admin.latest_alerts") || "Cảnh Báo Hệ Thống"}</span>
+                     <span className="truncate">{t("admin.latest_alerts")}</span>
                   </h2>
                   <Button asChild variant="ghost" className="text-[10px] font-black uppercase tracking-widest gap-2 bg-destructive/5 hover:bg-destructive/10 text-destructive border-none">
                      <Link href="/admin/ai-security">
-                        {t("admin.check_with_ai") || "Check with AI"} <ArrowUpRight size={14} />
+                        {t("admin.check_with_ai")} <ArrowUpRight size={14} />
                      </Link>
                   </Button>
                </div>
@@ -256,12 +256,12 @@ export default function AdminDashboardPage() {
                               </div>
                               <div className="min-w-0 flex-1 space-y-1">
                                  <div className="flex items-center gap-3">
-                                    <span className="text-[9px] font-black bg-muted px-2 py-0.5 rounded-lg uppercase tracking-widest opacity-70">{t("admin.moderation_nav") || "Moderation"}</span>
+                                    <span className="text-[9px] font-black bg-muted px-2 py-0.5 rounded-lg uppercase tracking-widest opacity-70">{t("admin.moderation_nav")}</span>
                                     <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">{format(new Date(alert.created_at), 'HH:mm - dd/MM')}</span>
                                  </div>
                                  <p className="font-black text-sm md:text-base truncate uppercase tracking-tight text-foreground/90">{alert.reason}</p>
                                  <p className="text-[10px] md:text-xs text-muted-foreground font-bold uppercase tracking-widest">
-                                    {t("admin.reported_by")}: <span className="text-foreground/60">{alert.reporter?.name || t("admin.system_user") || 'System'}</span>
+                                    {t("admin.reported_by")}: <span className="text-foreground/60">{alert.reporter?.name || t("admin.system_user")}</span>
                                  </p>
                               </div>
                               <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
@@ -273,7 +273,7 @@ export default function AdminDashboardPage() {
                   )) : (
                      <div className="p-12 md:p-20 text-center border-2 border-dashed border-border/50 opacity-20 select-none rounded-[2rem]">
                         <Shield className="size-12 md:size-16 mx-auto mb-6 text-muted-foreground" />
-                        <p className="text-xs font-black uppercase tracking-[0.3em]">{t("admin.no_alerts") || "Không có cảnh báo mới"}</p>
+                        <p className="text-xs font-black uppercase tracking-[0.3em]">{t("admin.no_alerts")}</p>
                      </div>
                   )}
                </div>
@@ -314,7 +314,7 @@ export default function AdminDashboardPage() {
                                  </td>
                                  <td className="px-6 py-5 text-right">
                                     <p className="font-black text-primary text-base md:text-lg tracking-tighter">{formatPrice(o.total_amount)}</p>
-                                    <span className="text-[8px] font-black opacity-30 tracking-widest uppercase">{o.status || 'Success'}</span>
+                                    <span className="text-[8px] font-black opacity-30 tracking-widest uppercase">{o.status || t("common.success")}</span>
                                  </td>
                               </tr>
                            ))}

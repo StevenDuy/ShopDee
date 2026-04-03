@@ -145,7 +145,7 @@ export default function CartPage() {
                            </div>
 
                            <div className="text-right">
-                              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 mb-0.5">{formatPrice(item.salePrice ?? item.price)}/unit</p>
+                              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 mb-0.5">{formatPrice(item.salePrice ?? item.price)}{t("cart_page.unit")}</p>
                               <p className="text-lg font-black text-primary tracking-tighter">{formatPrice((item.salePrice ?? item.price) * item.quantity)}</p>
                            </div>
                         </div>
@@ -174,7 +174,7 @@ export default function CartPage() {
                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
                     <span className="text-muted-foreground opacity-60">{t("cart_page.shipping")}</span>
                     <span className={shipping === 0 ? "text-primary font-black" : "text-foreground"}>
-                      {shipping === 0 ? "FREE" : formatPrice(shipping)}
+                      {shipping === 0 ? t("cart_page.free") : formatPrice(shipping)}
                     </span>
                   </div>
                   {shipping > 0 && (

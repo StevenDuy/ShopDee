@@ -61,7 +61,7 @@ export default function AdminBannersPage() {
       });
       setBanners(res.data);
     } catch (err) {
-      console.error("Failed to load banners", err);
+      console.error(err);
     } finally {
       if (isInitial) setLoading(false);
     }
@@ -301,7 +301,7 @@ export default function AdminBannersPage() {
                        </div>
                     </div>
                     <div className="p-3">
-                       <h3 className="font-bold text-sm tracking-tight line-clamp-1 group-hover:text-primary transition-colors">{banner.title || "Untitled"}</h3>
+                       <h3 className="font-bold text-sm tracking-tight line-clamp-1 group-hover:text-primary transition-colors">{banner.title || t("common.untitled")}</h3>
                        <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{banner.subtitle}</p>
                        {banner.product && (
                           <div className="mt-2 pt-2 border-t border-border/30 flex items-center gap-1.5 text-[9px] text-primary/80 font-black uppercase tracking-tighter">
@@ -405,7 +405,7 @@ export default function AdminBannersPage() {
                                   </div>
                                   <div className="min-w-0 flex-1">
                                      <p className="text-sm font-black uppercase tracking-tight text-foreground truncate">{selectedProduct.title}</p>
-                                     <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest mt-0.5">ID: {selectedProduct.id}</p>
+                                     <p className="text-[9px] font-black text-primary/60 uppercase tracking-widest mt-0.5">{t("customer_orders.record_id")}: {selectedProduct.id}</p>
                                   </div>
                                </div>
                                <Button 

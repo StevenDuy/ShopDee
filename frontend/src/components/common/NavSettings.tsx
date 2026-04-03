@@ -14,12 +14,7 @@ export function NavSettings({ collapsed = false }: NavSettingsProps) {
   const { theme, setTheme } = useTheme();
   const { t, i18n } = useTranslation();
   const [mounted, setMounted] = useState(false);
-  const [currency, setCurrency] = useState("VND");
-
-  useEffect(() => setMounted(true), []);
-
   const toggleLang = () => i18n.changeLanguage(i18n.language === "vi" ? "en" : "vi");
-  const toggleCurrency = () => setCurrency(currency === "VND" ? "USD" : "VND");
 
   if (!mounted) return null;
 
@@ -69,26 +64,6 @@ export function NavSettings({ collapsed = false }: NavSettingsProps) {
         </AnimatePresence>
       </button>
 
-      {/* Currency Toggle */}
-      <button 
-        type="button"
-        onClick={toggleCurrency}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-accent transition-colors text-muted-foreground"
-      >
-        <div className="shrink-0 w-5 h-5 flex items-center justify-center font-bold text-[10px] border border-muted-foreground rounded-sm">
-          {currency === "VND" ? "đ" : "$"}
-        </div>
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.span 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="truncate"
-            >
-              {currency === "VND" ? "VNĐ" : "USD"}
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </button>
     </div>
   );
 }

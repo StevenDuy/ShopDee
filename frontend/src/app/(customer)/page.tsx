@@ -137,7 +137,7 @@ export default function CustomerHomePage() {
         setNewArrivals(newArrivalsRes.data.data ?? newArrivalsRes.data ?? []);
         setBestSellers(bestSellersRes.data.data ?? bestSellersRes.data ?? []);
       } catch (error) {
-        console.error("Lỗi khi tải dữ liệu trang chủ:", error);
+        console.error(t("customer_home.error_loading"), error);
       } finally {
         setLoading(false);
       }
@@ -200,9 +200,9 @@ export default function CustomerHomePage() {
         
         {/* Mid-Page Promo / Divider */}
         <div className="py-12 border-y-4 border-primary/10 flex flex-col items-center text-center space-y-4">
-          <div className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Limited Collection</div>
-          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">Experience ShopDee Elite</h2>
-          <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest">Premium Quality // Professional Delivery</p>
+          <div className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">{t("customer_home.limited_collection")}</div>
+          <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">{t("customer_home.experience_elite")}</h2>
+          <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest">{t("customer_home.premium_quality_delivery")}</p>
         </div>
 
         <Section title={t("customer_home.new_arrivals")} products={newArrivals} href="/products?sort=newest" />

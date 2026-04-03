@@ -261,20 +261,20 @@ export function UnifiedInbox() {
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch (err: any) {
       console.error("Chat Error Detail:", err.response?.data || err.message || err);
-      toast.error(t("common.error_send_message") || "Lỗi gửi tin nhắn");
+      toast.error(t("common.error_send_message"));
     }
   };
 
   const handleDeleteConversation = async (convId: number) => {
     try {
       await axios.delete(`${API}/chat/conversations/${convId}`, { headers: { Authorization: `Bearer ${token}` } });
-      toast.success(t("inbox.conversation_deleted") || "Đã xóa cuộc hội thoại");
+      toast.success(t("inbox.conversation_deleted"));
       setActiveConv(null);
       setIsDeletingConv(false);
       refreshData();
     } catch (err) {
       console.error(err);
-      toast.error(t("inbox.error_delete_conversation") || "Lỗi xóa cuộc hội thoại");
+      toast.error(t("inbox.error_delete_conversation"));
     }
   };
 
@@ -351,7 +351,7 @@ export function UnifiedInbox() {
       fetchUnreadCounts(token!);
     } catch (e) {
       console.error(e);
-      toast.error(t("inbox.error_delete_notification") || "Lỗi xóa thông báo");
+      toast.error(t("inbox.error_delete_notification"));
     }
   };
 
@@ -451,10 +451,10 @@ export function UnifiedInbox() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-black text-xs uppercase tracking-tight text-foreground truncate">{n.data?.title || n.title || "Note"}</p>
+                    <p className="font-black text-xs uppercase tracking-tight text-foreground truncate">{n.data?.title || n.title || t("common.note")}</p>
                     {isAdmin && (n as any).user && (
                       <p className="text-[9px] font-black text-primary/60 mt-1 uppercase tracking-widest opacity-80">
-                        {t("admin.recipient") || "Người nhận"}: {(n as any).user.name}
+                        {t("inbox.recipient")}: {(n as any).user.name}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5 font-medium leading-relaxed">{n.data?.message || n.message}</p>
@@ -485,7 +485,7 @@ export function UnifiedInbox() {
                     <h3 className="font-black text-sm uppercase tracking-tight leading-none text-foreground">{activeConv.other_user?.name}</h3>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-70">{t("inbox.online") || "Online"}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-70">{t("inbox.online")}</span>
                     </div>
                   </div>
                 </div>
@@ -509,7 +509,7 @@ export function UnifiedInbox() {
                         onClick={() => handleDeleteConversation(activeConv.id)}
                         className="px-4 h-10 font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg"
                       >
-                        {t("inbox.confirm") || "XÓA VĨNH VIỄN"}
+                        {t("inbox.delete_forever")}
                       </Button>
                       <Button
                         variant="outline"
@@ -517,7 +517,7 @@ export function UnifiedInbox() {
                         onClick={() => setIsDeletingConv(false)}
                         className="px-4 h-10 font-bold text-[10px] uppercase tracking-widest rounded-xl"
                       >
-                        {t("inbox.cancel_short") || "HỦY"}
+                        {t("inbox.cancel_short")}
                       </Button>
                     </div>
                   )}
@@ -649,8 +649,8 @@ export function UnifiedInbox() {
                       <motion.div initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.9 }} className="bg-card w-full max-w-2xl border border-border/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-[3rem] overflow-hidden flex flex-col max-h-[85vh]">
                         <div className="p-8 border-b border-border/50 bg-muted/20 flex items-center justify-between">
                           <div>
-                            <h2 className="text-3xl font-black tracking-tight uppercase text-foreground">{t("inbox.attach_product") || "CHỌN SẢN PHẨM"}</h2>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 mt-1">{t("inbox.select_desc") || "Tìm kiếm và đính kèm vào tin nhắn"}</p>
+                            <h2 className="text-3xl font-black tracking-tight uppercase text-foreground">{t("inbox.attach_product")}</h2>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 mt-1">{t("inbox.select_desc")}</p>
                           </div>
                           <Button variant="ghost" size="icon" onClick={() => setIsAttachingProduct(false)} className="w-12 h-12 rounded-full hover:bg-muted active:scale-95"><X size={24} strokeWidth={3} /></Button>
                         </div>
@@ -662,7 +662,7 @@ export function UnifiedInbox() {
                               autoFocus
                               value={productSearch}
                               onChange={(e) => setProductSearch(e.target.value)}
-                              placeholder={t("inbox.search_product_placeholder") || "Tìm kiếm sản phẩm theo tên..."}
+                              placeholder={t("inbox.search_product_placeholder")}
                               className="w-full pl-14 h-14 bg-background border-border/30 rounded-2xl text-sm font-bold shadow-none"
                             />
                           </div>
@@ -698,7 +698,7 @@ export function UnifiedInbox() {
                         </div>
 
                         <div className="p-6 bg-muted/30 border-t border-border/50 flex justify-end">
-                          <Button variant="outline" onClick={() => setIsAttachingProduct(false)} className="px-10 h-14 rounded-2xl font-black text-xs uppercase tracking-widest">{t("inbox.close") || "ĐÓNG LẠI"}</Button>
+                          <Button variant="outline" onClick={() => setIsAttachingProduct(false)} className="px-10 h-14 rounded-2xl font-black text-xs uppercase tracking-widest">{t("inbox.close")}</Button>
                         </div>
                       </motion.div>
                     </div>
@@ -756,14 +756,14 @@ export function UnifiedInbox() {
                           onClick={() => handleDeleteNotification(selectedNotif.id)}
                           className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95"
                         >
-                          {t("inbox.confirm") || "XÓA QUẢNG BÁ"}
+                          {t("inbox.confirm_broadcast_delete")}
                         </Button>
                         <Button
                           variant="outline"
                           onClick={() => setIsConfirmingDelete(false)}
                           className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest"
                         >
-                          {t("inbox.cancel_short") || "HỦY"}
+                          {t("inbox.cancel_short")}
                         </Button>
                       </div>
                     )}
@@ -816,7 +816,7 @@ export function UnifiedInbox() {
               <div className="p-8 border-b border-border/50 bg-primary/5 flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-black tracking-tight uppercase px-2 text-foreground">{t("inbox.new_broadcast")}</h2>
-                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 ml-2 mt-1">GỬI THÔNG BÁO CHO HỆ THỐNG</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 ml-2 mt-1">{t("inbox.broadcast_system_desc")}</p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setShowCreateModal(false)} className="w-12 h-12 rounded-full active:scale-95"><X size={24} strokeWidth={3} /></Button>
               </div>
@@ -826,16 +826,16 @@ export function UnifiedInbox() {
                   <Input required value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="..." className="h-14 bg-muted/20 border-transparent focus:bg-background rounded-2xl text-sm font-bold shadow-none" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.target_role") || "ĐỐI TƯỢNG NHẬN"}</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">{t("inbox.target_role")}</label>
                   <div className="relative">
                     <select
                       value={form.role}
                       onChange={e => setForm({ ...form, role: e.target.value })}
                       className="w-full h-14 px-6 bg-muted/20 border border-transparent rounded-2xl outline-none focus:bg-background focus:border-primary/20 text-sm appearance-none cursor-pointer font-bold shadow-none transition-all"
                     >
-                      <option value="all">{t("inbox.role_all") || "🔊 Tất cả mọi người"}</option>
-                      <option value="customer">{t("inbox.role_customer") || "👥 Khách hàng"}</option>
-                      <option value="seller">{t("inbox.role_seller") || "🏪 Người bán / Shop"}</option>
+                      <option value="all">{t("inbox.role_all")}</option>
+                      <option value="customer">{t("inbox.role_customer")}</option>
+                      <option value="seller">{t("inbox.role_seller")}</option>
                     </select>
                     <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none opacity-40"><Package size={16} /></div>
                   </div>
@@ -853,7 +853,7 @@ export function UnifiedInbox() {
                 <div className="pt-6 flex gap-4">
                   <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1 h-14 font-black rounded-2xl text-xs uppercase tracking-widest">{t("inbox.cancel")}</Button>
                   <Button disabled={loading || !form.title || !form.message} className="flex-[2] h-14 font-black rounded-2xl shadow-xl text-xs uppercase tracking-widest transition-all">
-                    {loading ? "SENDING..." : t("inbox.broadcast")}
+                    {loading ? t("auth.sending") : t("inbox.broadcast")}
                   </Button>
                 </div>
               </form>

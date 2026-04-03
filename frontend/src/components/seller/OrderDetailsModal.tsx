@@ -112,7 +112,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                <h2 className="text-3xl font-black uppercase tracking-tighter">
                  {t("seller.orders.order_id")} #{order.id.toString().padStart(6, '0')}
                </h2>
-               {getStatusBadge(order.status)}
+                {getStatusBadge(order.status, t)}
             </div>
             <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest opacity-40">
               <span className="flex items-center gap-2"><Calendar size={14} strokeWidth={2.5} className="text-primary"/> {format(new Date(order.created_at), 'PPP p')}</span>
@@ -264,7 +264,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
   );
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, t: any) {
   const styles: Record<string, string> = {
     pending: "bg-amber-500/10 text-amber-600 border-amber-500/20",
     processing: "bg-blue-500/10 text-blue-600 border-blue-500/20",
@@ -276,7 +276,7 @@ function getStatusBadge(status: string) {
   };
   return (
     <Badge variant="outline" className={cn("px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border", styles[status])}>
-      {status}
+      {t(`seller.orders.status_${status}`)}
     </Badge>
   );
 }

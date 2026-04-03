@@ -4,8 +4,10 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 export default function LoginSuccess() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
@@ -41,13 +43,9 @@ export default function LoginSuccess() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <div className="w-8 h-8 bg-muted animate-pulse rounded-full"></div>
-        <h2 className="text-xl font-black uppercase tracking-widest">Đang xác thực...</h2>
+        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-6" />
+        <h2 className="text-xl font-black uppercase tracking-widest">{t("common.authenticating")}</h2>
       </div>
     </div>
   );
 }
-
-
-
-

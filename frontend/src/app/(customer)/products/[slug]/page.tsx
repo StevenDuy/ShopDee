@@ -271,7 +271,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="text-right">
                    <div className="flex items-baseline gap-2 justify-end mb-0.5">
-                     <p className="text-[9px] font-black text-primary tracking-widest">{formatPrice(totalPrice)}/unit</p>
+                     <p className="text-[9px] font-black text-primary tracking-widest">{formatPrice(totalPrice)}{t("cart_page.unit")}</p>
                      {product.sale_price && <span className="text-[7px] text-muted-foreground line-through decoration-primary opacity-30">{formatPrice(product.price)}</span>}
                    </div>
                   <p className="text-2xl font-black text-primary tracking-tighter">{formatPrice(totalPrice * qty)}</p>
@@ -281,7 +281,7 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <button onClick={handleAddToCart} disabled={effectiveStock === 0 || !allComplete}
                   className="py-4 rounded-[1.5rem] border-2 border-primary text-primary font-black text-[9px] uppercase tracking-[0.4em] hover:bg-primary hover:text-white transition-all duration-500 disabled:opacity-20">
-                  {addedMsg ? "DONE" : t("cart")}
+                  {addedMsg ? t("product_details.done") : t("cart")}
                 </button>
                 <button 
                   onClick={() => { handleAddToCart(); if (allComplete) router.push("/checkout"); }}
@@ -299,7 +299,7 @@ export default function ProductDetailPage() {
                   {product.seller.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-1">Storefront</p>
+                  <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-1">{t("product_details.storefront_label")}</p>
                   <Link href={`/shop/${product.seller.id}`} className="text-base font-black uppercase hover:text-primary transition-colors tracking-tight">{product.seller.name}</Link>
                 </div>
               </div>
@@ -353,7 +353,7 @@ export default function ProductDetailPage() {
                       <div className="p-5 rounded-[1.5rem] bg-primary text-white flex items-center justify-between shadow-lg">
                         <div>
                           <div className="text-3xl font-black tracking-tighter leading-none mb-1">{avgRating.toFixed(1)}</div>
-                          <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-60">Verified Rating</p>
+                          <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-60">{t("product_details.verified_rating")}</p>
                         </div>
                         <StarRow rating={avgRating} />
                       </div>

@@ -103,7 +103,7 @@ export default function AdminProductsPage() {
   const viewProductDetails = async (p: any) => {
     if (!token) return;
     if (p.deleted_at) {
-      alert(t("admin_products.deleted_warning") || "Sản phẩm này đã bị xóa bởi người bán. Không thể xem chi tiết.");
+      alert(t("admin_products.deleted_warning"));
       return;
     }
     try {
@@ -131,7 +131,7 @@ export default function AdminProductsPage() {
       setSelectedProduct({ ...selectedProduct, status: 'banned', ban_reason: banReason });
     } catch (err) {
       console.error("Failed to ban product", err);
-      alert(t("admin_products.ban_error") || "Lỗi khi cấm sản phẩm.");
+      alert(t("admin_products.ban_error"));
     } finally {
       setIsBanning(false);
     }
@@ -149,7 +149,7 @@ export default function AdminProductsPage() {
       setSelectedProduct({ ...selectedProduct, status: 'active', ban_reason: null });
     } catch (err) {
       console.error("Failed to unban product", err);
-      alert("Lỗi khi mở khóa sản phẩm.");
+      alert(t("admin_products.unban_error"));
     } finally {
       setIsBanning(false);
     }
@@ -159,8 +159,8 @@ export default function AdminProductsPage() {
     if (!token) return;
     const isTrashed = !!product.deleted_at;
     const msg = isTrashed
-      ? (t("admin_products.confirm_restore") || "Bạn có muốn khôi phục sản phẩm này?")
-      : (t("admin_products.confirm_delete") || "Bạn có chắc chắn muốn xóa sản phẩm này?");
+      ? t("admin_products.confirm_restore")
+      : t("admin_products.confirm_delete");
 
     if (!confirm(msg)) return;
 
@@ -171,7 +171,7 @@ export default function AdminProductsPage() {
       fetchProducts(pagination.current_page);
     } catch (err) {
       console.error("Failed to toggle product deletion", err);
-      alert(t("admin_products.delete_error") || "Lỗi khi xử lý xóa/khôi phục sản phẩm.");
+      alert(t("admin_products.delete_error"));
     }
   };
 
@@ -192,7 +192,7 @@ export default function AdminProductsPage() {
 
   const handleBanUser = async (u: any) => {
     if (!token) return;
-    const reason = prompt(t("admin_products.ban_reason_placeholder") || "Lý do cấm người dùng này?");
+    const reason = prompt(t("admin_products.ban_reason_placeholder"));
     if (!reason) return;
     try {
       await axios.put(`${API}/admin/users/${u.id}/ban`, { reason }, {
@@ -200,26 +200,26 @@ export default function AdminProductsPage() {
       });
       viewSellerDetails(u.id);
     } catch (err: any) {
-      alert(err.response?.data?.message || "Không thể cấm người dùng");
+      alert(err.response?.data?.message || t("admin_products.ban_user_error"));
     }
   };
 
   const handleUnbanUser = async (u: any) => {
     if (!token) return;
-    if (!confirm("Bạn có chắc chắn muốn bỏ cấm người dùng này?")) return;
+    if (!confirm(t("admin_products.confirm_unban_user"))) return;
     try {
       await axios.put(`${API}/admin/users/${u.id}/unban`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       viewSellerDetails(u.id);
     } catch (err: any) {
-      alert(err.response?.data?.message || "Không thể bỏ cấm người dùng");
+      alert(err.response?.data?.message || t("admin_products.unban_user_error"));
     }
   };
 
   const handleDeleteUser = async (u: any) => {
     if (!token) return;
-    if (!confirm(t("admin.users_manage.confirm_delete", { name: u.name }) || `Bạn có chắc chắn muốn xóa người dùng ${u.name}?`)) {
+    if (!confirm(t("admin.users_manage.confirm_delete", { name: u.name }))) {
       return;
     }
     try {
@@ -229,7 +229,7 @@ export default function AdminProductsPage() {
       setShowSellerModal(false);
       fetchProducts(pagination.current_page);
     } catch (err: any) {
-      alert(err.response?.data?.message || "Không thể xóa người dùng");
+      alert(err.response?.data?.message || t("admin_products.delete_user_error"));
     }
   };
 
@@ -256,7 +256,7 @@ export default function AdminProductsPage() {
       case 'active':
         return <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20">{t("seller.products_manage.active")}</Badge>;
       case 'banned':
-        return <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20">{t("admin_products.product_banned", { defaultValue: "BỊ CẤM" })}</Badge>;
+        return <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20">{t("admin_products.product_banned")}</Badge>;
       case 'hide':
         return <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/20">{t("seller.products_manage.hide")}</Badge>;
       case 'out_of_stock':
@@ -305,16 +305,33 @@ export default function AdminProductsPage() {
           </div>
           <div className="md:col-span-4 lg:col-span-3 flex items-center gap-2">
             <Filter size={20} className="text-muted-foreground ml-2 shrink-0 opacity-50" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(v: unknown) => setStatusFilter(v as string)}>
                 <SelectTrigger className="h-12 bg-muted/30 border-transparent focus:border-primary rounded-2xl font-black uppercase text-xs tracking-widest transition-all">
-                  <SelectValue placeholder={t("admin_products.all_status")} />
+                  <SelectValue>
+                    {statusFilter === "all" ? t("admin_products.all_status") : 
+                     statusFilter === "active" ? t("seller.products_manage.active") : 
+                     statusFilter === "hide" ? t("seller.products_manage.hide") : 
+                     statusFilter === "out_of_stock" ? t("seller.products_manage.out_of_stock") : 
+                     statusFilter === "banned" ? t("admin_products.product_banned") : 
+                     t("admin_products.all_status")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl">
-                  <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest">{t("admin_products.all_status")}</SelectItem>
-                  <SelectItem value="active" className="font-bold uppercase text-[10px] tracking-widest">{t("seller.products_manage.active").toUpperCase()}</SelectItem>
-                  <SelectItem value="hide" className="font-bold uppercase text-[10px] tracking-widest">{t("seller.products_manage.hide").toUpperCase()}</SelectItem>
-                  <SelectItem value="out_of_stock" className="font-bold uppercase text-[10px] tracking-widest">{t("seller.products_manage.out_of_stock").toUpperCase()}</SelectItem>
-                  <SelectItem value="banned" className="font-bold uppercase text-[10px] tracking-widest">{t("admin_products.product_banned").toUpperCase()}</SelectItem>
+                  <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none py-3">
+                    {t("admin_products.all_status")}
+                  </SelectItem>
+                  <SelectItem value="active" className="font-bold uppercase text-[10px] tracking-widest leading-none py-3">
+                    {t("seller.products_manage.active")}
+                  </SelectItem>
+                  <SelectItem value="hide" className="font-bold uppercase text-[10px] tracking-widest leading-none py-3">
+                    {t("seller.products_manage.hide")}
+                  </SelectItem>
+                  <SelectItem value="out_of_stock" className="font-bold uppercase text-[10px] tracking-widest leading-none py-3">
+                    {t("seller.products_manage.out_of_stock")}
+                  </SelectItem>
+                  <SelectItem value="banned" className="font-bold uppercase text-[10px] tracking-widest leading-none py-3">
+                    {t("admin_products.product_banned")}
+                  </SelectItem>
                 </SelectContent>
             </Select>
           </div>
@@ -374,9 +391,9 @@ export default function AdminProductsPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-5">
+                      <td className="hidden sm:table-cell px-6 py-5">
                     <Badge variant="outline" className="bg-muted px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider text-muted-foreground border-border/50">
-                      {p.category?.name || "N/A"}
+                      {p.category?.name || t("common.no_data")}
                     </Badge>
                   </td>
                   <td className="px-6 py-5 font-black text-primary text-sm md:text-base tracking-tighter">
@@ -486,7 +503,7 @@ export default function AdminProductsPage() {
 
                         <div className="flex items-center gap-6 pt-4">
                            <RenderStatusBadge status={selectedProduct.status} />
-                           <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40 tracking-widest">PID #{selectedProduct.id}</span>
+                           <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40 tracking-widest">{t("admin_products.id_prefix")} {selectedProduct.id}</span>
                         </div>
                       </div>
 
@@ -599,7 +616,7 @@ export default function AdminProductsPage() {
                       ) : reviews.length === 0 ? (
                         <div className="py-24 border-2 border-dashed border-border/50 text-center opacity-20 select-none rounded-[3rem]">
                            <MessageCircle size={48} className="mx-auto mb-4" />
-                           <p className="text-xs font-black uppercase tracking-[0.3em]">{t("product_details.no_reviews")}</p>
+                           <p className="text-xs font-black uppercase tracking-[0.3em]">{t("admin_products.no_reviews")}</p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -645,13 +662,13 @@ export default function AdminProductsPage() {
                       {t("admin_products.ban_product")}
                     </Button>
                   ) : (
-                    <Button
+                     <Button
                       size="lg"
                       onClick={handleUnbanProduct}
                       className="px-12 h-14 bg-emerald-600 text-white rounded-[1.25rem] font-black uppercase text-xs tracking-widest shadow-2xl shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
                     >
                       <CheckCircle2 size={20} className="mr-3" strokeWidth={3} />
-                      {t("admin_products.unban_product") || "UNBAN PRODUCT"}
+                      {t("admin_products.unban_product")}
                     </Button>
                   )}
 
@@ -660,7 +677,7 @@ export default function AdminProductsPage() {
                       size="lg"
                       variant="outline"
                       onClick={() => {
-                        if (confirm(t("confirm_delete"))) {
+                        if (confirm(t("admin_products.confirm_delete"))) {
                           axios.delete(`${API}/admin/products/${selectedProduct.id}`, {
                             headers: { Authorization: `Bearer ${token}` }
                           }).then(() => {
@@ -679,7 +696,7 @@ export default function AdminProductsPage() {
                       size="lg"
                       variant="outline"
                       onClick={() => {
-                        if (confirm(t("admin_products.confirm_restore") || "Bạn có muốn khôi phục sản phẩm này?")) {
+                        if (confirm(t("admin_products.confirm_restore"))) {
                           axios.delete(`${API}/admin/products/${selectedProduct.id}`, {
                             headers: { Authorization: `Bearer ${token}` }
                           }).then(() => {
@@ -691,7 +708,7 @@ export default function AdminProductsPage() {
                       className="px-10 h-14 border-emerald-500/30 text-emerald-500 hover:bg-emerald-600 hover:text-white rounded-[1.25rem] font-black uppercase text-xs tracking-widest"
                     >
                       <ArrowUpRight size={20} className="mr-3" />
-                      {t("admin_products.restore_product") || "KHÔI PHỤC"}
+                      {t("admin_products.restore_product")}
                     </Button>
                   )}
                 </div>
@@ -729,7 +746,7 @@ export default function AdminProductsPage() {
                       <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20 font-black text-[9px] tracking-widest uppercase">
                         {t("roles.seller")}
                       </Badge>
-                      <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40 tracking-widest">USER_ID #{selectedSeller.id}</span>
+                      <span className="text-[10px] font-black text-muted-foreground uppercase opacity-40 tracking-widest">{t("admin_products.uid_prefix")} {selectedSeller.id}</span>
                     </div>
                   </div>
                 </div>
@@ -767,7 +784,7 @@ export default function AdminProductsPage() {
                               </div>
                               <div className="min-w-0 flex-1 space-y-1">
                                 <p className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em]">{t("profile_page.phone")}</p>
-                                <p className="font-bold text-base">{selectedSeller.profile?.phone || "N/A"}</p>
+                                <p className="font-bold text-base">{selectedSeller.profile?.phone || t("common.no_data")}</p>
                               </div>
                             </Card>
                             <Card className="flex items-center gap-6 p-6 border-border/50 rounded-2xl group hover:bg-muted/30 transition-all">
@@ -777,7 +794,7 @@ export default function AdminProductsPage() {
                               <div className="min-w-0 flex-1 space-y-1">
                                 <p className="text-[9px] font-black opacity-30 uppercase tracking-[0.2em]">{t("admin.joined")}</p>
                                 <p className="font-bold text-base">
-                                  {selectedSeller.created_at ? format(new Date(selectedSeller.created_at), "dd MMMM, yyyy", { locale: i18n.language === 'vi' ? vi : undefined }) : "N/A"}
+                                  {selectedSeller.created_at ? format(new Date(selectedSeller.created_at), "dd MMMM, yyyy", { locale: i18n.language === 'vi' ? vi : undefined }) : t("common.no_data")}
                                 </p>
                               </div>
                             </Card>
@@ -798,7 +815,7 @@ export default function AdminProductsPage() {
                               <p className="text-base font-black truncate pr-16 uppercase tracking-tight">{addr.address_line_1}</p>
                               <p className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-widest">{addr.city}, {addr.country}</p>
                               {addr.is_default && (
-                                <Badge className="mt-4 bg-primary/5 text-primary border-primary/20 text-[8px] font-black tracking-widest px-3">DEFAULT</Badge>
+                                <Badge className="mt-4 bg-primary/5 text-primary border-primary/20 text-[8px] font-black tracking-widest px-3">{t("profile_page.default")}</Badge>
                               )}
                             </Card>
                           )) : (

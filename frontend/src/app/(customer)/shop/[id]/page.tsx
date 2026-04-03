@@ -39,9 +39,9 @@ interface Product {
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function SellerShopPage() {
+export default function SellerShopPage({ params }: { params: { id: string } }) {
   const { t } = useTranslation();
-  const { id } = useParams<{ id: string }>();
+  const { id } = params;
   const router = useRouter();
   const { formatPrice } = useCurrencyStore();
   const { token } = useAuthStore();
@@ -92,7 +92,7 @@ export default function SellerShopPage() {
                         onClick={() => router.back()} 
                         className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all mb-8 active:scale-95 group"
                     >
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> {t?.("common.back") || "Quay lại"}
+                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> {t("common.back")}
                     </button>
 
                     <motion.div 
@@ -115,22 +115,22 @@ export default function SellerShopPage() {
                             <div>
                                 <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase leading-none">{seller.name}</h1>
                                 <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed font-bold opacity-70">
-                                    {seller.profile?.bio || "Chào mừng bạn đến với cửa hàng của tôi! Chúc bạn mua sắm vui vẻ."}
+                                    {seller.profile?.bio || t("shop.default_bio")}
                                 </p>
                             </div>
 
                             <div className="flex flex-wrap gap-4 md:gap-8 border-t border-border/5 pt-4">
-                                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                                <div className="flex items-center gap-1.5 opacity-60 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                                     <Package size={16} strokeWidth={2.5} className="text-primary" />
-                                    <span>{seller.products_count} sản phẩm</span>
+                                    <span>{t("common.products_count", { count: seller.products_count })}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                                <div className="flex items-center gap-1.5 opacity-60 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
                                     <Star size={16} strokeWidth={2.5} className="text-yellow-500 fill-yellow-500/20" />
-                                    <span>{seller.avg_rating || "N/A"} Đánh giá</span>
+                                    <span>{t("common.reviews_count", { count: seller.avg_rating || 0 })}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
                                     <Calendar size={16} strokeWidth={2.5} />
-                                    <span>Tham gia {new Date(seller.created_at).getFullYear()}</span>
+                                    <span>{t("shop.joined_at", { year: new Date(seller.created_at).getFullYear() })}</span>
                                 </div>
                             </div>
                         </div>
@@ -170,7 +170,7 @@ export default function SellerShopPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" size={18} />
                         <Input 
                             type="text" 
-                            placeholder="TÌM TRONG CỬA HÀNG..." 
+                            placeholder={t("common.search_in_shop")} 
                             value={search}
                             onChange={(e) => {
                                 const val = e.target.value;

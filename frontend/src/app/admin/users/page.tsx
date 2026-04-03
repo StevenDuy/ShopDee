@@ -96,7 +96,7 @@ export default function AdminUsersPage() {
 
   const handleBanUser = async (u: any) => {
     if (!token) return;
-    const reason = prompt(t("admin.users_manage.ban_reason_prompt") || "Lý do khóa tài khoản:");
+    const reason = prompt(t("admin.users_manage.ban_reason_prompt"));
     if (reason === null) return;
 
     try {
@@ -106,13 +106,13 @@ export default function AdminUsersPage() {
       fetchUsers(pagination.current_page);
       if (showDetail) viewUserDetails(u.id);
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to ban user");
+      alert(err.response?.data?.message || t("admin.users_manage.ban_failed"));
     }
   };
 
   const handleUnbanUser = async (u: any) => {
     if (!token) return;
-    if (!confirm(t("admin.users_manage.confirm_unban") || "Bỏ khóa tài khoản này?")) return;
+    if (!confirm(t("admin.users_manage.confirm_unban"))) return;
 
     try {
       await axios.put(`${API_URL}/admin/users/${u.id}/unban`, {}, {
@@ -121,7 +121,7 @@ export default function AdminUsersPage() {
       fetchUsers(pagination.current_page);
       if (showDetail) viewUserDetails(u.id);
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to unban user");
+      alert(err.response?.data?.message || t("admin.users_manage.unban_failed"));
     }
   };
 
@@ -150,9 +150,9 @@ export default function AdminUsersPage() {
              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                 <Users size={20} strokeWidth={2.5} />
              </div>
-             <Badge variant="outline" className="font-black text-[9px] tracking-widest uppercase py-0.5 px-2 bg-background border-border/50">
-                IDENTITY // CORE
-             </Badge>
+              <Badge variant="outline" className="font-black text-[9px] tracking-widest uppercase py-0.5 px-2 bg-background border-border/50">
+                 {t("admin.users_manage.identity_core")}
+              </Badge>
           </div>
           <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-foreground">{t("admin.users_nav")}</h1>
           <p className="text-muted-foreground font-bold text-[10px] uppercase opacity-70 tracking-widest mt-2">{t("admin.users_manage.desc")}</p>
@@ -176,15 +176,28 @@ export default function AdminUsersPage() {
               />
           </div>
           <div className="md:col-span-4 lg:col-span-3">
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <Select value={roleFilter} onValueChange={(v: unknown) => setRoleFilter(v as string)}>
                 <SelectTrigger className="h-14 bg-background border-transparent focus:border-primary/30 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-none">
-                  <SelectValue placeholder={t("admin.users_manage.all_roles")} />
+                  <SelectValue>
+                    {roleFilter === "1" ? t("roles.admin") : 
+                     roleFilter === "2" ? t("roles.seller") : 
+                     roleFilter === "3" ? t("roles.customer") : 
+                     t("admin.users_manage.all_roles")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl">
-                  <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest">{t("admin.users_manage.all_roles")}</SelectItem>
-                  <SelectItem value="1" className="font-bold uppercase text-[10px] tracking-widest text-red-500">{t("roles.admin").toUpperCase()}</SelectItem>
-                  <SelectItem value="2" className="font-bold uppercase text-[10px] tracking-widest text-blue-500">{t("roles.seller").toUpperCase()}</SelectItem>
-                  <SelectItem value="3" className="font-bold uppercase text-[10px] tracking-widest">{t("roles.customer").toUpperCase()}</SelectItem>
+                  <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none py-3">
+                    {t("admin.users_manage.all_roles")}
+                  </SelectItem>
+                  <SelectItem value="1" className="font-bold uppercase text-[10px] tracking-widest text-red-500 leading-none py-3">
+                    {t("roles.admin")}
+                  </SelectItem>
+                  <SelectItem value="2" className="font-bold uppercase text-[10px] tracking-widest text-blue-500 leading-none py-3">
+                    {t("roles.seller")}
+                  </SelectItem>
+                  <SelectItem value="3" className="font-bold uppercase text-[10px] tracking-widest leading-none py-3">
+                    {t("roles.customer")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
           </div>
@@ -235,8 +248,8 @@ export default function AdminUsersPage() {
                                 variant={u.status === 'banned' ? "destructive" : "secondary"}
                                 className="px-2 py-0.5 font-black text-[9px] tracking-widest uppercase rounded-lg"
                               >
-                                {u.status === 'banned' ? 'BANNED' : 'ACTIVE'}
-                              </Badge>
+                                 {u.status === 'banned' ? t("admin.users_manage.status_banned") : t("admin.users_manage.status_active")}
+                               </Badge>
                           </td>
                           <td className="hidden sm:table-cell px-8 py-5 text-right border-b border-border/5 dark:border-white/5">
                               <div className="flex flex-col items-end">
@@ -410,13 +423,13 @@ export default function AdminUsersPage() {
                        )}
                     </div>
                     {selectedUser.id !== loggedInUser?.id && selectedUser.role_id !== 1 && (
-                       <Button 
-                          onClick={() => alert("Deletion is restricted.")}
-                          variant="destructive"
-                          className="h-14 text-[10px] tracking-widest opacity-20 hover:opacity-100 transition-all font-black uppercase"
-                       >
-                          <Trash2 size={18} className="mr-2" /> {t("admin.users_manage.delete_user")}
-                       </Button>
+                        <Button 
+                           onClick={() => alert(t("admin.users_manage.delete_restricted"))}
+                           variant="destructive"
+                           className="h-14 text-[10px] tracking-widest opacity-20 hover:opacity-100 transition-all font-black uppercase"
+                        >
+                           <Trash2 size={18} className="mr-2" /> {t("admin.users_manage.delete_user")}
+                        </Button>
                     )}
                  </div>
             </motion.div>

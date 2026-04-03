@@ -10,6 +10,8 @@ interface CurrencyState {
   setCurrency: (currency: CurrencyType) => void;
   formatPrice: (amount: number) => string;
   compactPrice: (amount: number) => string;
+  fromBaseCurrency: (amount: number) => number;
+  toBaseCurrency: (amount: number) => number;
 }
 
 export const useCurrencyStore = create<CurrencyState>()(
@@ -44,6 +46,16 @@ export const useCurrencyStore = create<CurrencyState>()(
         });
 
         return formatter.format(finalAmount) + " " + currency;
+      },
+      fromBaseCurrency: (amount) => {
+        const { currency } = get();
+        if (currency === 'USD') return amount / EXCHANGE_RATE_USD_TO_VND;
+        return amount;
+      },
+      toBaseCurrency: (amount) => {
+        const { currency } = get();
+        if (currency === 'USD') return amount * EXCHANGE_RATE_USD_TO_VND;
+        return amount;
       }
     }),
     {

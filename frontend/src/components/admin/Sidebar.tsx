@@ -28,7 +28,7 @@ export function AdminSidebar() {
     { href: "/admin", icon: LayoutDashboard, label: t("admin.dashboard") },
     { href: "/admin/users", icon: Users, label: t("admin.users_nav") },
     { href: "/admin/banners", icon: ImageIcon, label: t("admin.banners_nav") },
-    { href: "/admin/products", icon: Package, label: t("admin.products_view") || "Quản lý sản phẩm" },
+    { href: "/admin/products", icon: Package, label: t("admin.products_view") },
     { href: "/admin/inbox", icon: MessageCircle, label: t("admin.inbox_nav"), hasBadge: true },
     { href: "/admin/ai-security", icon: Brain, label: t("admin.ai_security_nav") },
     { href: "/admin/settings", icon: Settings, label: t("admin.settings_nav") },

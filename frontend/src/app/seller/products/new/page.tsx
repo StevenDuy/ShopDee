@@ -3,11 +3,14 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Image as ImageIcon, Trash2, Plus, X, ChevronDown } from "lucide-react";
-import axios from "axios";
-import { useAuthStore } from "@/store/useAuthStore";
-import Link from "next/link";
+import { ArrowLeft, Save, Image as ImageIcon, Trash2, Plus, X, ChevronDown, Box } from "lucide-react";
+import "@/lib/echo"; // Initialize WebSocket client
 import { useTranslation } from "react-i18next";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { EliteCombobox } from "@/components/ui/elite-combobox";
+import axios from "axios";
+import Link from "next/link";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -46,14 +49,10 @@ const emptySubValue = (): SubValue => ({ option_value: "", price_adjustment: 0, 
 const emptyValue = (): OptionValue => ({ option_value: "", price_adjustment: 0, stock_quantity: 0, sub_values: [] });
 const emptyOption = (): ProductOption => ({ option_name: "", values: [emptyValue(), emptyValue()] });
 
-const formatPrice = (val: string | number) => {
-  if (val === undefined || val === null || val === "") return "";
-  const str = val.toString().replace(/\D/g, "");
-  return str.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-};
 
 export default function NewProductPage() {
   const { t } = useTranslation();
+  const { formatPrice, fromBaseCurrency, toBaseCurrency } = useCurrencyStore();
   const router = useRouter();
   const { token } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -102,7 +101,13 @@ export default function NewProductPage() {
   // ── Option helpers ─────────────────────────────────────────────────────
   const setOpts = (fn: (prev: ProductOption[]) => ProductOption[]) => setOptions(fn);
 
-  const addOption = () => setOpts(prev => [...prev, emptyOption()]);
+  const addOption = () => {
+    const nextIndex = options.length + 1;
+    setOpts(prev => [...prev, { 
+      ...emptyOption(), 
+      option_name: `${t("seller.products_manage.product_label")} ${nextIndex}` 
+    }]);
+  };
   const removeOption = (oi: number) => setOpts(prev => prev.filter((_, i) => i !== oi));
 
   const updateOptionName = (oi: number, name: string) =>
@@ -176,7 +181,7 @@ export default function NewProductPage() {
         { headers: { Authorization: `Bearer ${token}` } });
       setNewCategoryName(""); setNewCategoryParentId(""); setShowAddCategory(false);
       fetchCategories();
-    } catch { setAddCategoryError("Failed to add category."); }
+    } catch { setAddCategoryError(t("seller.products_manage.create_failed")); }
     finally { setAddingCategory(false); }
   };
 
@@ -188,10 +193,10 @@ export default function NewProductPage() {
     for (const file of filesToValidate) {
       const ext = file.name.split(".").pop()?.toLowerCase();
       if (!ext || !allowedExtensions.includes(ext)) {
-        return `File "${file.name}" không đúng định dạng. Chỉ chấp nhận: ${allowedExtensions.join(", ")}`;
+        return t("seller.products_manage.invalid_file_format", { name: file.name, exts: allowedExtensions.join(", ") });
       }
       if (file.size > maxSize) {
-        return `File "${file.name}" quá lớn. Tối đa 10MB.`;
+        return t("seller.products_manage.file_too_large", { name: file.name });
       }
     }
     return null;
@@ -261,7 +266,7 @@ export default function NewProductPage() {
     } else {
       // Nếu không có option, bắt buộc phải có giá và stock chính
       if (!formData.price || !formData.stock) {
-        setError("Vui lòng nhập giá và số lượng hoặc thêm các tùy chọn sản phẩm.");
+        setError(t("seller.products_manage.price_stock_required"));
         return;
       }
     }
@@ -310,7 +315,7 @@ export default function NewProductPage() {
       router.push("/seller/products");
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || "Failed to create product");
+      setError(e.response?.data?.message || t("seller.products_manage.create_failed"));
 
       // CLEANUP: Nếu đã tạo sản phẩm nhưng lỗi ở bước sau (media/options), xóa sản phẩm đó
       if (createdProductId) {
@@ -411,7 +416,7 @@ export default function NewProductPage() {
                 {attributes.map((attr, idx) => (
                   <div key={idx} className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start p-4 bg-muted/20 border border-border rounded-xl relative">
                     <div className="flex-1 space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-muted-foreground sm:hidden">Tên thông số</label>
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground sm:hidden">{t("seller.products_manage.spec_name")}</label>
                       <input
                         type="text"
                         placeholder={t("seller.products_manage.spec_name_placeholder")}
@@ -425,7 +430,7 @@ export default function NewProductPage() {
                       />
                     </div>
                     <div className="flex-1 space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-muted-foreground sm:hidden">Giá trị</label>
+                      <label className="text-[10px] font-bold uppercase text-muted-foreground sm:hidden">{t("seller.products_manage.spec_value")}</label>
                       <input
                         type="text"
                         placeholder={t("seller.products_manage.spec_value_placeholder")}
@@ -473,35 +478,29 @@ export default function NewProductPage() {
             <div className="space-y-5">
               {options.map((opt, oi) => (
                 <div key={oi} className="border border-border rounded-xl p-4 space-y-4 bg-muted/20">
-                  {/* Option name row — compact */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-card/60 p-3 border-b border-border -mx-4 -mt-4 rounded-t-xl">
-                    <div className="flex-1 flex items-center gap-3">
-                      <input
-                        type="text"
-                        value={opt.option_name}
-                        onChange={e => updateOptionName(oi, e.target.value)}
-                        placeholder={t("seller.products_manage.option_name_placeholder")}
-                        className="flex-1 sm:w-48 sm:shrink-0 px-3 py-2 bg-input border-2 border-primary/20 rounded-xl text-sm font-black uppercase tracking-tight focus:outline-none focus:border-primary transition-all"
-                      />
-                      <button type="button" onClick={() => removeOption(oi)}
-                        className="sm:hidden p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors" title="Remove option">
-                        <Trash2 size={18} />
-                      </button>
+                  {/* Option header — consolidated and simplified */}
+                  <div className="flex items-center justify-between gap-3 bg-card/60 p-3 border-b border-border -mx-4 -mt-4 rounded-t-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-primary/10 rounded-lg flex items-center justify-center text-[10px] font-black text-primary border border-primary/20">
+                        #{oi + 1}
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{opt.option_name}</span>
                     </div>
-                    
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t("seller.products_manage.min_2_values")}</div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="hidden sm:block text-[10px] font-bold uppercase text-muted-foreground tracking-widest">{t("seller.products_manage.min_2_values")}</div>
                       
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         {/* Option total stock badge */}
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-xl" title="Tổng stock option">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-xl" title={t("seller.products_manage.total_stock_hint")}>
+                          <Box size={14} className="text-primary" />
                           <span className="text-[9px] font-black uppercase tracking-widest text-primary">{t("seller.products_manage.total")}:</span>
                           <span className="text-xs font-black text-primary">{computedOptionStock(opt)}</span>
                         </div>
-                        
+
                         <button type="button" onClick={() => removeOption(oi)}
-                          className="hidden sm:flex p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors" title="Remove option">
-                          <X size={18} />
+                          className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors border border-transparent hover:border-destructive/20" title="Remove entire option group">
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
@@ -510,7 +509,9 @@ export default function NewProductPage() {
                   {/* Column headers (Hidden on Mobile) */}
                   <div className="hidden sm:grid grid-cols-[1fr_120px_80px_auto] gap-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2">
                     <span>{t("seller.products_manage.product")}</span>
-                    <span>+ {t("seller.products_manage.price")} (VNĐ)</span>
+                    <span className="text-[10px] bg-primary/10 text-primary px-3 py-1 rounded-full font-black uppercase tracking-widest border border-primary/10">
+                    + {t("seller.products_manage.price")} ({t("currency_code")})
+                    </span>
                     <span className="text-center">{t("seller.products_manage.inventory")}</span>
                     <span className="w-[70px]"></span>
                   </div>
@@ -539,15 +540,15 @@ export default function NewProductPage() {
                                 <div className="space-y-1">
                                   <label className="text-[10px] font-black uppercase text-primary/60 sm:hidden tracking-wider">{t("seller.products_manage.price")}</label>
                                   {hasSubs ? (
-                                    <div className="h-[38px] px-3 flex items-center justify-center bg-muted border border-dashed border-border rounded-lg text-[9px] text-muted-foreground font-bold italic text-center" title="Tính từ giá option con">
+                                    <div className="h-[38px] px-3 flex items-center justify-center bg-muted border border-dashed border-border rounded-lg text-[9px] text-muted-foreground font-bold italic text-center" title={t("seller.products_manage.from_sub")}>
                                       {t("seller.products_manage.from_sub")}
                                     </div>
                                   ) : (
-                                    <input type="text" value={formatPrice(val.price_adjustment)}
+                                    <input type="text" value={fromBaseCurrency(val.price_adjustment)}
                                       onChange={e => {
-                                        const raw = e.target.value.replace(/\./g, "");
+                                        const raw = e.target.value.replace(/[^\d.]/g, "");
                                         if (!isNaN(Number(raw)) || raw === "") {
-                                          updateValue(oi, vi, "price_adjustment", parseFloat(raw) || 0);
+                                          updateValue(oi, vi, "price_adjustment", toBaseCurrency(parseFloat(raw) || 0));
                                         }
                                       }}
                                       className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 text-center font-bold" />
@@ -558,7 +559,7 @@ export default function NewProductPage() {
                                 <div className="space-y-1">
                                   <label className="text-[10px] font-black uppercase text-primary/60 sm:hidden tracking-wider">{t("seller.products_manage.inventory")}</label>
                                   {hasSubs ? (
-                                    <div className="h-[38px] px-3 flex items-center justify-center bg-muted border border-dashed border-border rounded-lg text-xs font-black text-primary text-center" title="Tự động = SUM(stock sub_values)">
+                                    <div className="h-[38px] px-3 flex items-center justify-center bg-muted border border-dashed border-border rounded-lg text-xs font-black text-primary text-center" title={t("seller.products_manage.total_from_options")}>
                                       {parentStock}
                                     </div>
                                   ) : (
@@ -574,7 +575,7 @@ export default function NewProductPage() {
                                <button
                                  type="button"
                                  onClick={() => addSubValue(oi, vi)}
-                                 title="Thêm phân loại cấp 2"
+                                 title={t("seller.products_manage.add_sub_variant")}
                                  className="flex-1 sm:flex-none sm:w-8 h-8 flex items-center justify-center bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-lg transition-all font-black"
                                >
                                  <Plus size={16} />
@@ -608,13 +609,13 @@ export default function NewProductPage() {
                                <div className="grid grid-cols-2 sm:contents gap-2">
                                  <div className="space-y-1">
                                    <label className="text-[9px] font-black uppercase text-primary/60 sm:hidden tracking-wider px-1">{t("seller.products_manage.price")}</label>
-                                   <input type="text" value={formatPrice(sub.price_adjustment)}
-                                     onChange={e => {
-                                       const raw = e.target.value.replace(/\./g, "");
-                                       if (!isNaN(Number(raw)) || raw === "") {
-                                         updateSubValue(oi, vi, si, "price_adjustment", parseFloat(raw) || 0);
-                                       }
-                                     }}
+                                    <input type="text" value={fromBaseCurrency(sub.price_adjustment)}
+                                      onChange={e => {
+                                        const raw = e.target.value.replace(/[^\d.]/g, "");
+                                        if (!isNaN(Number(raw)) || raw === "") {
+                                          updateSubValue(oi, vi, si, "price_adjustment", toBaseCurrency(parseFloat(raw) || 0));
+                                        }
+                                      }}
                                      className="w-full px-2 py-1.5 bg-input border border-border rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary/50 text-center font-bold" />
                                  </div>
                                  <div className="space-y-1">
@@ -658,32 +659,20 @@ export default function NewProductPage() {
               </button>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">{t("seller.products_manage.category")} <span className="text-destructive">*</span></label>
-              <div className="relative">
-                <Select 
-                  value={formData.categoryId?.toString() || ""} 
-                  onValueChange={(val: string) => setFormData({ ...formData, categoryId: val })}
-                >
-                  <SelectTrigger className="w-full h-12 bg-input border border-border rounded-xl text-sm appearance-none focus:ring-2 focus:ring-primary/50 pr-10 font-bold">
-                    <SelectValue placeholder={t("seller.products_manage.select_category")} />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
-                    {categories.map(cat => (
-                      <React.Fragment key={cat.id}>
-                        <SelectItem value={cat.id.toString()} className="font-black uppercase text-[10px] tracking-widest bg-muted/20">
-                          {cat.name.toUpperCase()}
-                        </SelectItem>
-                        {cat.children?.map(ch => (
-                          <SelectItem key={ch.id} value={ch.id.toString()} className="font-bold text-[11px] pl-8">
-                            {ch.name}
-                          </SelectItem>
-                        ))}
-                        <SelectSeparator />
-                      </React.Fragment>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <EliteCombobox
+                label={`${t("seller.products_manage.category")} *`}
+                placeholder={t("seller.products_manage.select_category")}
+                value={formData.categoryId?.toString() || ""}
+                onChange={(val) => setFormData({ ...formData, categoryId: val })}
+                options={categories.flatMap(cat => [
+                  { label: cat.name.toUpperCase(), value: cat.id.toString(), searchTerms: cat.name },
+                  ...(cat.children || []).map(ch => ({ 
+                    label: `↳ ${ch.name}`, 
+                    value: ch.id.toString(),
+                    searchTerms: `${cat.name} ${ch.name}`
+                  }))
+                ])}
+              />
             </div>
           </div>
 
@@ -692,7 +681,7 @@ export default function NewProductPage() {
             <h2 className="text-lg font-bold">{t("seller.products_manage.pricing_inventory")}</h2>
             <div>
               <label className="block text-sm font-medium mb-2">
-                {t("seller.products_manage.base_price")} (VNĐ) <span className="text-destructive">*</span>
+                {t("seller.products_manage.base_price")} ({t("currency_code")}) <span className="text-destructive">*</span>
               </label>
               {options.length > 0 ? (
                 <div className="w-full px-4 py-3 bg-muted border border-dashed border-border rounded-xl text-sm font-medium">
@@ -708,16 +697,16 @@ export default function NewProductPage() {
                            if (v.option_value.trim() && v.price_adjustment < min) min = v.price_adjustment;
                         }
                       }));
-                      return min === Infinity ? `0 ${t("currency_code")}` : new Intl.NumberFormat(t("locale"), { style: 'currency', currency: t("currency_code") }).format(min);
+                      return min === Infinity ? `0` : formatPrice(min);
                     })()}
                   </span>
                 </div>
               ) : (
-                <input type="text" name="price" required value={formatPrice(formData.price)} 
+                <input type="text" name="price" required value={fromBaseCurrency(Number(formData.price) || 0)} 
                   onChange={(e) => {
-                    const raw = e.target.value.replace(/\./g, "");
+                    const raw = e.target.value.replace(/[^\d.]/g, "");
                     if (!isNaN(Number(raw)) || raw === "") {
-                      setFormData({ ...formData, price: raw });
+                      setFormData({ ...formData, price: toBaseCurrency(parseFloat(raw) || 0).toString() });
                     }
                   }}
                   placeholder="0"

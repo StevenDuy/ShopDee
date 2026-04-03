@@ -1,52 +1,74 @@
 "use client";
 
-import { AlertTriangle, ExternalLink, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ShieldAlert, Terminal, Copy, Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
+
+const REQUIRED_VARS = [
+  "NEXT_PUBLIC_API_URL",
+  "NEXT_PUBLIC_GOOGLE_CLIENT_ID",
+];
 
 export function ConfigAlert() {
-  const missingConfigs = [];
-  
-  if (!process.env.NEXT_PUBLIC_API_URL) missingConfigs.push("NEXT_PUBLIC_API_URL (Backend API)");
-  if (!process.env.NEXT_PUBLIC_PUSHER_APP_KEY) missingConfigs.push("NEXT_PUBLIC_PUSHER_APP_KEY (Chat Realtime)");
-  if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) missingConfigs.push("NEXT_PUBLIC_GOOGLE_CLIENT_ID (Google Login)");
+  const { t } = useTranslation();
+  const [missingVars, setMissingVars] = useState<string[]>([]);
+  const [copied, setCopied] = useState(false);
 
-  if (missingConfigs.length === 0) return null;
+  useEffect(() => {
+    const missing: string[] = [];
+    
+    if (!process.env.NEXT_PUBLIC_API_URL) {
+      missing.push("NEXT_PUBLIC_API_URL");
+    }
+    
+    if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+      missing.push("NEXT_PUBLIC_GOOGLE_CLIENT_ID");
+    }
+
+    setMissingVars(missing);
+  }, []);
+
+  const copyToClipboard = () => {
+    const text = missingVars.map(v => `${v}=your_value_here`).join('\n');
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (missingVars.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-md p-4">
-      <div className="w-full max-w-md bg-card border-2 border-primary rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-        <div className="flex flex-col items-center text-center space-y-6">
-          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-            <AlertTriangle size={40} />
+    <div className="fixed bottom-6 right-6 z-[9999] w-80 animate-in slide-in-from-right duration-500">
+      <div className="bg-background/80 backdrop-blur-xl border border-primary/20 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden group">
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
+        <div className="space-y-4 text-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto border border-primary/20">
+            <ShieldAlert size={24} strokeWidth={2.5} />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-black uppercase tracking-tighter">{t("errors.config_incomplete")}</h2>
+            <p className="text-muted-foreground text-sm font-medium">{t("errors.config_missing_vars", { file: ".env.local" })}</p>
           </div>
           
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black uppercase tracking-tighter">Cấu hình chưa hoàn tất</h2>
-            <p className="text-muted-foreground text-sm font-medium">Hệ thống phát hiện bạn chưa cấu hình đầy đủ các Key API quan trọng trong file <code className="bg-muted px-1 rounded">.env.local</code></p>
-          </div>
-
-          <div className="w-full bg-muted/50 rounded-2xl p-4 border border-border space-y-3">
-             <p className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-left">Các biến còn thiếu:</p>
-             <ul className="space-y-2">
-                {missingConfigs.map(config => (
-                  <li key={config} className="flex items-center gap-2 text-xs font-bold text-foreground">
-                    <XCircle size={14} className="text-red-500" />
-                    {config}
-                  </li>
+          <div className="bg-muted/30 rounded-2xl p-4 border border-border/50">
+             <p className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-left mb-2">{t("errors.missing_vars_label")}</p>
+             <div className="space-y-1.5">
+                {missingVars.map(v => (
+                  <div key={v} className="flex items-center gap-2 text-[10px] font-mono opacity-70">
+                    <Terminal size={10} />
+                    <span>{v}</span>
+                  </div>
                 ))}
-             </ul>
+             </div>
           </div>
 
-          <a 
-            href="https://github.com/StevenDuy/ShopDee/blob/main/README.md" 
-            target="_blank" 
-            className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95"
+          <button 
+            onClick={copyToClipboard}
+            className="w-full h-12 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-primary/10"
           >
-            Xem hướng dẫn lấy Key <ExternalLink size={16} />
-          </a>
-          
-          <p className="text-[10px] text-muted-foreground italic font-medium mt-4">
-             Vui lòng cấu hình xong và khởi động lại server (`npm run dev`)
-          </p>
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? "COPIED" : "COPY ENV TEMPLATE"}
+          </button>
         </div>
       </div>
     </div>

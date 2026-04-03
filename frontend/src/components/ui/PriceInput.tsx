@@ -1,24 +1,36 @@
 "use client";
 
 import React, { useState } from "react";
-import { PlusCircle } from "lucide-react";
+import { LucideIcon, PlusCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface PriceInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  label?: string;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  icon?: LucideIcon;
   placeholder?: string;
+  required?: boolean;
 }
 
-export const PriceInput: React.FC<PriceInputProps> = ({ 
+export default function PriceInput({ 
+  label, 
   value, 
   onChange, 
-  label = "Giá sản phẩm", 
-  placeholder = "0" 
-}) => {
+  icon: Icon, 
+  placeholder, 
+  required = false 
+}: PriceInputProps) {
+  const { t } = useTranslation();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, "");
+    onChange(val ? parseInt(val) : 0);
+  };
+
   const appendZeros = (count: number) => {
-    const zeros = "0".repeat(count);
-    onChange(value + zeros);
+    const factor = Math.pow(10, count);
+    onChange(value * factor);
   };
 
   return (
@@ -28,7 +40,7 @@ export const PriceInput: React.FC<PriceInputProps> = ({
         <input
           type="text"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={handleInputChange}
           placeholder={placeholder}
           className="w-full px-5 py-4 rounded-[var(--radius)] border border-input bg-background/50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none smooth-transition text-lg font-medium"
         />
@@ -37,23 +49,21 @@ export const PriceInput: React.FC<PriceInputProps> = ({
           <button
             type="button"
             onClick={() => appendZeros(3)}
-            className="flex-1 py-2 px-3 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold active:scale-95 smooth-transition border border-border/50 flex items-center justify-center space-x-1"
+            className="flex-1 h-9 bg-primary/5 hover:bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-primary/10"
           >
-            <PlusCircle size={14} />
-            <span>+000 (Nghìn)</span>
+            <span>+000 ({t("common.thousand_short")})</span>
           </button>
           <button
             type="button"
             onClick={() => appendZeros(6)}
-            className="flex-1 py-2 px-3 rounded-xl bg-secondary text-secondary-foreground text-xs font-bold active:scale-95 smooth-transition border border-border/50 flex items-center justify-center space-x-1"
+            className="flex-1 h-9 bg-primary/5 hover:bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-primary/10"
           >
-            <PlusCircle size={14} />
-            <span>+000.000 (Triệu)</span>
+            <span>+000.000 ({t("common.million_short")})</span>
           </button>
         </div>
       </div>
       <p className="text-[10px] text-muted-foreground ml-1 italic">
-        * Gợi ý: Dùng nút nhấn nhanh để thêm số 0 chuẩn xác.
+        * {t("seller.products_manage.price_hint") || "Gợi ý: Dùng nút nhấn nhanh để thêm số 0 chuẩn xác."}
       </p>
     </div>
   );

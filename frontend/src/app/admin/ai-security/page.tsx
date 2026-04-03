@@ -9,8 +9,9 @@ import {
   Shield, Network, Scan, Fingerprint, Layers
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,49 +46,49 @@ interface AttackScenario {
 
 // --- Data ---
 const SCENARIOS: AttackScenario[] = [
-  {
-    id: "bot_auto",
-    name: "Automated Bot (Speed)",
+  { 
+    id: "bot_auto", 
+    name: "BOT AUTO-CHECKOUT", 
     description: "Tấn công bằng bot với tốc độ thanh toán siêu nhanh ngay sau khi vào trang.",
     icon: Zap,
     severity: "high",
     features: { time_to_checkout: 1.5, failed_logins: 0, ip_distance: 10, pages_viewed: 1, amount: 250000, device_changed: false, hour_of_day: 14 }
   },
-  {
-    id: "brute_force",
-    name: "Credential Brute Force",
+  { 
+    id: "brute_force", 
+    name: "BRUTE-FORCE LOGIN", 
     description: "Tài khoản đăng nhập sai nhiều lần trước khi thành công (Dấu hiệu dò mật khẩu).",
     icon: Lock,
     severity: "critical",
     features: { time_to_checkout: 120, failed_logins: 15, ip_distance: 150, pages_viewed: 5, amount: 150000, device_changed: true, hour_of_day: 3 }
   },
-  {
-    id: "location_spoof",
-    name: "Impossible Travel",
+  { 
+    id: "location_spoof", 
+    name: "LOCATION SPOOFING", 
     description: "Đăng nhập từ vị trí địa lý cách xa hàng nghìn km chỉ trong thời gian ngắn.",
     icon: Globe,
     severity: "high",
     features: { time_to_checkout: 300, failed_logins: 0, ip_distance: 5400, pages_viewed: 12, amount: 900000, device_changed: true, hour_of_day: 10 }
   },
-  {
-    id: "whale_sniper",
-    name: "High-Value Sniping",
+  { 
+    id: "whale_sniper", 
+    name: "WHALE SNIPER", 
     description: "Vào trang web và chạy ngay đến sản phẩm đắt nhất để mua mà không xem gì khác.",
     icon: TrendingUp,
     severity: "medium",
     features: { time_to_checkout: 15, failed_logins: 0, ip_distance: 5, pages_viewed: 2, amount: 45000000, device_changed: false, hour_of_day: 22 }
   },
-  {
-    id: "velocity_attack",
-    name: "Velocity Spamming",
+  { 
+    id: "velocity_attack", 
+    name: "VELOCITY ATTACK", 
     description: "Gửi hàng loạt yêu cầu mua hàng giá trị thấp trong thời gian cực ngắn.",
     icon: MousePointerClick,
     severity: "medium",
     features: { time_to_checkout: 4, failed_logins: 0, ip_distance: 2, pages_viewed: 4, amount: 10000, device_changed: false, hour_of_day: 1 }
   },
-  {
-    id: "account_takeover",
-    name: "Full Account Takeover",
+  { 
+    id: "account_takeover", 
+    name: "ACCOUNT TAKEOVER", 
     description: "Kết hợp thiết bị mới, IP lạ, đổi địa chỉ và mua món đồ đắt đỏ.",
     icon: UserX,
     severity: "critical",
@@ -95,8 +96,9 @@ const SCENARIOS: AttackScenario[] = [
   }
 ];
 
-export default function AISecurityPage() {
+export default function AdminAISecurityPage() {
   const { t } = useTranslation();
+  const { token } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"dashboard" | "simulator" | "monitor">("dashboard");
   const [loading, setLoading] = useState(true);
   const [selectedScenario, setSelectedScenario] = useState<AttackScenario | null>(null);
@@ -463,10 +465,9 @@ export default function AISecurityPage() {
                                    <Layers size={20} />
                                 </div>
                                 <div>
-                                   <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-2">Architectural Logic</p>
-                                   <p className="text-[11px] font-bold leading-relaxed opacity-70">
-                                      Các script tấn công tinh vi hiện nay thường mô phỏng độ trễ "như người thật" bằng cách sử dụng phân phối Gaussian. Tuy nhiên, ML models với đặc trưng trích xuất (Feature Extraction) 5-chiều vẫn có thể phát hiện sự bất thường trong chuỗi sự kiện đăng nhập-mua hàng.
-                                   </p>
+                                  <div className="p-8 bg-background/50 border border-white/10 rounded-[2rem] text-[11px] font-bold text-muted-foreground leading-relaxed uppercase tracking-widest opacity-60">
+                                      {t("admin.ai_security.logic_desc")}
+                                  </div>
                                 </div>
                              </div>
                           </div>
@@ -607,6 +608,7 @@ function ModelResultCard({ name, desc, risk, status, time, color }: any) {
 }
 
 function SuspectRow({ user, method, activity, consensus, severity }: any) {
+  const { t } = useTranslation();
   const sevStyle = severity === 'critical' ? 'text-red-500 bg-red-500/10' : severity === 'high' ? 'text-orange-500 bg-orange-500/10' : 'text-blue-500 bg-blue-500/10';
   
   return (
@@ -640,7 +642,7 @@ function SuspectRow({ user, method, activity, consensus, severity }: any) {
        </td>
        <td className="px-8 py-4">
           <div className="flex justify-end gap-2">
-             <Button size="sm" className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[9px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20" onClick={(e) => { e.stopPropagation(); toast.success("Đã khóa tài khoản " + user); }}>
+             <Button size="sm" className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[9px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20" onClick={(e) => { e.stopPropagation(); toast.success(t("admin.ai_security.lock_success", { user: user })); }}>
                 BLOCK
              </Button>
              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border/50 hover:bg-white shadow-sm">

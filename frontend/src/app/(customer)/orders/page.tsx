@@ -71,7 +71,7 @@ export default function MyOrdersPage() {
       });
       setOrders(r.data.data ?? []);
     } catch (err) {
-      toast.error(t("customer_orders.error_load_orders") || "Failed to load orders");
+      toast.error(t("customer_orders.error_load_orders"));
     } finally {
       setLoading(false);
     }
@@ -82,10 +82,10 @@ export default function MyOrdersPage() {
 
   useEffect(() => {
     if (paymentStatus === "success") {
-      toast.success(t("checkout_page.order_success") || "Payment Successful!", { duration: 5000 });
+      toast.success(t("checkout_page.order_success"), { duration: 5000 });
       window.history.replaceState({}, '', window.location.pathname);
     } else if (paymentStatus === "failed") {
-      toast.error("Payment Failed", { description: "The transaction was cancelled or encountered an error." });
+      toast.error(t("customer_orders.payment_failed"), { description: t("customer_orders.payment_failed_desc") });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [paymentStatus, t]);
@@ -154,9 +154,9 @@ export default function MyOrdersPage() {
               className="bg-white/30 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/20 rounded-3xl p-16 text-center shadow-2xl relative overflow-hidden"
             >
                <h2 className="text-xl font-black uppercase tracking-tighter mb-2">{t("customer_orders.no_orders_yet")}</h2>
-               <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-40 mb-8 italic">Your shopping record is currently empty.</p>
+               <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-40 mb-8 italic">{t("customer_orders.empty_record_hint")}</p>
                <button onClick={() => router.push("/products")} className="px-10 py-3 bg-primary text-white rounded-xl font-black uppercase text-[10px] tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all">
-                  START TRADING
+                  {t("customer_orders.start_trading")}
                </button>
             </motion.div>
           ) : (
@@ -180,14 +180,14 @@ export default function MyOrdersPage() {
                       
                       {/* Fixed Col 1: Administrative Identity (~140px) */}
                       <div className="w-[140px] shrink-0 border-r border-border/10 pr-6">
-                        <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">RECORD ID</span>
+                        <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">{t("customer_orders.record_id")}</span>
                         <p className="text-[11px] font-black uppercase tracking-tight text-primary">#{order.id}</p>
                         <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-0.5 leading-none">{new Date(order.created_at).toLocaleDateString()}</p>
                       </div>
 
                       {/* Fixed Col 2: Status Chip (~130px) */}
                       <div className="w-[130px] shrink-0 border-r border-border/10 pr-6">
-                         <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">STATUS</span>
+                         <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">{t("seller.orders.status").toUpperCase()}</span>
                          <span className={`text-[8px] font-black px-2 py-1 rounded-lg border flex items-center gap-1.5 uppercase tracking-widest whitespace-nowrap ${statusInfo.color} ${statusInfo.glow}`}>
                             <StatusIcon size={10} strokeWidth={3} /> {statusInfo.label}
                          </span>
@@ -202,18 +202,18 @@ export default function MyOrdersPage() {
                                </div>
                             ))}
                          </div>
-                         <div className="flex flex-col min-w-0">
-                            <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">PRODUCTS</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1">{t("seller.products").toUpperCase()}</span>
                             <p className="text-[10px] font-black uppercase tracking-tight truncate opacity-80">{order.items[0].product.title}</p>
                             {order.items.length > 1 && (
-                               <p className="text-[8px] font-black text-primary/60 uppercase tracking-widest leading-none mt-0.5">+ {order.items.length - 1} more items</p>
+                               <p className="text-[8px] font-black text-primary/60 uppercase tracking-widest leading-none mt-0.5">{t("customer_orders.more_items", { count: order.items.length - 1 })}</p>
                             )}
-                         </div>
+                          </div>
                       </div>
 
                       {/* Fixed Col 4: Financial Summary (~120px) */}
                       <div className="w-[120px] shrink-0 border-l border-border/10 pl-6 flex flex-col items-end">
-                         <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1 leading-none">TOTAL VALUE</span>
+                         <span className="text-[7.5px] font-black text-muted-foreground/30 uppercase tracking-[0.2em] block mb-1 leading-none">{t("customer_orders.total_value")}</span>
                          <p className="text-[16px] font-black text-primary tracking-tighter leading-none">{formatPrice(order.total_amount)}</p>
                          <p className="text-[7px] font-black uppercase text-muted-foreground/40 mt-1">{order.payment_method.toUpperCase()}</p>
                       </div>
@@ -236,12 +236,12 @@ export default function MyOrdersPage() {
                         {order.status === 'delivered' && (
                            confirmId === order.id ? (
                               <div className="flex gap-1 whitespace-nowrap">
-                                 <button onClick={() => handleConfirmReceived(order.id)} className="px-4 py-1.5 text-[8px] font-black uppercase bg-green-600 text-white rounded-lg">ACK</button>
+                                 <button onClick={() => handleConfirmReceived(order.id)} className="px-4 py-1.5 text-[8px] font-black uppercase bg-green-600 text-white rounded-lg">{t("customer_orders.ack")}</button>
                                  <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 text-[8px] font-black uppercase bg-white/10 text-white/50 rounded-lg">X</button>
                               </div>
                            ) : (
                               <button onClick={() => setConfirmId(order.id)} className="px-5 py-2 text-[8px] font-black uppercase bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all whitespace-nowrap">
-                                 CONFIRM
+                                 {t("customer_orders.confirm_received_btn")}
                               </button>
                            )
                         )}

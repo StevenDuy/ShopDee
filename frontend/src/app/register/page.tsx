@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, UserPlus, ShoppingBag, User, Store, ArrowLeft } from "lucide-react";
 import axios from "axios";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -42,7 +44,7 @@ export default function RegisterPage() {
 
   const handleSendOtp = async () => {
     if (!email) {
-      setError("Vui lòng nhập email trước khi gửi mã.");
+      setError(t("auth.email_required"));
       return;
     }
     setOtpLoading(true);
@@ -54,10 +56,10 @@ export default function RegisterPage() {
         purpose: "registration"
       });
       setIsOtpSent(true);
-      setSuccess("Mã xác thực đã được gửi!");
+      setSuccess(t("auth.otp_sent"));
       startCountdown();
     } catch (err: any) {
-      setError(err.response?.data?.message || "Không thể gửi mã xác thực.");
+      setError(err.response?.data?.message || t("auth.otp_error"));
     } finally {
       setOtpLoading(false);
     }
@@ -66,7 +68,7 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isOtpSent) {
-      setError("Vui lòng xác thực email trước.");
+      setError(t("auth.verify_first"));
       return;
     }
     setLoading(true);
@@ -82,7 +84,7 @@ export default function RegisterPage() {
 
       router.push("/login?registered=true");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Đăng ký thất bại.");
+      setError(err.response?.data?.message || t("auth.register_failed"));
     } finally {
       setLoading(false);
     }
@@ -96,32 +98,32 @@ export default function RegisterPage() {
 
       <div className="w-full max-w-md relative z-10">
         <Link href="/login" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary mb-6 transition-colors group">
-          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Quay lại đăng nhập
+          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> {t("auth.back_to_login")}
         </Link>
 
         {/* Logo */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-foreground uppercase tracking-tight">Đăng ký</h1>
-          <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-2 opacity-70">Tham gia hệ thống Thương mại điện tử 2.0</p>
+          <h1 className="text-4xl font-bold text-foreground uppercase tracking-tight">{t("auth.register_title")}</h1>
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-2 opacity-70">{t("auth.system_subtitle")}</p>
         </div>
 
         {/* Card */}
         <Card className="backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-border/50 shadow-2xl p-8 hover:scale-100">
           <form onSubmit={handleRegister} className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Họ và tên</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("auth.full_name")}</label>
               <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Nguyễn Văn A"
+                placeholder={t("auth.name_placeholder")}
                 className="h-12"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("auth.email")}</label>
               <div className="flex gap-2">
                 <Input
                   type="email"
@@ -139,14 +141,14 @@ export default function RegisterPage() {
                   variant="outline"
                   className="h-12 px-4 text-[10px] font-black uppercase tracking-widest border-border/50"
                 >
-                  {otpLoading ? "..." : countdown > 0 ? `${countdown}s` : isOtpSent ? "Gửi lại" : "Gửi mã"}
+                  {otpLoading ? "..." : countdown > 0 ? `${countdown}s` : isOtpSent ? t("auth.resend") : t("auth.send_code")}
                 </Button>
               </div>
             </div>
 
             {isOtpSent && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-primary ml-1">Mã xác thực (OTP)</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-primary ml-1">{t("auth.otp_label")}</label>
                 <Input
                   type="text"
                   value={code}
@@ -156,12 +158,12 @@ export default function RegisterPage() {
                   maxLength={6}
                   required
                 />
-                <p className="text-[9px] font-bold text-primary/70 mt-1 uppercase text-center">Kiểm tra email của bạn để lấy mã!</p>
+                <p className="text-[9px] font-bold text-primary/70 mt-1 uppercase text-center">{t("auth.check_email_hint")}</p>
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mật khẩu</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("auth.password")}</label>
               <div className="relative">
                 <Input
                   type={showPw ? "text" : "password"}
@@ -179,7 +181,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-3 pb-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Bạn muốn gia nhập với tư cách?</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("auth.join_as")}</label>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
@@ -187,7 +189,7 @@ export default function RegisterPage() {
                   onClick={() => setRoleId(3)}
                   className="h-12 text-[10px] tracking-widest font-black uppercase transition-all"
                 >
-                  <User size={16} className="mr-2" /> Người mua
+                  <User size={16} className="mr-2" /> {t("roles.customer")}
                 </Button>
                 <Button
                   type="button"
@@ -195,7 +197,7 @@ export default function RegisterPage() {
                   onClick={() => setRoleId(2)}
                   className="h-12 text-[10px] tracking-widest font-black uppercase transition-all"
                 >
-                  <Store size={16} className="mr-2" /> Người bán
+                  <Store size={16} className="mr-2" /> {t("roles.seller")}
                 </Button>
               </div>
             </div>
@@ -213,7 +215,7 @@ export default function RegisterPage() {
             )}
 
             <Button type="submit" disabled={loading} size="lg" className="w-full h-14 text-xs tracking-widest">
-              <UserPlus size={18} className="mr-2" /> ĐĂNG KÝ
+              <UserPlus size={18} className="mr-2" /> {t("auth.register_btn")}
             </Button>
           </form>
         </Card>

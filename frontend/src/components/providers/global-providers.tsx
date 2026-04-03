@@ -4,9 +4,34 @@ import { ThemeProvider } from "./theme-provider";
 import { useEffect, useState } from "react";
 import "../../lib/i18n/config"; // Initialize i18n
 import "../../lib/echo"; // Initialize WebSocket client
+import { useTranslation } from "react-i18next";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import { Toaster } from "sonner";
 import { ConfigAlert } from "./config-alert";
+
+function CurrencySync() {
+  const { i18n } = useTranslation();
+  const { setCurrency } = useCurrencyStore();
+
+  useEffect(() => {
+    const syncCurrency = (lng: string) => {
+      if (lng === "vi") setCurrency("VND");
+      else if (lng === "en") setCurrency("USD");
+    };
+
+    // Initial sync
+    syncCurrency(i18n.language);
+
+    // Listen for future changes
+    i18n.on('languageChanged', syncCurrency);
+    return () => {
+      i18n.off('languageChanged', syncCurrency);
+    };
+  }, [i18n, setCurrency]);
+
+  return null;
+}
 
 export function GlobalProviders({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -21,6 +46,7 @@ export function GlobalProviders({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <CurrencySync />
       <ConfigAlert />
       {children}
       <Toaster position="top-right" richColors closeButton />

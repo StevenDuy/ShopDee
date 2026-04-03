@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Mail, Send } from "lucide-react";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,13 +30,13 @@ export default function ForgotPasswordPage() {
         email,
         purpose: "reset_password"
       });
-      setSuccess("Mã xác thực đã được gửi đến email của bạn.");
+      setSuccess(t("auth.otp_sent_to_email"));
       // Chuyển sang trang reset password kèm email
       setTimeout(() => {
         router.push(`/reset-password?email=${encodeURIComponent(email)}`);
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Không thể gửi mã xác thực.");
+      setError(err.response?.data?.message || t("auth.otp_error"));
     } finally {
       setLoading(false);
     }
@@ -48,18 +50,18 @@ export default function ForgotPasswordPage() {
 
       <div className="w-full max-w-md relative z-10">
         <Link href="/login" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary mb-6 transition-colors group">
-          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Quay lại đăng nhập
+          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> {t("auth.back_to_login")}
         </Link>
 
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-foreground uppercase tracking-tight">Quên mật khẩu?</h1>
-          <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-2 opacity-70">Chúng tôi sẽ gửi mã xác thực cho bạn</p>
+          <h1 className="text-4xl font-bold text-foreground uppercase tracking-tight">{t("auth.forgot_password_title")}</h1>
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-2 opacity-70">{t("auth.forgot_password_subtitle")}</p>
         </div>
 
         <Card className="backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-border/50 shadow-2xl p-8 hover:scale-100">
           <form onSubmit={handleSendOtp} className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email tài khoản</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t("auth.email_label")}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <Input
@@ -86,7 +88,7 @@ export default function ForgotPasswordPage() {
             )}
 
             <Button type="submit" disabled={loading} size="lg" className="w-full h-14 text-xs tracking-widest">
-              {loading ? "ĐANG GỬI..." : <><Send size={18} className="mr-2" /> GỬI MÃ XÁC THỰC</>}
+              {loading ? t("auth.sending") : <><Send size={18} className="mr-2" /> {t("auth.send_otp_btn")}</>}
             </Button>
           </form>
         </Card>

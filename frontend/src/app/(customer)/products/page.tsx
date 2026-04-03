@@ -7,6 +7,7 @@ import { Search, SlidersHorizontal, Star, X, ArrowUpDown, ChevronRight, Trending
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
+import { EliteCombobox } from "@/components/ui/elite-combobox";
 
 interface Category { id: number; name: string; slug: string; children?: Category[] }
 interface Product {
@@ -79,6 +80,7 @@ function ProductCard({ product }: { product: Product }) {
  
 export default function ProductsPage() {
   const { t } = useTranslation();
+  const { formatPrice, currency } = useCurrencyStore();
   const searchParams = useSearchParams();
   const router = useRouter();
  
@@ -168,7 +170,7 @@ export default function ProductsPage() {
             className="flex items-center justify-center gap-2 h-14 px-8 bg-primary text-white font-black uppercase text-[10px] tracking-[0.3em] rounded-2xl hover:scale-105 transition-transform shadow-xl shadow-primary/20"
           >
             <SlidersHorizontal size={18} strokeWidth={3} />
-            <span className="hidden md:inline">LỌC</span>
+            <span className="hidden md:inline">{t("products_page.filter_label")}</span>
           </button>
         </div>
       </div>
@@ -183,7 +185,7 @@ export default function ProductsPage() {
  
       <aside className={`fixed top-0 right-0 h-full w-[340px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl z-[201] shadow-2xl transition-all duration-500 flex flex-col ${showFilters ? "translate-x-0" : "translate-x-full"}`}>
         <div className="h-[80px] shrink-0 border-b border-border/10 flex items-center justify-between px-8">
-          <h2 className="text-2xl font-black uppercase tracking-tighter text-primary">Bộ lọc</h2>
+          <h2 className="text-2xl font-black uppercase tracking-tighter text-primary">{t("products_page.filters")}</h2>
           <button 
             onClick={() => setShowFilters(false)}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:bg-primary hover:text-white transition-all"
@@ -195,71 +197,43 @@ export default function ProductsPage() {
         <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
           {/* Category Section */}
           <div className="space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Danh mục</h3>
-            <div className="relative">
-              <Search size={14} strokeWidth={3} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input 
-                type="text" 
-                placeholder="Tìm danh mục..." 
-                value={categorySearch}
-                onChange={(e) => setCategorySearch(e.target.value)}
-                className="w-full pl-9 pr-2 py-3 bg-muted/30 border border-border/50 rounded-xl font-black text-[10px] uppercase focus:outline-none focus:border-primary transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <button 
-                onClick={() => updateParam("category", "")}
-                className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!category ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground hover:bg-muted"}`}
-              >
-                Tất cả danh mục
-              </button>
-              <div className="space-y-2">
-                {filteredCategories.map(c => (
-                  <div key={c.id} className="space-y-2">
-                    <button 
-                      onClick={() => updateParam("category", c.slug)}
-                      className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${category === c.slug ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-muted/30 text-muted-foreground hover:bg-muted"}`}
-                    >
-                      {c.name}
-                    </button>
-                    {c.children && c.children.length > 0 && category === c.slug && (
-                      <div className="ml-4 space-y-2 border-l-2 border-primary/20 pl-4 py-1">
-                        {c.children.map(child => (
-                          <button 
-                            key={child.id}
-                            onClick={() => updateParam("category", child.slug)}
-                            className={`w-full text-left px-4 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${category === child.slug ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground"}`}
-                          >
-                            {child.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">{t("products_page.categories_label")}</h3>
+            <EliteCombobox
+              value={category}
+              onChange={(val) => updateParam("category", val === "all" ? "" : val)}
+              options={[
+                { label: t("products_page.all_categories"), value: "all" },
+                ...categories.flatMap(c => [
+                  { label: c.name.toUpperCase(), value: c.slug },
+                  ...(c.children?.map(child => ({
+                    label: `  ↳ ${child.name.toUpperCase()}`,
+                    value: child.slug
+                  })) || [])
+                ])
+              ]}
+              placeholder={t("products_page.search_categories_placeholder")}
+            />
           </div>
  
           {/* Sort Section */}
           <div className="space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Sắp xếp</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">{t("products_page.sort_label")}</h3>
             <div className="grid grid-cols-1 gap-3">
               <button onClick={() => toggleSort("newest")}
                 className={`flex items-center justify-between px-4 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${sort === "newest" || sort === "oldest" ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground"}`}>
-                <div className="flex items-center gap-3"><Clock size={16} /> {sort === "oldest" ? "Cũ nhất" : "Mới nhất"}</div>
+                <div className="flex items-center gap-3"><Clock size={16} /> {sort === "oldest" ? t("products_page.sort_oldest") : t("products_page.sort_newest")}</div>
                 {sort === "oldest" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
               </button>
  
               <button onClick={() => toggleSort("best_sellers")}
                 className={`flex items-center justify-between px-4 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${sort === "best_sellers" || sort === "worst_sellers" ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground"}`}>
-                <div className="flex items-center gap-3"><TrendingUp size={16} /> {sort === "worst_sellers" ? "Bán chậm" : "Bán chạy"}</div>
+                <div className="flex items-center gap-3"><TrendingUp size={16} /> {sort === "worst_sellers" ? t("products_page.sort_worst_sellers") : t("products_page.sort_best_sellers")}</div>
                 {sort === "worst_sellers" ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
               </button>
  
               <button onClick={() => toggleSort("price")}
                 className={`flex items-center justify-between px-4 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${sort.startsWith("price") ? "bg-primary text-white" : "bg-muted/30 text-muted-foreground"}`}>
-                <div className="flex items-center gap-3"><ArrowUpDown size={16} /> Giá: {sort === "price_desc" ? "Cao -> Thấp" : "Thấp -> Cao"}</div>
+                <div className="flex items-center gap-3"><ArrowUpDown size={16} /> {sort === "price_desc" ? t("products_page.sort_price_desc") : t("products_page.sort_price_asc")}</div>
                 {sort === "price_desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
               </button>
             </div>
@@ -267,13 +241,13 @@ export default function ProductsPage() {
  
           {/* Price Range Section */}
           <div className="space-y-4">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Khoảng giá ($)</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">{t("products_page.price_range_label", { currency: currency })}</h3>
             <div className="flex items-center gap-3">
-              <input type="number" placeholder="MIN" defaultValue={minPrice}
+              <input type="number" placeholder={t("products_page.min_price")} defaultValue={minPrice}
                 onChange={(e) => updateParam("min_price", e.target.value)}
                 className="w-full px-4 py-4 bg-muted/30 border border-border/50 rounded-xl font-black text-xs focus:outline-none focus:border-primary h-14" />
               <div className="w-4 h-0.5 bg-border/50 shrink-0" />
-              <input type="number" placeholder="MAX" defaultValue={maxPrice}
+              <input type="number" placeholder={t("products_page.max_price")} defaultValue={maxPrice}
                 onChange={(e) => updateParam("max_price", e.target.value)}
                 className="w-full px-4 py-4 bg-muted/30 border border-border/50 rounded-xl font-black text-xs focus:outline-none focus:border-primary h-14" />
             </div>
@@ -285,7 +259,7 @@ export default function ProductsPage() {
               onClick={() => { router.push("/products"); setShowFilters(false); }}
               className="w-full py-5 bg-red-600/10 text-red-600 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all shadow-lg shadow-red-600/10"
             >
-              <X size={14} strokeWidth={3} className="inline mr-2" /> Xóa toàn bộ lọc
+              <X size={14} strokeWidth={3} className="inline mr-2" /> {t("products_page.clear_all")}
             </button>
           )}
         </div>
@@ -298,9 +272,9 @@ export default function ProductsPage() {
             <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
               <Search size={32} className="text-muted-foreground opacity-30" />
             </div>
-            <p className="text-2xl font-black uppercase tracking-tighter text-muted-foreground italic">Không tìm thấy sản phẩm</p>
+            <p className="text-2xl font-black uppercase tracking-tighter text-muted-foreground italic">{t("products_page.no_products")}</p>
             <button onClick={() => router.push("/products")} className="mt-8 px-8 py-4 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-2xl">
-              Thử lại ngay
+              {t("products_page.try_again")}
             </button>
           </div>
         ) : (

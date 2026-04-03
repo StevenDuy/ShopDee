@@ -376,24 +376,23 @@ export default function AddressModal({ isOpen, onClose, onSuccess, token, addres
                       </div>
                    </div>
 
-                   {/* Legacy Select Replacement (Premium Combobox) */}
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">{t("profile_page.address_type")}</label>
-                         <Select 
-                           value={formData.type} 
-                           onValueChange={(val) => setFormData({ ...formData, type: val })}
-                         >
-                            <SelectTrigger className="w-full h-14 px-6 bg-muted/20 border-border/50 rounded-2xl font-black text-sm uppercase tracking-widest focus:ring-primary/10 transition-all">
-                               <SelectValue placeholder="TYPE" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
-                               <SelectItem value="Home" className="font-bold uppercase text-[10px] tracking-widest">🏠 {t("profile_page.home") || "HOME"}</SelectItem>
-                               <SelectItem value="Office" className="font-bold uppercase text-[10px] tracking-widest">🏢 {t("profile_page.office") || "OFFICE"}</SelectItem>
-                               <SelectItem value="Other" className="font-bold uppercase text-[10px] tracking-widest">✨ {t("profile_page.other") || "OTHER"}</SelectItem>
-                            </SelectContent>
-                         </Select>
-                      </div>
+                       <div className="space-y-4">
+                          <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-4">{t("profile_page.address_type")}</label>
+                          <Select 
+                            value={formData.type} 
+                            onValueChange={(val: unknown) => setFormData({ ...formData, type: val as string })}
+                          >
+                             <SelectTrigger className="w-full h-14 px-6 bg-muted/20 border-border/50 rounded-2xl font-black text-sm uppercase tracking-widest focus:ring-primary/10 transition-all">
+                                <SelectValue placeholder="TYPE" />
+                             </SelectTrigger>
+                             <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
+                                <SelectItem value="Home" className="font-bold uppercase text-[10px] tracking-widest">🏠 {t("profile_page.home") || "HOME"}</SelectItem>
+                                <SelectItem value="Office" className="font-bold uppercase text-[10px] tracking-widest">🏢 {t("profile_page.office") || "OFFICE"}</SelectItem>
+                                <SelectItem value="Other" className="font-bold uppercase text-[10px] tracking-widest">✨ {t("profile_page.other") || "OTHER"}</SelectItem>
+                             </SelectContent>
+                          </Select>
+                       </div>
 
                       {formData.type === "Other" && (
                          <div className="space-y-4">

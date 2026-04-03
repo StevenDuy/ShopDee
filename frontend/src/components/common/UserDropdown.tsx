@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { 
   User, LogOut, ChevronUp, ChevronDown, 
-  Globe, DollarSign, LogIn, Moon, Sun
+  Globe, LogIn, Moon, Sun
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
@@ -60,7 +60,6 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
   };
 
   const toggleLang = () => i18n.changeLanguage(i18n.language === "vi" ? "en" : "vi");
-  const toggleCurrency = () => setCurrency(currency === "VND" ? "USD" : "VND");
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   return (
@@ -147,18 +146,6 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
               </span>
             </button>
 
-            <button 
-              onClick={toggleCurrency}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted border border-transparent hover:border-border"
-            >
-              <div className="flex items-center gap-3">
-                <DollarSign size={14} />
-                <span>{t("currency")}</span>
-              </div>
-              <span className="text-[10px] font-bold border border-border px-1">
-                {currency}
-              </span>
-            </button>
 
             <div className="h-px bg-border my-1" />
 

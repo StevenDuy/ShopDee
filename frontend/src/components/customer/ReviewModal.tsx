@@ -6,6 +6,7 @@ import { Star, X, MessageSquare, Send } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 import { ImagePlus, Video, Loader2 } from "lucide-react";
 
 interface ReviewModalProps {
@@ -26,6 +27,7 @@ interface ReviewModalProps {
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: ReviewModalProps) {
+  const { t } = useTranslation();
   const { token } = useAuthStore();
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
@@ -41,33 +43,28 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
 
   const handleSubmit = async () => {
     if (rating < 1) {
-      toast.error("Vui lòng chọn số sao đánh giá");
+      toast.error(t("reviews.select_rating_error"));
       return;
     }
 
     setSubmitting(true);
     try {
-      console.log("Starting submission process via Backend...");
-      
       const formData = new FormData();
       formData.append("order_item_id", orderItem.id.toString());
       formData.append("product_id", orderItem.product_id.toString());
       formData.append("rating", rating.toString());
       formData.append("comment", comment);
       
-      // Send existing URLs if any
       mediaUrls.forEach((url, index) => {
         formData.append(`media[${index}]`, url);
       });
 
-      // Send actual files
       if (files.length > 0) {
         files.forEach((file) => {
           formData.append("files[]", file);
         });
       }
 
-      console.log("Sending multipart data to backend...");
       await axios.post(
         `${API}/reviews`,
         formData,
@@ -79,8 +76,7 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
         }
       );
 
-      console.log("Review submitted successfully");
-      toast.success("Cảm ơn bạn đã đánh giá sản phẩm!");
+      toast.success(t("reviews.success_msg"));
       onSuccess();
       onClose();
       
@@ -91,9 +87,8 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
       setMediaUrls([]);
     } catch (err: any) {
       console.error("Review submit error:", err);
-      toast.error(err.response?.data?.message || "Không thể gửi đánh giá");
+      toast.error(err.response?.data?.message || t("reviews.error_msg"));
     } finally {
-      console.log("Submission process finished.");
       setSubmitting(false);
       setUploadingMedia(false);
     }
@@ -103,17 +98,17 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           onClick={onClose}
+           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         />
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-lg bg-card border border-border rounded-3xl shadow-2xl overflow-hidden"
+           initial={{ opacity: 0, scale: 0.9, y: 20 }}
+           animate={{ opacity: 1, scale: 1, y: 0 }}
+           exit={{ opacity: 0, scale: 0.9, y: 20 }}
+           className="relative w-full max-w-lg bg-card border border-border rounded-3xl shadow-2xl overflow-hidden"
         >
           {/* Header */}
           <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-muted/20">
@@ -121,7 +116,7 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
               <div className="p-2 bg-primary/10 rounded-xl text-primary">
                 <MessageSquare size={20} />
               </div>
-              <h3 className="text-xl font-bold">Đánh giá sản phẩm</h3>
+              <h3 className="text-xl font-bold">{t("reviews.title")}</h3>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
               <X size={20} />
@@ -154,7 +149,7 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
 
             {/* Rating Stars */}
             <div className="space-y-4 text-center py-4 bg-primary/[0.02] rounded-[2rem] border border-primary/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Chất lượng sản phẩm</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">{t("reviews.quality_label")}</p>
               <div className="flex items-center justify-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -177,28 +172,28 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
                 ))}
               </div>
               <p className="text-xs font-black text-primary uppercase tracking-[0.1em] h-5 italic italic-black">
-                {rating === 1 && "— Cực kỳ thất vọng —"}
-                {rating === 2 && "— Không hài lòng —"}
-                {rating === 3 && "— Tạm chấp nhận được —"}
-                {rating === 4 && "— Rất hài lòng —"}
-                {rating === 5 && "— Tuyệt vời trên cả mong đợi —"}
+                {rating === 1 && t("reviews.rating_1")}
+                {rating === 2 && t("reviews.rating_2")}
+                {rating === 3 && t("reviews.rating_3")}
+                {rating === 4 && t("reviews.rating_4")}
+                {rating === 5 && t("reviews.rating_5")}
               </p>
             </div>
 
             {/* Comment */}
             <div className="space-y-3">
-              <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Bình luận chi tiết</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">{t("reviews.comment_label")}</label>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này nhé..."
+                placeholder={t("reviews.placeholder")}
                 className="w-full h-32 p-4 bg-muted/30 border border-border rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none font-medium text-sm"
               />
             </div>
 
             {/* Media Upload */}
             <div className="space-y-3">
-              <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Hình ảnh / Video (Tùy chọn)</label>
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">{t("reviews.media_label")}</label>
               <div className="flex flex-wrap gap-2">
                 {/* Previews */}
                 {mediaUrls.map((url, i) => (
@@ -248,7 +243,7 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
 
                 <label className="w-20 h-20 rounded-xl border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-all flex flex-col items-center justify-center cursor-pointer gap-1 group">
                   <ImagePlus size={20} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="text-[10px] font-bold text-muted-foreground group-hover:text-primary uppercase">Thêm</span>
+                  <span className="text-[10px] font-bold text-muted-foreground group-hover:text-primary uppercase">{t("reviews.add_media")}</span>
                   <input 
                     type="file" 
                     multiple 
@@ -275,7 +270,7 @@ export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: R
               ) : (
                 <>
                   <Send size={18} />
-                  Gửi đánh giá
+                  {t("reviews.submit")}
                 </>
               )}
             </button>

@@ -15,7 +15,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
 import AddressModal from "@/components/profile/AddressModal";
-import EmailUpdateModal from "@/components/profile/EmailUpdateModal";
+import { EmailUpdateModal } from "@/components/profile/EmailUpdateModal";
 
 interface Profile { id: number; name: string; email: string; profile?: { phone?: string } }
 interface Address { id: number; type: string; address_line_1: string; city: string; country: string; is_default: boolean }
@@ -65,17 +65,17 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       await axios.put(`${API}/profile`, { name, phone }, { headers: authHeaders });
-      setSaveMsg(t("profile_page.update_success") || "Profile updated!");
-    } catch { setSaveMsg(t("profile_page.update_failed") || "Update failed!"); }
+      setSaveMsg(t("profile_page.update_success"));
+    } catch { setSaveMsg(t("profile_page.update_failed")); }
     finally { setSaving(false); setTimeout(() => setSaveMsg(""), 3000); }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPw !== confPw) { setPwMsg(t("profile_page.passwords_not_match") || "Passwords do not match!"); return; }
+    if (newPw !== confPw) { setPwMsg(t("profile_page.passwords_not_match")); return; }
     try {
       await axios.post(`${API}/profile/change-password`, { current_password: curPw, password: newPw, password_confirmation: confPw }, { headers: authHeaders });
-      setPwMsg(t("profile_page.password_success") || "Password updated!"); setTimeout(() => { logout(); router.push("/login"); }, 2000);
+      setPwMsg(t("profile_page.password_success")); setTimeout(() => { logout(); router.push("/login"); }, 2000);
     } catch (err: any) {
       setPwMsg(err.response?.data?.message ?? t("profile_page.update_failed"));
     }
@@ -106,14 +106,14 @@ export default function ProfilePage() {
                         <User size={22} strokeWidth={2.5} />
                      </div>
                      <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-1 px-3 bg-background border-border/50">
-                        USER // CONFIGURATION
+                        {t("profile_page.user_configuration")}
                      </Badge>
                   </div>
                   <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-foreground leading-none">
                     {t("profile_page.personal_info")}
                   </h1>
                   <p className="text-muted-foreground font-bold text-[11px] uppercase opacity-60 tracking-[0.2em] mt-3">
-                    {t("profile_page.manage_account_settings") || "MANAGE YOUR ACCOUNT AND SECURITY SETTINGS"}
+                    {t("profile_page.manage_account_settings")}
                   </p>
                </div>
             </div>
@@ -127,7 +127,7 @@ export default function ProfilePage() {
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Edit2 size={16} className="text-primary" />
                       </div>
-                      <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">{t("profile_page.personal_details") || "PERSONAL DETAILS"}</h2>
+                      <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">{t("profile_page.personal_info")}</h2>
                     </div>
 
                     <Card className="rounded-[3rem] border-border/30 bg-card/40 backdrop-blur-sm p-10 shadow-sm relative overflow-hidden">
@@ -160,7 +160,7 @@ export default function ProfilePage() {
                                   value={name}
                                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                                   className="h-16 pl-16 bg-muted/20 border-border/50 rounded-2xl font-black text-sm tracking-tight focus-visible:ring-primary/10 transition-all"
-                                  placeholder="YOUR NAME"
+                                  placeholder={t("profile_page.name_placeholder")}
                                   required
                                 />
                             </div>
@@ -180,7 +180,7 @@ export default function ProfilePage() {
                                 <button 
                                   onClick={() => setIsEmailModalOpen(true)}
                                   className="absolute right-4 top-1/2 -translate-y-1/2 p-3 hover:bg-white/10 rounded-xl text-primary transition-all active:scale-95"
-                                  title="Change Email"
+                                  title={t("profile_page.change_email")}
                                 >
                                   <Edit2 size={18} />
                                 </button>
@@ -197,7 +197,7 @@ export default function ProfilePage() {
                                   value={phone}
                                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
                                   className="h-16 pl-16 bg-muted/20 border-border/50 rounded-2xl font-black text-sm tracking-tight focus-visible:ring-primary/10 transition-all"
-                                  placeholder="PHONE NUMBER"
+                                  placeholder={t("profile_page.phone_placeholder")}
                                 />
                             </div>
                           </div>
@@ -379,9 +379,9 @@ export default function ProfilePage() {
               onClose={() => setIsEmailModalOpen(false)}
               currentEmail={profile.email}
               token={token}
-              onSuccess={(newEmail) => {
+              onSuccess={(newEmail: string) => {
                 setProfile({ ...profile, email: newEmail });
-                setSaveMsg(t("profile_page.email_update_success") || "Cập nhật email thành công!");
+                setSaveMsg(t("profile_page.email_update_success"));
                 setTimeout(() => setSaveMsg(""), 3000);
               }}
             />

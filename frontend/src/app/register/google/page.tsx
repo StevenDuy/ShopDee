@@ -1,127 +1,159 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShoppingBag, User, Store, ArrowRight } from "lucide-react";
+import { ShoppingBag, User, Store, ArrowRight, ShieldCheck } from "lucide-react";
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function RegisterGoogle() {
+export default function GoogleRegisterPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth } = useAuthStore();
 
-  const [roleId, setRoleId] = useState<number>(3); // Mặc định là Customer
+  const [roleId, setRoleId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const email = searchParams.get("email");
-  const name = searchParams.get("name");
-  const googleId = searchParams.get("google_id");
-  const googleToken = searchParams.get("google_token");
+  const [error, setError] = useState("");
+  const [name, setName] = useState("");
 
   useEffect(() => {
-    if (!googleId || !email) {
-      router.push("/login");
-    }
-  }, [googleId, email, router]);
+    setName(searchParams.get("name") || "User");
+  }, [searchParams]);
 
-  const handleComplete = async () => {
+  const handleCompleteSetup = async () => {
+    if (!roleId) return;
     setLoading(true);
-    setError(null);
+    setError("");
+
     try {
-      const res = await axios.post(`${API_URL}/auth/google/register`, {
-        email,
-        name,
-        google_id: googleId,
-        google_token: googleToken,
+      const token = searchParams.get("token");
+      const res = await axios.post(`${API}/auth/google/complete`, {
         role_id: roleId,
+        token: token
       });
 
-      setAuth(res.data.user, res.data.token);
-      
-      if (roleId === 2) {
-        router.push("/seller");
-      } else {
-        router.push("/");
+      if (res.data.status === "success") {
+        setAuth(res.data.user, res.data.access_token);
+        // Redirect based on role
+        if (roleId === 2) router.push("/seller/dashboard");
+        else router.push("/");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Hoàn tất đăng ký thất bại.");
+      setError(err.response?.data?.message || t("common.error_occurred"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-primary/5 flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Decorative Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px]" />
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden p-6">
+      {/* Background Aesthetics */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
+      </div>
 
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-2xl relative z-10">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-foreground uppercase tracking-tight">Chào mừng {name}!</h1>
-          <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-2 opacity-70">Bước cuối cùng: Chọn vai trò của bạn</p>
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-6 border border-primary/20">
+            <ShieldCheck size={32} strokeWidth={2.5} />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-foreground uppercase tracking-tighter">
+            {t("auth.google_setup.welcome", { name: name })}
+          </h1>
+          <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-4 opacity-70">
+            {t("auth.google_setup.final_step")}
+          </p>
         </div>
 
-        <Card className="backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-border/50 shadow-2xl p-8 hover:scale-100">
-          <div className="space-y-4 mb-8">
-            <button
-              onClick={() => setRoleId(3)}
-              className={`w-full flex items-center gap-4 p-4 border transition-all rounded-xl ${
-                roleId === 3 ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border/50 bg-background/50 hover:bg-muted/50"
-              }`}
-            >
-              <div className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all ${roleId === 3 ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
-                <User size={24} />
-              </div>
-              <div className="text-left">
-                <p className={`font-bold uppercase text-sm ${roleId === 3 ? "text-primary" : "text-foreground"}`}>Tôi là Người mua</p>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase opacity-70">Mua hàng và đánh giá sản phẩm</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setRoleId(2)}
-              className={`w-full flex items-center gap-4 p-4 border transition-all rounded-xl ${
-                roleId === 2 ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border/50 bg-background/50 hover:bg-muted/50"
-              }`}
-            >
-              <div className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all ${roleId === 2 ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
-                <Store size={24} />
-              </div>
-              <div className="text-left">
-                <p className={`font-bold uppercase text-sm ${roleId === 2 ? "text-primary" : "text-foreground"}`}>Tôi là Người bán</p>
-                <p className="text-[10px] font-medium text-muted-foreground uppercase opacity-70">Bán sản phẩm và quản lý cửa hàng</p>
-              </div>
-            </button>
-          </div>
-
-          {error && (
-            <div className="text-[10px] font-black uppercase bg-destructive text-white p-4 border-border/50 mb-4 rounded-xl">
-              {error}
-            </div>
-          )}
-
-          <Button
-            onClick={handleComplete}
-            disabled={loading}
-            size="lg"
-            className="w-full h-14 text-xs tracking-widest"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          {/* Customer Role */}
+          <button 
+            onClick={() => setRoleId(3)}
+            className={`p-8 rounded-[2.5rem] border-2 transition-all text-left relative overflow-hidden group ${
+              roleId === 3 
+                ? "border-primary bg-primary/[0.03] shadow-2xl shadow-primary/10 scale-[1.02]" 
+                : "border-border/50 bg-card/50 hover:border-primary/30"
+            }`}
           >
-            {loading ? "ĐANG XỬ LÝ..." : (
-              <>HOÀN TẤT <ArrowRight size={18} className="ml-2" /></>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${
+              roleId === 3 ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+            }`}>
+              <User size={28} strokeWidth={2.5} />
+            </div>
+            <div className="relative z-10">
+                <p className={`font-black uppercase text-sm tracking-tight ${roleId === 3 ? "text-primary" : "text-foreground"}`}>
+                  {t("auth.google_setup.i_am_customer")}
+                </p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 mt-1 leading-relaxed">
+                  {t("auth.google_setup.customer_desc")}
+                </p>
+            </div>
+            {roleId === 3 && (
+              <motion.div layoutId="role-indicator" className="absolute top-4 right-4 w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_rgba(255,61,0,0.5)]" />
             )}
-          </Button>
-        </Card>
+          </button>
+
+          {/* Seller Role */}
+          <button 
+            onClick={() => setRoleId(2)}
+            className={`p-8 rounded-[2.5rem] border-2 transition-all text-left relative overflow-hidden group ${
+              roleId === 2 
+                ? "border-primary bg-primary/[0.03] shadow-2xl shadow-primary/10 scale-[1.02]" 
+                : "border-border/50 bg-card/50 hover:border-primary/30"
+            }`}
+          >
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 ${
+              roleId === 2 ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+            }`}>
+              <Store size={28} strokeWidth={2.5} />
+            </div>
+            <div className="relative z-10">
+                <p className={`font-black uppercase text-sm tracking-tight ${roleId === 2 ? "text-primary" : "text-foreground"}`}>
+                  {t("auth.google_setup.i_am_seller")}
+                </p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 mt-1 leading-relaxed">
+                  {t("auth.google_setup.seller_desc")}
+                </p>
+            </div>
+            {roleId === 2 && (
+              <motion.div layoutId="role-indicator" className="absolute top-4 right-4 w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_rgba(255,61,0,0.5)]" />
+            )}
+          </button>
+        </div>
+
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="text-[10px] font-black uppercase bg-red-500/10 text-red-500 p-5 border border-red-500/20 mb-8 rounded-[1.5rem] text-center tracking-widest"
+          >
+            {error}
+          </motion.div>
+        )}
+
+        <Button 
+          disabled={!roleId || loading} 
+          onClick={handleCompleteSetup}
+          className="w-full h-16 rounded-[2rem] bg-primary hover:bg-primary/90 text-white font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-3"
+        >
+          {loading ? (
+            <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+          ) : (
+            <>
+              {t("auth.google_setup.complete_btn")} 
+              <ArrowRight size={20} strokeWidth={3} />
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
 }
-
-
-
