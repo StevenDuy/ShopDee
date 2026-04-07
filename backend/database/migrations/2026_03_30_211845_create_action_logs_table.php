@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('lat', 10, 8)->nullable();
             $table->decimal('lng', 11, 8)->nullable();
             $table->boolean('is_anomaly')->default(false); // Sandbox: Mark for AI Training
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             $table->index('type');

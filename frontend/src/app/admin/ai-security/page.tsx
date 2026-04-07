@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import axios from "axios";
 import { 
   Brain, Zap, ShieldAlert, TrendingUp, MousePointerClick, 
   Clock, Globe, Lock, ShoppingCart, UserX, AlertTriangle,
   CheckCircle2, BarChart3, Dna, Terminal, Play, History,
   Info, ShieldCheck, Cpu, ArrowRight, Activity, ChevronRight,
-  Shield, Network, Scan, Fingerprint, Layers
+  Shield, Network, Scan, Fingerprint, Layers, X, Eye
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -23,633 +24,903 @@ interface ModelMetric {
   precision: number;
   recall: number;
   f1: number;
-  trainTime: number;
-  inferenceTime: number;
+  [key: string]: any;
 }
 
-interface AttackScenario {
-  id: string;
+interface User {
+  id: number;
   name: string;
-  description: string;
-  icon: any;
-  severity: "low" | "medium" | "high" | "critical";
-  features: {
-    time_to_checkout: number;
-    failed_logins: number;
-    ip_distance: number;
-    pages_viewed: number;
-    amount: number;
-    device_changed: boolean;
-    hour_of_day: number;
-  };
+  email: string;
+  status: string;
+  ban_reason?: string | null;
 }
 
-// --- Data ---
-const SCENARIOS: AttackScenario[] = [
-  { 
-    id: "bot_auto", 
-    name: "BOT AUTO-CHECKOUT", 
-    description: "Tấn công bằng bot với tốc độ thanh toán siêu nhanh ngay sau khi vào trang.",
-    icon: Zap,
-    severity: "high",
-    features: { time_to_checkout: 1.5, failed_logins: 0, ip_distance: 10, pages_viewed: 1, amount: 250000, device_changed: false, hour_of_day: 14 }
-  },
-  { 
-    id: "brute_force", 
-    name: "BRUTE-FORCE LOGIN", 
-    description: "Tài khoản đăng nhập sai nhiều lần trước khi thành công (Dấu hiệu dò mật khẩu).",
-    icon: Lock,
-    severity: "critical",
-    features: { time_to_checkout: 120, failed_logins: 15, ip_distance: 150, pages_viewed: 5, amount: 150000, device_changed: true, hour_of_day: 3 }
-  },
-  { 
-    id: "location_spoof", 
-    name: "LOCATION SPOOFING", 
-    description: "Đăng nhập từ vị trí địa lý cách xa hàng nghìn km chỉ trong thời gian ngắn.",
-    icon: Globe,
-    severity: "high",
-    features: { time_to_checkout: 300, failed_logins: 0, ip_distance: 5400, pages_viewed: 12, amount: 900000, device_changed: true, hour_of_day: 10 }
-  },
-  { 
-    id: "whale_sniper", 
-    name: "WHALE SNIPER", 
-    description: "Vào trang web và chạy ngay đến sản phẩm đắt nhất để mua mà không xem gì khác.",
-    icon: TrendingUp,
-    severity: "medium",
-    features: { time_to_checkout: 15, failed_logins: 0, ip_distance: 5, pages_viewed: 2, amount: 45000000, device_changed: false, hour_of_day: 22 }
-  },
-  { 
-    id: "velocity_attack", 
-    name: "VELOCITY ATTACK", 
-    description: "Gửi hàng loạt yêu cầu mua hàng giá trị thấp trong thời gian cực ngắn.",
-    icon: MousePointerClick,
-    severity: "medium",
-    features: { time_to_checkout: 4, failed_logins: 0, ip_distance: 2, pages_viewed: 4, amount: 10000, device_changed: false, hour_of_day: 1 }
-  },
-  { 
-    id: "account_takeover", 
-    name: "ACCOUNT TAKEOVER", 
-    description: "Kết hợp thiết bị mới, IP lạ, đổi địa chỉ và mua món đồ đắt đỏ.",
-    icon: UserX,
-    severity: "critical",
-    features: { time_to_checkout: 45, failed_logins: 1, ip_distance: 1200, pages_viewed: 3, amount: 12000000, device_changed: true, hour_of_day: 4 }
-  }
-];
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface FlaggedLog {
+  id: number;
+  user_id: number;
+  user?: User;
+  type: string;
+  payload: any;
+  created_at: string;
+}
+
+enum ScenarioType {
+  BOT_CLICK = "bot_click",
+  LOGIN_FAIL = "login_fail",
+  LOCATION_CHANGE = "location_change",
+  BULK_PURCHASE = "bulk_purchase",
+  HIGH_VALUE_PURCHASE = "high_value_purchase",
+  ACCOUNT_TAKEOVER = "account_takeover",
+}
+
+interface SimulationParams {
+  scenario: ScenarioType;
+  user_id: number | null;
+  product_id?: number | null;
+  lat?: number;
+  lng?: number;
+  // BOT_CLICK
+  click_speed_ms?: number;
+  click_count?: number;
+  // LOGIN_FAIL
+  wrong_password_attempts?: number;
+  // LOCATION_CHANGE
+  location_changes?: number;
+  interval_ms?: number;
+  // PURCHASES
+  purchase_quantity?: number;
+  purchase_value?: number;
+  // Others
+  duration_ms?: number;
+  distance_jump?: number;
+  address_changes?: number;
+  auto_block?: boolean;
+  is_fraud?: boolean;
+  type?: string;
+}
 
 export default function AdminAISecurityPage() {
   const { t } = useTranslation();
   const { token } = useAuthStore();
+  
+  // UI State
   const [activeTab, setActiveTab] = useState<"dashboard" | "simulator" | "monitor">("dashboard");
   const [loading, setLoading] = useState(true);
-  const [selectedScenario, setSelectedScenario] = useState<AttackScenario | null>(null);
-  const [simResult, setSimResult] = useState<any>(null);
-  const [simulating, setSimulating] = useState(false);
+  const [training, setTraining] = useState(false);
+  const [autoBlockEnabled, setAutoBlockEnabled] = useState(false);
+  const [monitorView, setMonitorView] = useState<"flagged" | "blocked">("flagged");
+  
+  // Data State
+  const [metrics, setMetrics] = useState<{ rf: ModelMetric; svm: ModelMetric } | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [flaggedLogs, setFlaggedLogs] = useState<FlaggedLog[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<User[]>([]);
+  const [totalFlagged, setTotalFlagged] = useState(0);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Mock Performance Data
-  const metrics = {
-    rf: { accuracy: 96.5, precision: 94.2, recall: 92.8, f1: 93.5, trainTime: 4.2, inferenceTime: 0.012 },
-    svm: { accuracy: 92.1, precision: 89.5, recall: 88.2, f1: 88.8, trainTime: 12.8, inferenceTime: 0.085 }
-  };
-
-  const handleRunSimulation = (scenario: AttackScenario) => {
-    setSelectedScenario(scenario);
-    setSimResult(null);
-    setSimulating(true);
-    
-    // Simulate ML Engine Processing
-    setTimeout(() => {
-      const rf_risk = scenario.severity === "critical" ? 0.98 : (scenario.severity === "high" ? 0.85 : 0.65);
-      const svm_risk = rf_risk - 0.05 - (Math.random() * 0.1);
-      
-      setSimResult({
-        rf: { risk: rf_risk, status: rf_risk > 0.8 ? "Fraud" : "Suspicious", time: "12ms" },
-        svm: { risk: svm_risk, status: svm_risk > 0.8 ? "Fraud" : "Suspicious", time: "85ms" }
-      });
-      setSimulating(false);
-      
-      if (rf_risk > 0.9) {
-        toast.error(t("admin.ai_security.auto_block") || "Hệ thống tự động: Đã tạm khóa tài khoản do rủi ro Critical!");
-      } else {
-        toast.warning(t("admin.ai_security.suspicious_warning") || "Cảnh báo: Phát hiện hành vi nghi vấn. Đã gửi yêu cầu xác thực 2 lớp.");
+  const flaggedUsers = useMemo(() => {
+    const map = new Map<number, User>();
+    flaggedLogs.forEach((log) => {
+      if (log.user?.id && !map.has(log.user.id)) {
+        map.set(log.user.id, log.user);
       }
-    }, 2000);
+    });
+    return Array.from(map.values());
+  }, [flaggedLogs]);
+  
+  // Simulator State
+  const [activeScenario, setActiveScenario] = useState<ScenarioType | null>(null);
+  const [simulating, setSimulating] = useState(false);
+  const [simResult, setSimResult] = useState<any>(null);
+  const [simParams, setSimParams] = useState<SimulationParams>({
+    scenario: ScenarioType.BOT_CLICK,
+    user_id: null,
+    product_id: null,
+    click_speed_ms: 100,
+    click_count: 15,
+    wrong_password_attempts: 5,
+    location_changes: 4,
+    interval_ms: 800,
+    purchase_quantity: 5,
+    purchase_value: 100000,
+    auto_block: false,
+    is_fraud: true,
+  });
+  
+  // Monitor State
+  const [selectedUserLog, setSelectedUserLog] = useState<FlaggedLog | null>(null);
+  const [selectedUserDetails, setSelectedUserDetails] = useState<{ logs: any[] } | null>(null);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+
+  // Setup authorization
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    }
+  }, [token]);
+
+  // Load initial data
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [metricsRes, usersRes, productsRes, monitorRes] = await Promise.all([
+        axios.get(`${API_URL}/ai/metrics`).catch(() => ({ data: null })),
+        axios.get(`${API_URL}/ai/users`),
+        axios.get(`${API_URL}/ai/products`),
+        axios.get(`${API_URL}/ai/monitor`),
+      ]);
+
+      // Parse metrics
+      if (metricsRes.data?.models) {
+        setMetrics({
+          rf: metricsRes.data.models.random_forest || {},
+          svm: metricsRes.data.models.svm || {},
+        });
+      }
+
+      setUsers(usersRes.data || []);
+      setProducts(productsRes.data || []);
+      
+      if (monitorRes.data) {
+        setFlaggedLogs(monitorRes.data.recent_flagged || []);
+        setBlockedUsers(monitorRes.data.blocked_users || []);
+        setTotalFlagged(monitorRes.data.total_flagged || 0);
+      }
+    } catch (error) {
+      console.error("Failed to load dashboard", error);
+      toast.error("Failed to load AI metrics");
+    } finally {
+      setLoading(false);
+    }
+  }, [API_URL]);
+
+  // Load filtered users
+  useEffect(() => {
+    if (token) {
+      loadDashboard();
+    }
+  }, [token, loadDashboard]);
+
+  // Train AI Model
+  const handleTrain = async () => {
+    setTraining(true);
+    try {
+      const response = await axios.post(`${API_URL}/ai/train`);
+      toast.success(response.data.message || "Training started!");
+      // Reload metrics after training
+      setTimeout(() => loadDashboard(), 3000);
+    } catch (error: any) {
+      console.error("Training failed", error);
+      toast.error(error.response?.data?.message || "Training failed - AI service unavailable");
+    } finally {
+      setTraining(false);
+    }
   };
+
+  // Retrain AI Model
+  const handleRetrain = async () => {
+    setTraining(true);
+    try {
+      const response = await axios.post(`${API_URL}/ai/retrain`);
+      toast.success(response.data.message || "Retraining started!");
+      setTimeout(() => loadDashboard(), 3000);
+    } catch (error: any) {
+      console.error("Retrain failed", error);
+      toast.error(error.response?.data?.message || "Retraining failed");
+    } finally {
+      setTraining(false);
+    }
+  };
+
+  // Run Simulation
+  const handleRunSimulation = async () => {
+    if (!simParams.user_id) {
+      toast.error("Chọn user để giả lập");
+      return;
+    }
+
+    setSimulating(true);
+    setSimResult(null);
+
+    try {
+      const payload: any = {
+        ...simParams,
+        user_id: simParams.user_id,
+        scenario: activeScenario || ScenarioType.BOT_CLICK,
+        type: getTypeForScenario(activeScenario || ScenarioType.BOT_CLICK),
+        lat: simParams.lat || 10.762622,
+        lng: simParams.lng || 106.660172,
+      };
+
+      const response = await axios.post(`${API_URL}/ai/simulate`, payload);
+      
+      if (response.data?.results?.length > 0) {
+        const result = response.data.results[0];
+        setSimResult(result);
+        
+        if (result.prediction) {
+          const rfRisk = (result.prediction.random_forest?.risk_percentage || 0) / 100;
+          const svmRisk = (result.prediction.svm?.risk_percentage || 0) / 100;
+          
+          if (rfRisk > 0.8 || svmRisk > 0.8) {
+            toast.error("⚠️ Phát hiện gian lận tiềm ẩn cao!");
+          } else {
+            toast.success("✓ Giả lập hoàn tất - Kết quả đã được lưu");
+          }
+        }
+
+        // Refresh monitor data
+        setTimeout(() => loadDashboard(), 1000);
+      }
+    } catch (error: any) {
+      console.error("Simulation failed", error);
+      toast.error(error.response?.data?.message || "Giả lập thất bại - kiểm tra lại tham số");
+    } finally {
+      setSimulating(false);
+    }
+  };
+
+  // Block User
+  const handleBlockUser = async (userId: number, reason: string = "AI detected fraud") => {
+    try {
+      await axios.post(`${API_URL}/ai/users/${userId}/block`, { reason });
+      toast.success("User đã bị chặn");
+      loadDashboard();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to block user");
+    }
+  };
+
+  // Unblock User
+  const handleUnblockUser = async (userId: number) => {
+    try {
+      await axios.post(`${API_URL}/ai/users/${userId}/unblock`);
+      toast.success("User đã được bỏ chặn");
+      loadDashboard();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to unblock user");
+    }
+  };
+
+  // Auto Block Flagged Users
+  const handleAutoBlock = async () => {
+    try {
+      const response = await axios.post(`${API_URL}/ai/auto-block`);
+      toast.success(`Auto-blocked ${response.data.blocked_count} users`);
+      loadDashboard();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Auto-block failed");
+    }
+  };
+
+  // View User Logs
+  const handleViewUserLogs = async (userId: number) => {
+    setLoadingLogs(true);
+    try {
+      const response = await axios.get(`${API_URL}/ai/users/${userId}/logs`);
+      setSelectedUserDetails({ logs: response.data });
+    } catch (error) {
+      toast.error("Failed to load user logs");
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const getTypeForScenario = (scenario: ScenarioType): string => {
+    const typeMap: Record<ScenarioType, string> = {
+      [ScenarioType.BOT_CLICK]: "view_product",
+      [ScenarioType.LOGIN_FAIL]: "login",
+      [ScenarioType.LOCATION_CHANGE]: "login",
+      [ScenarioType.ACCOUNT_TAKEOVER]: "checkout",
+      [ScenarioType.BULK_PURCHASE]: "checkout",
+      [ScenarioType.HIGH_VALUE_PURCHASE]: "checkout",
+    };
+    return typeMap[scenario] || "view_product";
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2 }}>
+            <Brain size={48} className="text-primary mx-auto" />
+          </motion.div>
+          <p className="text-muted-foreground">Loading AI Service...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-10">
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: loading ? 0 : 1 }}
-        transition={{ duration: 0.2, ease: "circOut" }}
-        className="max-w-7xl mx-auto space-y-10"
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="max-w-7xl mx-auto space-y-8"
       >
-        {/* 1. ELITE HEADER */}
-        <div className="flex flex-col md:flex-row items-center justify-between border-b border-border/50 pb-8 gap-6 px-2">
-           <div className="text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-3 mb-3">
-                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                    <Brain size={22} strokeWidth={2.5} />
-                 </div>
-                 <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-0.5 px-2 bg-background border-border/50">
-                    AI // OVERWATCH
-                 </Badge>
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row items-center justify-between border-b border-border/50 pb-8 gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                <Brain size={22} />
               </div>
-              <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-foreground leading-none">
-                AI Fraud Research
-              </h1>
-              <p className="text-muted-foreground font-bold text-[10px] uppercase opacity-70 tracking-widest mt-2">
-                RANDOM FOREST vs SVM // BEHAVIORAL TELEMETRY
-              </p>
-           </div>
-           
-           {/* Elite Tab Navigation (Floating Segmented Control) */}
-           <div className="flex bg-muted/20 backdrop-blur-md p-1.5 rounded-[1.5rem] border border-border/50 shadow-sm relative overflow-hidden">
-             {["dashboard", "simulator", "monitor"].map((tab) => (
-                <button 
-                  key={tab}
-                  onClick={() => setActiveTab(tab as any)}
-                  className={cn(
-                    "relative px-6 py-2.5 rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all z-10",
-                    activeTab === tab ? "text-primary shadow-lg" : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {activeTab === tab && (
-                    <motion.div 
-                      layoutId="tab-active" 
-                      className="absolute inset-0 bg-background rounded-[1rem] shadow-sm -z-10 border border-primary/10" 
-                    />
-                  )}
-                  {tab}
-                </button>
-             ))}
-           </div>
+              <Badge variant="outline" className="font-black text-[9px]">AI FRAUD DETECTION</Badge>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter">AI Security Monitor</h1>
+            <p className="text-muted-foreground text-sm mt-2">Random Forest vs SVM Behavioral Analysis</p>
+          </div>
+
+          {/* TAB NAVIGATION */}
+          <div className="flex gap-2 bg-muted/20 p-2 rounded-2xl border border-border/50">
+            {["dashboard", "simulator", "monitor"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab as any)}
+                className={cn(
+                  "px-6 py-2.5 rounded-xl text-sm font-black uppercase transition-all",
+                  activeTab === tab
+                    ? "bg-primary text-white shadow-lg"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* TRAIN BUTTON */}
+          <Button
+            onClick={metrics ? handleRetrain : handleTrain}
+            disabled={training}
+            className="ml-auto h-11 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-black"
+          >
+            {training ? "TRAINING..." : metrics ? "RETRAIN" : "TRAIN"}
+          </Button>
         </div>
 
         <AnimatePresence mode="wait">
-          {/* --- TAB 1: DASHBOARD (Metrics Comparison) --- */}
+          {/* DASHBOARD TAB */}
           {activeTab === "dashboard" && (
-            <motion.div 
-              key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-            >
-              <div className="lg:col-span-2 space-y-8">
-                {/* Main Accuracy Comparison Card */}
-                <Card className="bg-card/50 border-border/50 rounded-[2.5rem] shadow-sm overflow-hidden relative">
-                   <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full -translate-y-1/2 translate-x-1/2" />
-                   <CardContent className="p-8 relative z-10">
-                      <div className="flex justify-between items-center mb-10">
-                         <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
-                            <Dna size={24} className="text-primary" /> Metrics Overview
-                         </h2>
-                         <Badge variant="secondary" className="font-bold text-[9px] uppercase tracking-widest px-3">STABLE RESULTS</Badge>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+              {!metrics ? (
+                <Card className="bg-yellow-500/10 border border-yellow-500/30 rounded-3xl p-12">
+                  <div className="flex gap-4 items-start">
+                    <AlertTriangle className="text-yellow-600 shrink-0 mt-1" size={24} />
+                    <div>
+                      <h3 className="font-black text-lg mb-2">Model Not Trained</h3>
+                      <p className="text-muted-foreground mb-6">Click TRAIN button above to train the AI models before running simulations</p>
+                      <Button onClick={handleTrain} disabled={training} className="bg-yellow-600 text-white hover:bg-yellow-700">
+                        {training ? "Training..." : "Train Now"}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Random Forest */}
+                  <Card className="rounded-3xl p-8 bg-card/50 border-border/50">
+                    <div className="flex justify-between items-start mb-8">
+                      <div>
+                        <p className="text-primary font-black text-lg uppercase">Random Forest</p>
+                        <p className="text-muted-foreground text-sm">Ensemble Learning</p>
+                      </div>
+                      <Activity className="text-primary opacity-40" size={28} />
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-bold">Accuracy</span>
+                          <span className="font-black text-primary">{(metrics.rf.accuracy * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="h-3 bg-muted rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${metrics.rf.accuracy * 100}%` }}
+                            transition={{ duration: 1 }}
+                            className="h-full bg-primary"
+                          />
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                         {/* Accuracy Gauges (Abstract Circular Progress) */}
-                         <div className="space-y-8">
-                            <div className="relative p-6 bg-primary/[0.03] border border-primary/10 rounded-[2rem] group hover:bg-primary/[0.06] transition-all">
-                               <div className="flex justify-between items-end mb-4">
-                                  <div>
-                                     <p className="text-[10px] font-black uppercase tracking-widest text-primary/70">Random Forest</p>
-                                     <h3 className="text-3xl font-black tracking-tighter">96.5%</h3>
-                                  </div>
-                                  <Activity className="text-primary opacity-30 group-hover:opacity-100 transition-opacity" size={24} />
-                               </div>
-                               <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                                  <motion.div initial={{ width: 0 }} animate={{ width: "96.5%" }} transition={{ duration: 1, ease: "circOut" }} className="h-full bg-primary" />
-                               </div>
-                            </div>
+                      {["precision", "recall", "f1"].map((key) => (
+                        <div key={key}>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm font-bold capitalize">{key}</span>
+                            <span className="font-bold">{(metrics.rf[key] * 100).toFixed(1)}%</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary/60" style={{ width: `${metrics.rf[key] * 100}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
 
-                            <div className="relative p-6 bg-indigo-500/[0.03] border border-indigo-500/10 rounded-[2rem] group hover:bg-indigo-500/[0.06] transition-all">
-                               <div className="flex justify-between items-end mb-4">
-                                  <div>
-                                     <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">SVM (RBF Kernel)</p>
-                                     <h3 className="text-3xl font-black tracking-tighter">92.1%</h3>
-                                  </div>
-                                  <Network className="text-indigo-400 opacity-30 group-hover:opacity-100 transition-opacity" size={24} />
-                               </div>
-                               <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                                  <motion.div initial={{ width: 0 }} animate={{ width: "92.1%" }} transition={{ duration: 1, ease: "circOut", delay: 0.1 }} className="h-full bg-indigo-500" />
-                               </div>
-                            </div>
-                         </div>
-
-                         {/* Supporting Metrics */}
-                         <div className="grid grid-cols-2 gap-4">
-                            <MetricMicroBox label="Precision" rf={metrics.rf.precision} svm={metrics.svm.precision} />
-                            <MetricMicroBox label="Recall" rf={metrics.rf.recall} svm={metrics.svm.recall} />
-                            <MetricMicroBox label="F1-Score" rf={metrics.rf.f1} svm={metrics.svm.f1} />
-                            <MetricMicroBox label="Reliability" rf={98} svm={85} />
-                         </div>
+                  {/* SVM */}
+                  <Card className="rounded-3xl p-8 bg-card/50 border-border/50">
+                    <div className="flex justify-between items-start mb-8">
+                      <div>
+                        <p className="text-indigo-500 font-black text-lg uppercase">SVM (RBF)</p>
+                        <p className="text-muted-foreground text-sm">Support Vector Machine</p>
                       </div>
-                   </CardContent>
+                      <Network className="text-indigo-400 opacity-40" size={28} />
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-bold">Accuracy</span>
+                          <span className="font-black text-indigo-500">{(metrics.svm.accuracy * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="h-3 bg-muted rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${metrics.svm.accuracy * 100}%` }}
+                            transition={{ duration: 1 }}
+                            className="h-full bg-indigo-500"
+                          />
+                        </div>
+                      </div>
+
+                      {["precision", "recall", "f1"].map((key) => (
+                        <div key={key}>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm font-bold capitalize">{key}</span>
+                            <span className="font-bold">{(metrics.svm[key] * 100).toFixed(1)}%</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500/60" style={{ width: `${metrics.svm[key] * 100}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* SIMULATOR TAB */}
+          {activeTab === "simulator" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* SCENARIO SELECTOR */}
+              <div className="lg:col-span-1 space-y-4">
+                <h3 className="font-black text-lg uppercase flex items-center gap-2">
+                  <Terminal size={20} className="text-primary" /> Attack Types
+                </h3>
+
+                {[
+                  { id: ScenarioType.BOT_CLICK, name: "Bot Click", icon: Zap },
+                  { id: ScenarioType.LOGIN_FAIL, name: "Brute Force", icon: Lock },
+                  { id: ScenarioType.LOCATION_CHANGE, name: "Location Spoof", icon: Globe },
+                  { id: ScenarioType.BULK_PURCHASE, name: "Bulk Purchase", icon: ShoppingCart },
+                  { id: ScenarioType.HIGH_VALUE_PURCHASE, name: "High Value", icon: TrendingUp },
+                  { id: ScenarioType.ACCOUNT_TAKEOVER, name: "Account Takeover", icon: UserX },
+                ].map(({ id, name, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setActiveScenario(id)}
+                    className={cn(
+                      "w-full text-left p-4 rounded-2xl border-2 transition-all flex gap-3",
+                      activeScenario === id
+                        ? "bg-primary/10 border-primary"
+                        : "bg-card border-border/50 hover:border-primary/50"
+                    )}
+                  >
+                    <Icon size={20} className={activeScenario === id ? "text-primary" : "text-muted-foreground"} />
+                    <div>
+                      <p className="font-black text-sm">{name}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* PARAMETERS */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="rounded-3xl p-8 bg-card/50 border-border/50">
+                  <h3 className="font-black text-lg mb-6 uppercase">Simulation Parameters</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* User Selection */}
+                    <div>
+                      <label className="block text-sm font-black mb-2">Select User</label>
+                      <select
+                        value={simParams.user_id || ""}
+                        onChange={(e) => setSimParams({ ...simParams, user_id: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                      >
+                        <option value="">Choose User...</option>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name} ({u.email})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Product Selection (for purchase scenarios) */}
+                    {[ScenarioType.BULK_PURCHASE, ScenarioType.HIGH_VALUE_PURCHASE].includes(activeScenario!) && (
+                      <div>
+                        <label className="block text-sm font-black mb-2">Select Product</label>
+                        <select
+                          value={simParams.product_id || ""}
+                          onChange={(e) => setSimParams({ ...simParams, product_id: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                        >
+                          <option value="">Choose Product...</option>
+                          {products.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name} (₫{p.price.toLocaleString()})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Scenario-Specific Parameters */}
+                    {activeScenario === ScenarioType.BOT_CLICK && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-black mb-2">Click Speed (ms)</label>
+                          <input
+                            type="number"
+                            value={simParams.click_speed_ms}
+                            onChange={(e) => setSimParams({ ...simParams, click_speed_ms: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-black mb-2">Click Count</label>
+                          <input
+                            type="number"
+                            value={simParams.click_count}
+                            onChange={(e) => setSimParams({ ...simParams, click_count: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {activeScenario === ScenarioType.LOGIN_FAIL && (
+                      <div>
+                        <label className="block text-sm font-black mb-2">Failed Attempts</label>
+                        <input
+                          type="number"
+                          value={simParams.wrong_password_attempts}
+                          onChange={(e) => setSimParams({ ...simParams, wrong_password_attempts: Number(e.target.value) })}
+                          className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                        />
+                      </div>
+                    )}
+
+                    {activeScenario === ScenarioType.LOCATION_CHANGE && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-black mb-2">Location Changes</label>
+                          <input
+                            type="number"
+                            value={simParams.location_changes}
+                            onChange={(e) => setSimParams({ ...simParams, location_changes: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-black mb-2">Interval (ms)</label>
+                          <input
+                            type="number"
+                            value={simParams.interval_ms}
+                            onChange={(e) => setSimParams({ ...simParams, interval_ms: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {[ScenarioType.BULK_PURCHASE, ScenarioType.HIGH_VALUE_PURCHASE].includes(activeScenario!) && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-black mb-2">Quantity</label>
+                          <input
+                            type="number"
+                            value={simParams.purchase_quantity}
+                            onChange={(e) => setSimParams({ ...simParams, purchase_quantity: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-black mb-2">Purchase Value (₫)</label>
+                          <input
+                            type="number"
+                            value={simParams.purchase_value}
+                            onChange={(e) => setSimParams({ ...simParams, purchase_value: Number(e.target.value) })}
+                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Execute Button */}
+                  <Button
+                    onClick={handleRunSimulation}
+                    disabled={simulating || !simParams.user_id}
+                    className="w-full mt-8 h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-black uppercase text-sm"
+                  >
+                    {simulating ? "Running..." : "Execute Simulation"}
+                  </Button>
                 </Card>
 
-                {/* Efficiency Analysis */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <Card className="rounded-[2.5rem] border-border/50 bg-card/30 p-8 shadow-sm">
-                      <h3 className="text-[11px] font-black uppercase tracking-widest opacity-60 mb-6 flex items-center gap-2">
-                        <Clock size={16} /> Training Speed (s)
-                      </h3>
-                      <div className="flex items-end gap-6 h-36 border-b border-border/50 pb-2">
-                         <div className="flex-1 flex flex-col items-center gap-3">
-                            <motion.div initial={{ height: 0 }} animate={{ height: '30%' }} className="w-full bg-primary/20 rounded-xl border border-primary/30" />
-                            <span className="text-[10px] font-black uppercase">RF: 4.2s</span>
-                         </div>
-                         <div className="flex-1 flex flex-col items-center gap-3">
-                            <motion.div initial={{ height: 0 }} animate={{ height: '100%' }} className="w-full bg-indigo-500/20 rounded-xl border border-indigo-500/30" />
-                            <span className="text-[10px] font-black uppercase">SVM: 12.8s</span>
-                         </div>
-                      </div>
-                   </Card>
+                {/* Results */}
+                {simResult && (
+                  <Card className="rounded-3xl p-8 bg-card/50 border-border/50">
+                    <h3 className="font-black text-lg mb-6 uppercase">Prediction Results</h3>
 
-                   <Card className="rounded-[2.5rem] border-border/50 bg-card/30 p-8 shadow-sm">
-                      <h3 className="text-[11px] font-black uppercase tracking-widest opacity-60 mb-6 flex items-center gap-2">
-                        <Cpu size={16} /> Inference Latency (ms)
-                      </h3>
-                      <div className="flex items-end gap-6 h-36 border-b border-border/50 pb-2">
-                         <div className="flex-1 flex flex-col items-center gap-3">
-                            <motion.div initial={{ height: 0 }} animate={{ height: '15%' }} className="w-full bg-primary/20 rounded-xl border border-primary/30" />
-                            <span className="text-[10px] font-black uppercase">RF: 12ms</span>
-                         </div>
-                         <div className="flex-1 flex flex-col items-center gap-3">
-                            <motion.div initial={{ height: 0 }} animate={{ height: '75%' }} className="w-full bg-indigo-500/20 rounded-xl border border-indigo-500/30" />
-                            <span className="text-[10px] font-black uppercase">SVM: 85ms</span>
-                         </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* RF Result */}
+                      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6">
+                        <p className="text-primary font-black mb-4">Random Forest</p>
+                        {simResult.prediction?.random_forest && (
+                          <div className="space-y-3">
+                            <div>
+                              <div className="flex justify-between mb-2">
+                                <span className="text-sm">Risk</span>
+                                <span className="font-black">{simResult.prediction.random_forest.risk_percentage?.toFixed(1) || 0}%</span>
+                              </div>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${simResult.prediction.random_forest.risk_percentage || 0}%` }}
+                                />
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Prediction: <span className="font-black">{simResult.prediction.random_forest.prediction?.toUpperCase()}</span>
+                            </p>
+                          </div>
+                        )}
                       </div>
-                   </Card>
+
+                      {/* SVM Result */}
+                      <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-6">
+                        <p className="text-indigo-500 font-black mb-4">SVM</p>
+                        {simResult.prediction?.svm && (
+                          <div className="space-y-3">
+                            <div>
+                              <div className="flex justify-between mb-2">
+                                <span className="text-sm">Risk</span>
+                                <span className="font-black">{simResult.prediction.svm.risk_percentage?.toFixed(1) || 0}%</span>
+                              </div>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-indigo-500"
+                                  style={{ width: `${simResult.prediction.svm.risk_percentage || 0}%` }}
+                                />
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Prediction: <span className="font-black">{simResult.prediction.svm.prediction?.toUpperCase()}</span>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* MONITOR TAB */}
+          {activeTab === "monitor" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-black uppercase flex items-center gap-3">
+                  <History size={28} className="text-primary" /> Flagged Activities ({totalFlagged})
+                </h2>
+                <Button
+                  onClick={handleAutoBlock}
+                  disabled={autoBlockEnabled}
+                  className="h-11 rounded-xl bg-red-600 text-white hover:bg-red-700 font-black text-sm"
+                >
+                  {autoBlockEnabled ? "AUTO-BLOCK ON" : "ENABLE AUTO-BLOCK"}
+                </Button>
+              </div>
+
+              {!flaggedLogs.length ? (
+                <Card className="rounded-3xl p-12 text-center bg-card/50 border-border/50">
+                  <p className="text-muted-foreground">No flagged activities yet</p>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {flaggedLogs.map((log) => (
+                    <Card key={log.id} className="rounded-2xl p-6 bg-card/50 border-border/50 hover:border-primary/30 transition-all cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black">
+                              {log.user?.name?.charAt(0).toUpperCase() || "U"}
+                            </div>
+                            <div>
+                              <p className="font-black">{log.user?.name || `User ${log.user_id}`}</p>
+                              <p className="text-sm text-muted-foreground">{log.type}</p>
+                            </div>
+                          </div>
+
+                          {log.payload?.ai_prediction && (
+                            <div className="flex gap-4 mt-3 text-sm">
+                              <span>
+                                RF: <span className="font-black">{log.payload.ai_prediction.random_forest?.risk_percentage?.toFixed(0)}%</span>
+                              </span>
+                              <span>
+                                SVM: <span className="font-black">{log.payload.ai_prediction.svm?.risk_percentage?.toFixed(0)}%</span>
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => {
+                              setSelectedUserLog(log);
+                              handleViewUserLogs(log.user_id);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg"
+                          >
+                            <Eye size={16} />
+                          </Button>
+                          <Button
+                            onClick={() => handleBlockUser(log.user_id, "AI detected fraud")}
+                            className="h-9 px-4 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs font-black"
+                          >
+                            BLOCK
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* User Management Section */}
+              <div className="space-y-6">
+                <div className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <Shield size={24} className="text-primary" />
+                    <h3 className="text-xl font-black uppercase">User Management</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={monitorView === "flagged" ? "default" : "outline"}
+                      size="sm"
+                      className={cn("rounded-xl px-4 py-2 font-black text-sm", monitorView === "flagged" ? "bg-primary text-white" : "bg-card")}
+                      onClick={() => setMonitorView("flagged")}
+                    >
+                      Flagged Users
+                    </Button>
+                    <Button
+                      variant={monitorView === "blocked" ? "default" : "outline"}
+                      size="sm"
+                      className={cn("rounded-xl px-4 py-2 font-black text-sm", monitorView === "blocked" ? "bg-red-600 text-white" : "bg-card")}
+                      onClick={() => setMonitorView("blocked")}
+                    >
+                      Blocked Users
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(monitorView === "flagged" ? flaggedUsers : blockedUsers).map((user) => (
+                    <Card key={user.id} className="rounded-2xl p-6 bg-card/50 border-border/50">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black">
+                          {user.name?.charAt(0).toUpperCase() || "U"}
+                        </div>
+                        <Badge variant={user.status === "banned" ? "destructive" : "default"}>
+                          {user.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-black text-sm">{user.name}</p>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                        {user.ban_reason && (
+                          <p className="text-xs text-red-500">Reason: {user.ban_reason}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          onClick={() => {
+                            setSelectedUserLog({ user_id: user.id, user } as any);
+                            handleViewUserLogs(user.id);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 rounded-lg"
+                        >
+                          <Eye size={14} />
+                        </Button>
+                        {monitorView === "blocked" ? (
+                          <Button
+                            onClick={() => handleUnblockUser(user.id)}
+                            className="flex-1 h-9 rounded-lg bg-green-600 text-white hover:bg-green-700 text-xs font-black"
+                          >
+                            UNBLOCK
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => handleBlockUser(user.id, "Manual block")}
+                            className="flex-1 h-9 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs font-black"
+                          >
+                            BLOCK
+                          </Button>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
                 </div>
               </div>
-
-              {/* Sidebar: Insights & Call to Action */}
-              <div className="space-y-8">
-                 <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 text-primary opacity-10">
-                       <Shield size={64} />
-                    </div>
-                    <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 mb-6 text-foreground">
-                       <Scan size={18} className="text-primary" /> Key Findings
-                    </h3>
-                    <ul className="space-y-6">
-                       {[
-                         { id: 1, color: "text-primary", bg: "bg-primary/20", text: "Random Forest demonstrates superior performance in non-linear behavioral analysis." },
-                         { id: 2, color: "text-indigo-500", bg: "bg-indigo-500/20", text: "SVM models are extremely sensitive to data normalization and scaling." },
-                         { id: 3, color: "text-emerald-500", bg: "bg-emerald-500/20", text: "SMOTE technique is critical for simulating adversarial imbalance." }
-                       ].map(item => (
-                          <li key={item.id} className="flex gap-4 items-start group">
-                             <div className={cn("w-6 h-6 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-black transition-transform group-hover:scale-110", item.color, item.bg)}>
-                                {item.id}
-                             </div>
-                             <p className="text-xs font-bold leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity">
-                                {item.text}
-                             </p>
-                          </li>
-                       ))}
-                    </ul>
-                 </div>
-
-                 <Card className="rounded-[2.5rem] border-border/50 bg-black text-white p-8 group relative overflow-hidden">
-                    <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/20 blur-[60px] rounded-full group-hover:scale-150 transition-transform duration-700" />
-                    <div className="relative z-10 space-y-6">
-                       <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-primary mb-4 border border-white/10">
-                          <ShieldCheck size={32} />
-                       </div>
-                       <h3 className="text-xl font-black uppercase tracking-tight leading-none">Security Mandate</h3>
-                       <p className="text-[10px] uppercase font-bold opacity-50 tracking-widest leading-relaxed">
-                          Behavioral fraud detection protects customer trust and ensures long-term operational integrity.
-                       </p>
-                       <Button variant="outline" className="w-full bg-white/5 border-white/20 text-white hover:bg-primary hover:text-white hover:border-transparent rounded-xl text-[10px] font-black uppercase tracking-widest h-12">
-                          Download Audit Report
-                       </Button>
-                    </div>
-                 </Card>
               </div>
-            </motion.div>
-          )}
 
-          {/* --- TAB 2: ATTACK SIMULATOR (Elite Logic) --- */}
-          {activeTab === "simulator" && (
-            <motion.div 
-              key="simulator" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-            >
-              {/* Scenarios Sidebar */}
-              <div className="lg:col-span-1 space-y-4">
-                 <h2 className="text-lg font-black uppercase tracking-tight mb-6 flex items-center gap-3">
-                    <Terminal size={22} className="text-primary" /> Scenario Lab
-                 </h2>
-                 <div className="space-y-3">
-                    {SCENARIOS.map((s) => (
-                      <button 
-                         key={s.id} 
-                         onClick={() => handleRunSimulation(s)}
-                         disabled={simulating}
-                         className={cn(
-                           "w-full text-left p-5 rounded-[2rem] border-2 transition-all flex gap-5 group relative overflow-hidden",
-                           selectedScenario?.id === s.id 
-                             ? "bg-primary/[0.03] border-primary shadow-lg shadow-primary/5" 
-                             : "bg-card border-border/50 hover:border-primary/40 hover:bg-muted/30"
-                         )}
-                      >
-                         <div className={cn(
-                           "p-4 rounded-2xl shrink-0 transition-all duration-300 group-hover:scale-110",
-                           selectedScenario?.id === s.id ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-                         )}>
-                            <s.icon size={24} strokeWidth={2.5} />
-                         </div>
-                         <div className="min-w-0 flex-1">
-                            <h3 className="font-black text-[13px] uppercase tracking-tight mb-1 group-hover:text-primary transition-colors">{s.name}</h3>
-                            <p className="text-[10px] font-bold text-muted-foreground line-clamp-2 leading-relaxed opacity-70">
-                               {s.description}
-                            </p>
-                            <Badge 
-                               variant="outline" 
-                               className={cn(
-                                 "mt-3 text-[8px] font-black uppercase px-2 h-5 tracking-widest",
-                                 s.severity === 'critical' ? 'border-red-500 text-red-500' : 'border-border'
-                               )}
-                            >
-                               {s.severity} THREAT
-                            </Badge>
-                         </div>
-                         {selectedScenario?.id === s.id && (
-                           <motion.div layoutId="sim-active-indicator" className="w-1 h-12 bg-primary absolute left-0 top-1/2 -translate-y-1/2 rounded-r-full" />
-                         )}
+              {/* User Logs Modal */}
+              {selectedUserLog && selectedUserDetails && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-background rounded-3xl max-w-2xl w-full max-h-[80vh] overflow-auto p-8"
+                  >
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="font-black text-2xl">User Logs - {selectedUserLog.user?.name}</h3>
+                      <button onClick={() => { setSelectedUserLog(null); setSelectedUserDetails(null); }} className="p-2 hover:bg-muted rounded-lg">
+                        <X size={20} />
                       </button>
-                    ))}
-                 </div>
-              </div>
-
-              {/* Simulation Result Area (Cyber Window) */}
-              <div className="lg:col-span-2">
-                 <div className="bg-[#0A0C10] border border-white/10 rounded-[3rem] p-10 text-white min-h-[600px] flex flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden">
-                    {/* Background Tech Noise */}
-                    <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_20%,rgba(var(--primary-rgb),0.1),transparent_50%)]" />
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
-
-                    <div className="relative z-10 flex items-center justify-between border-b border-white/10 pb-8 mb-8">
-                       <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/40 animate-pulse">
-                             <Activity size={24} className="text-primary" />
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">REAL-TIME TELEMETRY</p>
-                             <h2 className="text-3xl font-black tracking-tighter uppercase whitespace-nowrap">AI Analysis Engine</h2>
-                          </div>
-                       </div>
-                       <div className="hidden sm:flex flex-col items-end opacity-40 font-mono text-[10px]">
-                          <span>SYS_OVERWATCH_V4.2</span>
-                          <span>LATENCY_SYNC: 0.002s</span>
-                       </div>
                     </div>
 
-                    <div className="flex-1 relative z-10 overflow-y-auto custom-scrollbar pr-4">
-                       {simulating ? (
-                          <div className="h-full flex flex-col items-center justify-center space-y-8 py-20">
-                             <div className="relative">
-                                <motion.div 
-                                  animate={{ rotate: 360, scale: [1, 1.1, 1] }} 
-                                  transition={{ repeat: Infinity, duration: 3, ease: "linear" }} 
-                                  className="w-24 h-24 border-2 border-primary/10 border-t-primary rounded-full" 
-                                />
-                                <Fingerprint className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" size={32} />
-                             </div>
-                             <div className="text-center font-mono space-y-3">
-                                <p className="text-sm uppercase tracking-widest text-primary animate-pulse font-black">Decrypting Behavior Tokens...</p>
-                                <div className="space-y-1 opacity-50 text-[10px] uppercase">
-                                   <p>{">"} Mapping cross-geo IP nodes...</p>
-                                   <p>{">"} Comparing classification hyperplane vectors...</p>
-                                </div>
-                             </div>
+                    {loadingLogs ? (
+                      <p className="text-center py-8 text-muted-foreground">Loading logs...</p>
+                    ) : !selectedUserDetails.logs?.length ? (
+                      <p className="text-center py-8 text-muted-foreground">No logs found</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedUserDetails.logs.map((log: any) => (
+                          <div key={log.id} className="bg-muted/20 rounded-xl p-4 border border-border/50">
+                            <div className="flex justify-between items-start mb-2">
+                              <p className="font-bold text-sm uppercase">{log.type}</p>
+                              <span className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString('vi-VN')}</span>
+                            </div>
+                            {log.payload?.scenario && (
+                              <p className="text-sm text-muted-foreground">Scenario: {log.payload.scenario}</p>
+                            )}
+                            {log.payload?.ai_prediction && (
+                              <div className="text-xs mt-2 font-mono text-muted-foreground">
+                                RF: {log.payload.ai_prediction.random_forest?.risk_percentage?.toFixed(0)}% | SVM: {log.payload.ai_prediction.svm?.risk_percentage?.toFixed(0)}%
+                              </div>
+                            )}
                           </div>
-                       ) : simResult ? (
-                          <div className="space-y-10 py-4 animate-in fade-in duration-300">
-                             {/* Features Summary */}
-                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <FeatureTag label="Activity" value={selectedScenario?.name} color="text-primary" />
-                                <FeatureTag label="Checkout" value={`${selectedScenario?.features.time_to_checkout}s`} />
-                                <FeatureTag label="Logins" value={selectedScenario?.features.failed_logins.toString()} />
-                                <FeatureTag label="Risk Level" value={selectedScenario?.severity} urgent />
-                             </div>
-
-                             {/* Comparison Modules */}
-                             <div className="grid md:grid-cols-2 gap-8">
-                                <ModelResultCard 
-                                  name="Random Forest" 
-                                  desc="Ensemble Classification"
-                                  risk={simResult.rf.risk}
-                                  status={simResult.rf.status}
-                                  time={simResult.rf.time}
-                                  color="primary"
-                                />
-                                <ModelResultCard 
-                                  name="SVM (Support Vector)" 
-                                  desc="Hyperplane Partitioning"
-                                  risk={simResult.svm.risk}
-                                  status={simResult.svm.status}
-                                  time={simResult.svm.time}
-                                  color="indigo"
-                                />
-                             </div>
-
-                             {/* System Insights */}
-                             <div className="bg-white/5 border-2 border-white/10 rounded-[2rem] p-6 flex gap-5 items-start">
-                                <div className="w-10 h-10 rounded-xl bg-primary/20 shrink-0 flex items-center justify-center text-primary mt-1">
-                                   <Layers size={20} />
-                                </div>
-                                <div>
-                                  <div className="p-8 bg-background/50 border border-white/10 rounded-[2rem] text-[11px] font-bold text-muted-foreground leading-relaxed uppercase tracking-widest opacity-60">
-                                      {t("admin.ai_security.logic_desc")}
-                                  </div>
-                                </div>
-                             </div>
-                          </div>
-                       ) : (
-                          <div className="h-full flex flex-col items-center justify-center text-center opacity-20 select-none py-20 grayscale scale-110">
-                             <Scan size={80} strokeWidth={1} className="mb-6 animate-pulse" />
-                             <h3 className="text-2xl font-black uppercase tracking-[0.4em]">Awaiting Uplink</h3>
-                             <p className="text-xs mt-3 uppercase tracking-widest font-bold">Select target scenario to deploy analyzer</p>
-                          </div>
-                       )}
-                    </div>
-                    
-                    {/* Retro Cyber-Border Glow */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-primary/50 to-transparent blur-sm" />
-                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* --- TAB 3: MONITOR (Elite Table) --- */}
-          {activeTab === "monitor" && (
-            <motion.div 
-               key="monitor" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="space-y-8"
-            >
-               <div className="flex items-center justify-between px-2">
-                  <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-                    <History size={26} className="text-primary" /> Active Overwatch
-                  </h2>
-                  <Button className="h-10 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] bg-red-600 hover:bg-red-700 text-white border-none shadow-lg shadow-red-500/20">
-                     AUTO-BLOCK: ON
-                  </Button>
-               </div>
-
-               <Card className="border-border/50 rounded-[2.5rem] overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto custom-scrollbar">
-                     <table className="w-full text-left border-separate border-spacing-0">
-                        <thead className="bg-muted/30 border-b border-border/50 text-muted-foreground">
-                           <tr>
-                              <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black">Suspicious Account</th>
-                              <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black">Method</th>
-                              <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black">Flagged Pattern</th>
-                              <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black">Model Consensus</th>
-                              <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black text-right">Confidence</th>
-                              <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black text-right">Actions</th>
-                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/50">
-                           <SuspectRow user="anonymous_7h2" method="Direct Link" activity="Bot Sniping" consensus="92% RF / 88% SVM" severity="high" />
-                           <SuspectRow user="tranvan_security_test" method="Proxy VPN" activity="Impossible Travel" consensus="85% RF / 79% SVM" severity="medium" />
-                           <SuspectRow user="dark_phantom" method="Bot Script" activity="Velocity Spam" consensus="98% RF / 96% SVM" severity="critical" />
-                           <SuspectRow user="user_8821" method="Brute Force" activity="Credential Stuffing" consensus="94% RF / 92% SVM" severity="critical" />
-                           <SuspectRow user="shop_whale_01" method="Direct Pay" activity="Whale Hunt" consensus="75% RF / 65% SVM" severity="low" />
-                        </tbody>
-                     </table>
-                  </div>
-               </Card>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.1); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        :root { --primary-rgb: 255, 61, 0; } /* Example primary color mapping */
-      `}</style>
     </div>
-  );
-}
-
-// --- Internal Support Components ---
-
-function MetricMicroBox({ label, rf, svm }: { label: string, rf: number, svm: number }) {
-  return (
-    <div className="p-4 bg-muted/40 rounded-2xl border border-border/30 hover:border-primary/20 transition-all flex flex-col justify-between">
-      <p className="text-[9px] font-black uppercase opacity-50 tracking-widest mb-3">{label}</p>
-      <div className="space-y-2">
-        <div className="flex justify-between items-center text-[9px] font-black uppercase">
-          <span className="opacity-40">RF</span>
-          <span className="text-primary">{rf}%</span>
-        </div>
-        <div className="h-1 bg-background rounded-full overflow-hidden">
-          <div className="h-full bg-primary" style={{ width: `${rf}%` }} />
-        </div>
-        <div className="flex justify-between items-center text-[9px] font-black uppercase">
-          <span className="opacity-40">SVM</span>
-          <span className="text-indigo-400">{svm}%</span>
-        </div>
-        <div className="h-1 bg-background rounded-full overflow-hidden">
-          <div className="h-full bg-indigo-500" style={{ width: `${svm}%` }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FeatureTag({ label, value, color = "text-white", urgent = false }: any) {
-  return (
-    <div className={cn("p-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition-all", urgent && value === 'critical' ? 'border-red-500/40 bg-red-500/5' : '')}>
-       <p className="text-[9px] font-black uppercase opacity-40 tracking-widest mb-1">{label}</p>
-       <p className={cn("text-xs font-black uppercase tracking-tight", color, urgent && value === 'critical' ? 'text-red-500' : '')}>
-          {value || "N/A"}
-       </p>
-    </div>
-  );
-}
-
-function ModelResultCard({ name, desc, risk, status, time, color }: any) {
-  const isHighRisk = risk > 0.8;
-  const accentClass = color === 'primary' ? 'border-primary/30' : 'border-indigo-500/30';
-  const textClass = color === 'primary' ? 'text-primary' : 'text-indigo-400';
-  
-  return (
-     <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className={cn("bg-white/5 border-2 rounded-[2rem] p-6 flex flex-col justify-between", accentClass)}>
-        <div className="flex justify-between items-start mb-6">
-           <div className="min-w-0">
-              <h4 className={cn("text-sm font-black uppercase tracking-widest leading-none", textClass)}>{name}</h4>
-              <p className="text-[9px] font-bold opacity-30 mt-1 uppercase tracking-tighter">{desc}</p>
-           </div>
-           <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest h-5 bg-white/5 border-white/10">{time}</Badge>
-        </div>
-
-        <div className="flex-1 flex flex-col items-center justify-center py-6">
-           <p className="text-6xl font-black tracking-tighter leading-none mb-1 tabular-nums">{Math.round(risk * 100)}%</p>
-           <p className="text-[10px] font-black uppercase opacity-30 tracking-[0.2em]">Risk Variance</p>
-        </div>
-
-        <div className={cn(
-          "px-6 py-3 rounded-xl text-[10px] font-black uppercase text-center tracking-[0.2em] shadow-lg",
-          status === 'Fraud' ? 'bg-red-600 text-white shadow-red-600/10' : 'bg-primary text-white shadow-primary/10'
-        )}>
-          {status} DETECTED
-        </div>
-     </motion.div>
-  );
-}
-
-function SuspectRow({ user, method, activity, consensus, severity }: any) {
-  const { t } = useTranslation();
-  const sevStyle = severity === 'critical' ? 'text-red-500 bg-red-500/10' : severity === 'high' ? 'text-orange-500 bg-orange-500/10' : 'text-blue-500 bg-blue-500/10';
-  
-  return (
-    <tr className="hover:bg-muted/40 transition-colors group cursor-pointer border-b border-border/10 last:border-0 h-20">
-       <td className="px-8 py-4">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center font-black text-primary transition-all group-hover:scale-110">
-                {user.charAt(0).toUpperCase()}
-             </div>
-             <span className="font-black text-[11px] uppercase tracking-tight text-foreground group-hover:text-primary transition-colors">{user}</span>
-          </div>
-       </td>
-       <td className="px-8 py-4 text-xs font-bold text-muted-foreground uppercase opacity-60">{method}</td>
-       <td className="px-8 py-4">
-          <span className={cn("px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-transparent", sevStyle)}>
-            {activity}
-          </span>
-       </td>
-       <td className="px-8 py-4 font-mono text-[10px] opacity-70 group-hover:opacity-100 transition-opacity tracking-tighter">{consensus}</td>
-       <td className="px-8 py-4 text-right">
-          <div className="flex flex-col items-end gap-1">
-             <span className="text-[10px] font-black text-primary">{consensus.split('%')[0]}%</span>
-             <div className="h-1.5 w-24 bg-muted rounded-full overflow-hidden">
-                <motion.div 
-                   initial={{ width: 0 }} 
-                   animate={{ width: consensus.split('%')[0] + '%' }} 
-                   className="h-full bg-primary" 
-                />
-             </div>
-          </div>
-       </td>
-       <td className="px-8 py-4">
-          <div className="flex justify-end gap-2">
-             <Button size="sm" className="h-9 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[9px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20" onClick={(e) => { e.stopPropagation(); toast.success(t("admin.ai_security.lock_success", { user: user })); }}>
-                BLOCK
-             </Button>
-             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border/50 hover:bg-white shadow-sm">
-                <ChevronRight size={16} className="text-muted-foreground" />
-             </Button>
-          </div>
-       </td>
-    </tr>
   );
 }

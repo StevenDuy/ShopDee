@@ -171,6 +171,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/search', [ProfileController::class, 'proxySearch']);
         Route::get('/reverse', [ProfileController::class, 'proxyReverse']);
     });
+
+    // --- AI SIMULATION ---
+    Route::get('/ai/users', [\App\Http\Controllers\AISimulationController::class, 'users']);
+    Route::get('/ai/users/{id}/logs', [\App\Http\Controllers\AISimulationController::class, 'logs']);
+    Route::get('/ai/products', [\App\Http\Controllers\AISimulationController::class, 'products']);
+    Route::get('/ai/monitor', [\App\Http\Controllers\AISimulationController::class, 'monitor']);
+    Route::get('/ai/metrics', [\App\Http\Controllers\AISimulationController::class, 'metrics']);
+    Route::post('/ai/train', [\App\Http\Controllers\AISimulationController::class, 'train']);
+    Route::post('/ai/retrain', [\App\Http\Controllers\AISimulationController::class, 'retrain']);
+    Route::post('/ai/simulate', [\App\Http\Controllers\AISimulationController::class, 'simulate']);
+    Route::post('/ai/auto-block', [\App\Http\Controllers\AISimulationController::class, 'autoBlock']);
+    Route::post('/ai/users/{id}/block', [\App\Http\Controllers\AISimulationController::class, 'block']);
+    Route::post('/ai/users/{id}/unblock', [\App\Http\Controllers\AISimulationController::class, 'unblock']);
+    Route::post('/ai/simulate', [\App\Http\Controllers\AISimulationController::class, 'simulate']);
 });
 
 
