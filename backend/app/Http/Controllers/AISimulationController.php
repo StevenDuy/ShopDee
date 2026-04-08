@@ -225,8 +225,11 @@ class AISimulationController extends Controller
         if (isset($prediction['random_forest']['risk_percentage']) && isset($prediction['svm']['risk_percentage'])) {
             $rfRisk = $prediction['random_forest']['risk_percentage'] / 100;
             $svmRisk = $prediction['svm']['risk_percentage'] / 100;
-            $payload['ai_flagged'] = $rfRisk >= 0.6 || $svmRisk >= 0.6;
-            $payload['flagged_by'] = $payload['ai_flagged'] ? ($rfRisk >= 0.6 ? 'random_forest' : 'svm') : null;
+            
+            // Flag if either model detects high risk (> 70%)
+            $payload['ai_flagged'] = $rfRisk >= 0.7 || $svmRisk >= 0.7;
+            $payload['risk_score'] = max($rfRisk, $svmRisk);
+            $payload['flagged_by'] = $payload['ai_flagged'] ? ($rfRisk >= 0.7 ? 'random_forest' : 'svm') : null;
         }
 
         $payload['simulated_fraud'] = $isFraud;
@@ -325,7 +328,7 @@ class AISimulationController extends Controller
                     break;
 
                 case 'login_fail':
-                    $attempts = max(1, $request->input('wrong_password_attempts', 4));
+                    $attempts = max(1, $request->input('wrong_password_attempts', 5));
                     $payload = [
                         'duration_ms' => max(100, $attempts * 250),
                         'distance_jump' => 0,
@@ -337,7 +340,7 @@ class AISimulationController extends Controller
                         'scenario' => 'login_fail',
                     ];
 
-                    $results[] = $this->createSimulationLog($user, 'login', $request->lat, $request->lng, $attempts >= 3, $payload, $autoBlock);
+                    $results[] = $this->createSimulationLog($user, 'login', $request->lat, $request->lng, $attempts >= 5, $payload, $autoBlock);
                     break;
 
                 case 'location_change':
