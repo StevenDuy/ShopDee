@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class NotificationController extends Controller
 {
@@ -51,12 +52,19 @@ class NotificationController extends Controller
             ->where('is_read', false)
             ->count();
             
-        $msgCount = \App\Models\ChatMessage::whereHas('conversation', function($q) use ($userId) {
-                $q->where('user1_id', $userId)->orWhere('user2_id', $userId);
-            })
-            ->where('sender_id', '!=', $userId)
-            ->where('is_read', false)
-            ->count();
+        $msgCount = 0;
+        try {
+            if (Schema::hasTable('chat_messages')) {
+                $msgCount = \App\Models\ChatMessage::whereHas('conversation', function($q) use ($userId) {
+                        $q->where('user1_id', $userId)->orWhere('user2_id', $userId);
+                    })
+                    ->where('sender_id', '!=', $userId)
+                    ->where('is_read', false)
+                    ->count();
+            }
+        } catch (\Throwable $e) {
+            \Log::warning("Unread chat message count failed: " . $e->getMessage());
+        }
             
         return response()->json([
             'notifications' => $notifCount,

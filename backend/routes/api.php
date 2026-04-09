@@ -181,6 +181,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ai/train', [\App\Http\Controllers\AISimulationController::class, 'train']);
     Route::post('/ai/retrain', [\App\Http\Controllers\AISimulationController::class, 'retrain']);
     Route::post('/ai/simulate', [\App\Http\Controllers\AISimulationController::class, 'simulate']);
+    Route::delete('/ai/logs', [\App\Http\Controllers\AISimulationController::class, 'clearLogs']);
     Route::post('/ai/auto-block', [\App\Http\Controllers\AISimulationController::class, 'autoBlock']);
     Route::post('/ai/users/{id}/block', [\App\Http\Controllers\AISimulationController::class, 'block']);
     Route::post('/ai/users/{id}/unblock', [\App\Http\Controllers\AISimulationController::class, 'unblock']);
