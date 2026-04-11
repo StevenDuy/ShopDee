@@ -30,7 +30,6 @@ export function SellerSidebar() {
     { href: "/seller/orders", icon: ShoppingCart, label: t("seller.orders_nav") },
     { href: "/seller/inbox", icon: MessageCircle, label: t("seller.inbox_nav"), hasBadge: true },
     { href: "/seller/finance", icon: DollarSign, label: t("seller.finance_nav") },
-    { href: "/seller/settings", icon: Settings, label: t("seller.settings_nav") },
   ];
 
   return (

@@ -105,7 +105,10 @@ export function UserDropdown({ collapsed = false, align = "bottom" }: UserDropdo
           <div className="space-y-1">
              <button 
               onClick={() => { 
-                const path = (user.role?.slug === 'admin' || user.role_id === 1) ? "/admin/profile" : "/profile";
+                let path = "/profile";
+                if (user.role?.slug === 'admin' || user.role_id === 1) path = "/admin/profile";
+                else if (user.role?.slug === 'seller' || user.role_id === 2) path = "/seller/settings";
+                
                 router.push(path); 
                 setIsOpen(false); 
               }}

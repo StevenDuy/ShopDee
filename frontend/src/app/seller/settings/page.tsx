@@ -145,7 +145,7 @@ export default function SellerSettingsPage() {
                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">{t("seller.settings.store_details")}</h2>
               </div>
 
-              <Card className="rounded-[3rem] border-border/30 bg-card/40 backdrop-blur-sm p-10 shadow-sm relative overflow-hidden">
+              <Card className="rounded-[3rem] border border-white/20 dark:border-slate-800/10 bg-card/40 backdrop-blur-3xl p-10 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden">
                  <div className="absolute top-0 right-0 p-8 opacity-5 -translate-y-8 translate-x-8 rotate-12 scale-150 pointer-events-none">
                     <Layout size={200} strokeWidth={1} />
                  </div>
@@ -235,7 +235,7 @@ export default function SellerSettingsPage() {
            </div>
 
            {/* Addresses Section */}
-           <div className="lg:col-span-5 space-y-8">
+           <div className="lg:col-span-5 space-y-10 px-2 pb-20">
               <div className="flex items-center justify-between ml-4">
                  <div className="flex items-center gap-4">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -251,7 +251,7 @@ export default function SellerSettingsPage() {
                  </button>
               </div>
 
-              <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+              <div className="space-y-6">
                  <AnimatePresence mode="popLayout">
                     {addresses.length === 0 ? (
                        <Card className="rounded-[2.5rem] border-dashed border-2 border-border/30 bg-muted/5 p-12 text-center grayscale opacity-40">
@@ -268,7 +268,7 @@ export default function SellerSettingsPage() {
                              animate={{ opacity: 1, x: 0 }}
                              transition={{ delay: idx * 0.05 }}
                           >
-                             <Card className="rounded-[2rem] border-border/30 bg-card/40 backdrop-blur-sm p-6 group transition-all hover:bg-muted/30 relative">
+                             <Card className="rounded-[2.5rem] border border-white/40 dark:border-slate-800/20 bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl p-8 hover:shadow-2xl hover:-translate-y-1 relative z-10 transition-all duration-500">
                                 <div className="flex items-start justify-between mb-4">
                                    <div className="flex gap-2">
                                       <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest border-border/50 px-2">
