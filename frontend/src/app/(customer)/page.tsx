@@ -22,6 +22,7 @@ interface Product {
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 function ProductCard({ product }: { product: Product }) {
+  const { t } = useTranslation();
   const { formatPrice } = useCurrencyStore();
   const img = product.media.find((m) => m.is_primary)?.full_url ?? product.media[0]?.full_url ?? "https://picsum.photos/300/300";
  
@@ -53,7 +54,7 @@ function ProductCard({ product }: { product: Product }) {
           </h3>
  
           <div className="mt-auto pt-2 space-y-3">
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 pt-2">
               <span className="font-black text-base text-primary tracking-tighter">
                 {formatPrice(product.sale_price ?? product.price)}
               </span>
@@ -62,17 +63,6 @@ function ProductCard({ product }: { product: Product }) {
                   {formatPrice(product.price)}
                 </span>
               )}
-            </div>
-            <div className="flex items-center justify-between border-t border-border/10 pt-3">
-              <div className="flex items-center gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} size={10} className={s <= 4 ? "fill-primary text-primary" : "fill-muted text-muted"} />
-                ))}
-                <span className="text-[10px] font-black ml-1.5 text-muted-foreground">4.0</span>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                <ArrowRight size={14} strokeWidth={3} />
-              </div>
             </div>
           </div>
         </div>
@@ -95,13 +85,13 @@ function Section({ title, products, href }: { title: string; products: Product[]
           <ArrowRight size={14} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-        {products.slice(0, 10).map((p) => <ProductCard key={p.id} product={p} />)}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+        {products.slice(0, 12).map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
     </section>
   );
 }
- 
+
 export default function CustomerHomePage() {
   const { t } = useTranslation();
   const [bannerIdx, setBannerIdx] = useState(0);
@@ -109,30 +99,30 @@ export default function CustomerHomePage() {
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
- 
+
   const getFullImageUrl = (path: string | null) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
     const baseUrl = API.replace("/api", "");
     return `${baseUrl}${path}`;
   };
- 
+
   useEffect(() => {
     if (banners.length > 0) {
       const timer = setInterval(() => setBannerIdx((i) => (i + 1) % banners.length), 5000);
       return () => clearInterval(timer);
     }
   }, [banners.length]);
- 
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [bannersRes, newArrivalsRes, bestSellersRes] = await Promise.all([
           axios.get(`${API}/banners?active_only=1`),
-          axios.get(`${API}/products?sort=newest&limit=10&status=active`),
-          axios.get(`${API}/products?sort=best_sellers&limit=10&status=active`)
+          axios.get(`${API}/products?sort=newest&limit=12&status=active`),
+          axios.get(`${API}/products?sort=best_sellers&limit=12&status=active`)
         ]);
- 
+
         setBanners(bannersRes.data);
         setNewArrivals(newArrivalsRes.data.data ?? newArrivalsRes.data ?? []);
         setBestSellers(bestSellersRes.data.data ?? bestSellersRes.data ?? []);
@@ -144,12 +134,12 @@ export default function CustomerHomePage() {
     };
     fetchData();
   }, []);
- 
+
   return (
-    <div className="space-y-12 animate-in fade-in duration-700">
+    <div className="max-w-screen-2xl mx-auto p-6 md:p-10 pb-24 md:pb-10 space-y-12 animate-in fade-in duration-700">
       {/* Premium Swippable Hero Banner (Sharp Edges) */}
       {banners.length > 0 && (
-        <div className="relative w-full overflow-hidden shadow-2xl group/banner">
+        <div className="relative w-full overflow-hidden shadow-2xl group/banner rounded-3xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={bannerIdx}
@@ -157,7 +147,7 @@ export default function CustomerHomePage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ ease: "easeInOut", duration: 0.4 }}
-              className="block relative aspect-[21/9] md:aspect-[21/7] overflow-hidden"
+              className="block relative aspect-[21/9] md:aspect-[21/6] overflow-hidden"
             >
               <Link href={`/products/${banners[bannerIdx].product?.slug || ""}`}>
                 <img
@@ -204,7 +194,7 @@ export default function CustomerHomePage() {
           <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter italic">{t("customer_home.experience_elite")}</h2>
           <p className="text-muted-foreground font-bold text-sm uppercase tracking-widest">{t("customer_home.premium_quality_delivery")}</p>
         </div>
-
+ 
         <Section title={t("customer_home.new_arrivals")} products={newArrivals} href="/products?sort=newest" />
       </div>
     </div>

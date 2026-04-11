@@ -35,7 +35,7 @@ export function EliteCombobox({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const selectedOption = options.find((opt) => opt.value === value);
 
   const filteredOptions = options.filter((opt) => {
@@ -63,7 +63,7 @@ export function EliteCombobox({
           {label}
         </label>
       )}
-      
+
       {/* Trigger Button */}
       <div
         onClick={() => setOpen(!open)}
@@ -73,14 +73,14 @@ export function EliteCombobox({
         )}
       >
         <span className={cn(
-          "text-sm font-black uppercase tracking-widest truncate", 
+          "text-sm font-black uppercase tracking-widest truncate",
           !selectedOption && "opacity-30 font-bold"
         )}>
           {selectedOption ? selectedOption.label : (placeholder || defaultPlaceholder)}
         </span>
-        <ChevronDown 
-          className={cn("text-muted-foreground transition-transform duration-300", open && "rotate-180 text-primary")} 
-          size={18} 
+        <ChevronDown
+          className={cn("text-muted-foreground transition-transform duration-300", open && "rotate-180 text-primary")}
+          size={18}
         />
       </div>
 
@@ -104,7 +104,7 @@ export function EliteCombobox({
                 autoFocus
               />
               {search && (
-                <button 
+                <button
                   onClick={() => setSearch("")}
                   className="absolute right-8 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >

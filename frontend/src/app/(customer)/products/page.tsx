@@ -20,6 +20,7 @@ interface Product {
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 function ProductCard({ product }: { product: Product }) {
+  const { t } = useTranslation();
   const { formatPrice } = useCurrencyStore();
   const img = product.media.find((m) => m.is_primary)?.full_url ?? product.media[0]?.full_url ?? `https://picsum.photos/seed/${product.id}/300/300`;
  
@@ -50,7 +51,7 @@ function ProductCard({ product }: { product: Product }) {
           </h3>
  
           <div className="mt-auto pt-2 space-y-3">
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 pt-2">
               <span className="font-black text-base text-primary tracking-tighter">
                 {formatPrice(product.sale_price ?? product.price)}
               </span>
@@ -59,17 +60,6 @@ function ProductCard({ product }: { product: Product }) {
                   {formatPrice(product.price)}
                 </span>
               )}
-            </div>
-            <div className="flex items-center justify-between border-t border-border/10 pt-3 opacity-60 group-hover:opacity-100 transition-opacity">
-              <div className="flex items-center gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} size={10} className={s <= 4 ? "fill-primary text-primary" : "fill-muted text-muted"} />
-                ))}
-                <span className="text-[10px] font-black ml-1.5">4.0</span>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                <ChevronRight size={14} strokeWidth={3} />
-              </div>
             </div>
           </div>
         </div>
@@ -120,7 +110,7 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ sort, page: String(currentPage), limit: "16" });
+      const params = new URLSearchParams({ sort, page: String(currentPage), limit: "18" });
       if (search) params.set("search", search);
       if (category) params.set("category", category);
       if (minPrice) params.set("min_price", minPrice);
@@ -153,7 +143,7 @@ export default function ProductsPage() {
       
       {/* Search Header Row */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50 h-[80px]">
-        <div className="max-w-7xl mx-auto w-full h-full flex items-center px-6 gap-4">
+        <div className="max-w-screen-2xl mx-auto w-full h-full flex items-center px-6 md:px-10 gap-4">
           <div className="relative flex-1">
             <Search size={18} strokeWidth={2.5} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -164,7 +154,7 @@ export default function ProductsPage() {
               className="w-full pl-12 pr-4 h-12 bg-muted/30 border-2 border-border/50 rounded-2xl font-black uppercase text-xs tracking-widest focus:outline-none focus:border-primary transition-all focus:bg-background h-14"
             />
           </div>
- 
+
           <button 
             onClick={() => setShowFilters(true)}
             className="flex items-center justify-center gap-2 h-14 px-8 bg-primary text-white font-black uppercase text-[10px] tracking-[0.3em] rounded-2xl hover:scale-105 transition-transform shadow-xl shadow-primary/20"
@@ -266,7 +256,7 @@ export default function ProductsPage() {
       </aside>
  
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-screen-2xl mx-auto px-6 md:px-10 py-12 pb-24 md:pb-12">
         {products.length === 0 && !loading ? (
           <div className="text-center py-32 bg-muted/20 border-2 border-dashed border-border/50 rounded-[3rem]">
             <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -278,7 +268,7 @@ export default function ProductsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
             {products.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         )}

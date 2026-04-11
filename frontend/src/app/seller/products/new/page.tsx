@@ -105,7 +105,7 @@ export default function NewProductPage() {
     const nextIndex = options.length + 1;
     setOpts(prev => [...prev, { 
       ...emptyOption(), 
-      option_name: `${t("seller.products_manage.product_label")} ${nextIndex}` 
+      option_name: `Option ${nextIndex}` 
     }]);
   };
   const removeOption = (oi: number) => setOpts(prev => prev.filter((_, i) => i !== oi));
@@ -481,10 +481,7 @@ export default function NewProductPage() {
                   {/* Option header — consolidated and simplified */}
                   <div className="flex items-center justify-between gap-3 bg-card/60 p-3 border-b border-border -mx-4 -mt-4 rounded-t-xl">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-primary/10 rounded-lg flex items-center justify-center text-[10px] font-black text-primary border border-primary/20">
-                        #{oi + 1}
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{opt.option_name}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary ml-2">{opt.option_name}</span>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -508,7 +505,7 @@ export default function NewProductPage() {
 
                   {/* Column headers (Hidden on Mobile) */}
                   <div className="hidden sm:grid grid-cols-[1fr_120px_80px_auto] gap-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2">
-                    <span>{t("seller.products_manage.product")}</span>
+                    <span>OPTION NAME</span>
                     <span className="text-[10px] bg-primary/10 text-primary px-3 py-1 rounded-full font-black uppercase tracking-widest border border-primary/10">
                     + {t("seller.products_manage.price")} ({t("currency_code")})
                     </span>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, MessageCircle, Package, ClipboardList } from "lucide-react";
+import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, MessageCircle, Package, ClipboardList, ChevronRight, ListFilter } from "lucide-react";
 import axios from "axios";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,7 @@ import { useCart } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 import { useDragScroll } from "@/hooks/useDragScroll";
+import { EliteCombobox } from "@/components/ui/elite-combobox";
 
 
 interface ProductAttribute { id: number; attribute_name: string; attribute_value: string }
@@ -147,10 +148,9 @@ export default function ProductDetailPage() {
 
   return (
     <div className="bg-background/20 text-foreground animate-in fade-in duration-1000 min-h-screen">
-      {/* Breadcrumb - High Fidelity */}
       <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-b border-border/10">
         <div className="max-w-5xl mx-auto px-4 h-10 flex items-center gap-2 text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-          <button onClick={() => router.back()} className="hover:text-primary transition-all flex items-center gap-1.5">
+          <button onClick={() => router.back()} className="hover:text-primary transition-all flex items-center gap-1.5 focus:outline-none">
             <ArrowLeft size={12} strokeWidth={3} /> {t("inbox.back")}
           </button>
           <span className="opacity-20">/</span>
@@ -164,33 +164,17 @@ export default function ProductDetailPage() {
         </div>
       </div>
  
-      <div className="max-w-6xl mx-auto px-6 py-6 font-black uppercase text-foreground">
-        <div className="grid grid-cols-1 lg:grid-cols-[450px_1fr] gap-10 items-start pb-20">
-          
-          {/* Gallery - Precision Align (Shifted Down Further with Gap Fix) */}
-          <div className="space-y-6 w-full sticky top-32 transition-all duration-500">
-            <div className="aspect-square bg-white dark:bg-slate-900 border-2 border-border/10 rounded-[2rem] p-6 shadow-2xl flex items-center justify-center group overflow-hidden relative">
+      <div className="max-w-6xl mx-auto px-6 py-4 font-black uppercase text-foreground">
+        <div className="grid grid-cols-1 lg:grid-cols-[450px_1fr] gap-10 items-start pb-6">
+          <div className="space-y-6 w-full sticky top-32 transition-all duration-500 z-20">
+            <div className="aspect-square bg-white dark:bg-slate-900 border-2 border-border/10 rounded-[2rem] p-6 shadow-2xl flex items-center justify-center group overflow-hidden relative cursor-grab active:cursor-grabbing">
                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
-              <img 
-                src={images[activeImg].full_url} 
-                alt={product.title} 
-                className="max-w-full max-h-full object-contain transition-transform duration-700 group-hover:scale-110 relative z-10" 
-              />
+              <img src={images[activeImg].full_url} alt={product.title} className="max-w-full max-h-full object-contain transition-transform duration-700 group-hover:scale-110 relative z-10 pointer-events-none" />
             </div>
             {images.length > 1 && (
-              <div 
-                ref={scrollRef}
-                onMouseDown={onMouseDown}
-                onMouseLeave={onMouseLeave}
-                onMouseUp={onMouseUp}
-                onMouseMove={onMouseMove}
-                className="flex h-14 gap-3 overflow-x-auto no-scrollbar pb-1 cursor-grab active:cursor-grabbing select-none px-1 pt-2"
-              >
+              <div ref={scrollRef} onMouseDown={onMouseDown} onMouseLeave={onMouseLeave} onMouseUp={onMouseUp} onMouseMove={onMouseMove} className="flex h-14 gap-3 overflow-x-auto no-scrollbar pb-1 cursor-grab active:cursor-grabbing select-none px-1 pt-2">
                 {images.map((img, i) => (
-                  <button key={i} 
-                    onClickCapture={onClickCapture}
-                    onClick={() => setActiveImg(i)}
-                    className={`w-14 h-full border-2 shrink-0 transition-all duration-300 rounded-lg overflow-hidden ${i === activeImg ? "border-primary shadow-xl shadow-primary/30 scale-105" : "border-border/10 opacity-60 hover:opacity-100 hover:border-primary/50"}`}>
+                  <button key={i} onClickCapture={onClickCapture} onClick={() => setActiveImg(i)} className={`w-14 h-full border-2 shrink-0 transition-all duration-300 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing ${i === activeImg ? "border-primary shadow-xl shadow-primary/30 scale-105" : "border-border/10 opacity-60 hover:opacity-100 hover:border-primary/50"}`}>
                     <img src={img.full_url} alt="" className="w-full h-full object-cover pointer-events-none" />
                   </button>
                 ))}
@@ -198,7 +182,6 @@ export default function ProductDetailPage() {
             )}
           </div>
  
-          {/* Info - High Fidelity Integrated Card */}
           <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/20 dark:border-slate-800/10 rounded-[3rem] p-8 md:p-10 shadow-2xl space-y-4">
             <div className="space-y-3 pb-2">
               {product.category && (
@@ -206,52 +189,34 @@ export default function ProductDetailPage() {
                   {product.category.parent?.name ? `${product.category.parent.name} // ` : ""}{product.category.name}
                 </p>
               )}
-              <h1 className="text-3xl font-black uppercase tracking-tighter leading-none text-foreground">
-                {product.title}
-              </h1>
+              <h1 className="text-3xl font-black uppercase tracking-tighter leading-none text-foreground">{product.title}</h1>
             </div>
  
-            {/* Options Selection - Compact Square Boxes */}
             {options.length > 0 && (
               <div className="space-y-4 py-4 border-y border-border/10">
                 {options.map((opt, idx) => {
                   const sel = selParent[opt.id];
-                  const locked = idx > 0 && !isGroupComplete(options[idx - 1]);
                   return (
-                    <div key={opt.id} className={`space-y-2 ${locked ? "opacity-20 pointer-events-none grayscale" : ""}`}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[8px] font-black uppercase tracking-[0.4em] text-primary">OPT{idx + 1}</span>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{opt.option_name}</p>
+                    <div key={idx} className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-px bg-primary/10 flex-1" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-primary opacity-80">
+                          {opt.option_name.toLowerCase().includes('option') || opt.option_name.toLowerCase().includes('product') 
+                            ? `Option ${idx + 1}` 
+                            : opt.option_name}
+                        </span>
+                        <div className="h-px bg-primary/10 flex-1" />
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      
+                      <div className="flex flex-wrap gap-3">
                         {opt.values.map(val => (
-                          <button key={val.id} 
-                            disabled={val.stock_quantity === 0 && !val.sub_values?.length}
-                            onClick={() => {
-                              setSelParent(p => ({ ...p, [opt.id]: val }));
-                              setSelSub(s => { const n = { ...s }; delete n[val.id]; return n; });
-                            }}
-                            className={`px-4 py-2 rounded-lg border-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300
-                              ${sel?.id === val.id 
-                                ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" 
-                                : "bg-muted/30 border-border/20 hover:border-primary/50 text-muted-foreground"}`}
-                          >
-                            {val.option_value}
-                          </button>
+                          <button key={val.id} disabled={val.stock_quantity === 0 && !val.sub_values?.length} onClick={() => { setSelParent(p => ({ ...p, [opt.id]: val })); setSelSub(s => { const n = { ...s }; delete n[val.id]; return n; }); }} className={`px-4 py-2 rounded-lg border-2 text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${sel?.id === val.id ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" : "bg-muted/30 border-border/20 hover:border-primary/50 text-muted-foreground"}`}>{val.option_value}</button>
                         ))}
                       </div>
                       {sel?.sub_values?.length > 0 && (
                         <div className="pl-6 border-l-2 border-primary/20 flex flex-wrap gap-2 pt-1">
                           {sel.sub_values.map(sub => (
-                            <button key={sub.id} disabled={sub.stock_quantity === 0}
-                              onClick={() => setSelSub(s => ({ ...s, [sel.id]: sub }))}
-                              className={`px-3 py-1.5 rounded-lg border-2 text-[9px] font-black uppercase tracking-widest transition-all
-                                ${selSub[sel.id]?.id === sub.id 
-                                  ? "bg-primary text-white border-primary shadow-md shadow-primary/20" 
-                                  : "bg-muted border-border/20 hover:border-primary/30 text-muted-foreground"}`}
-                            >
-                              {sub.option_value}
-                            </button>
+                            <button key={sub.id} disabled={sub.stock_quantity === 0} onClick={() => setSelSub(s => ({ ...s, [sel.id]: sub }))} className={`px-3 py-1.5 rounded-lg border-2 text-[9px] font-black uppercase tracking-widest transition-all ${selSub[sel.id]?.id === sub.id ? "bg-primary text-white border-primary shadow-md shadow-primary/20" : "bg-muted border-border/20 hover:border-primary/30 text-muted-foreground"}`}>{sub.option_value}</button>
                           ))}
                         </div>
                       )}
@@ -260,8 +225,7 @@ export default function ProductDetailPage() {
                 })}
               </div>
             )}
-  
-            {/* Actions Area - Compact & Professional */}
+ 
             <div className="space-y-3 pt-0">
               <div className="flex items-center justify-between gap-8 pb-1">
                 <div className="flex items-center bg-muted/20 rounded-xl p-0.5 border border-border/10">
@@ -270,118 +234,102 @@ export default function ProductDetailPage() {
                   <button onClick={() => setQty(q => Math.min(effectiveStock, q + 1))} className="w-10 h-10 flex items-center justify-center hover:bg-primary hover:text-white rounded-lg transition-all"><Plus size={14} strokeWidth={4} /></button>
                 </div>
                 <div className="text-right">
-                   <div className="flex items-baseline gap-2 justify-end mb-0.5">
-                     <p className="text-[9px] font-black text-primary tracking-widest">{formatPrice(totalPrice)}{t("cart_page.unit")}</p>
-                     {product.sale_price && <span className="text-[7px] text-muted-foreground line-through decoration-primary opacity-30">{formatPrice(product.price)}</span>}
+                   <div className="flex items-baseline gap-2 justify-end mb-1">
+                     {product.sale_price && <span className="text-[9px] text-muted-foreground line-through decoration-primary opacity-30 font-bold">{formatPrice(product.price)}</span>}
+                     <div className="px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
+                        <p className="text-[10px] font-black text-primary tracking-widest leading-none">{t("price")}</p>
+                     </div>
                    </div>
-                  <p className="text-2xl font-black text-primary tracking-tighter">{formatPrice(totalPrice * qty)}</p>
+                  <p className="text-3xl font-black text-primary tracking-tighter leading-none">{formatPrice(totalPrice * qty)}</p>
                 </div>
               </div>
-  
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <button onClick={handleAddToCart} disabled={effectiveStock === 0 || !allComplete}
-                  className="py-4 rounded-[1.5rem] border-2 border-primary text-primary font-black text-[9px] uppercase tracking-[0.4em] hover:bg-primary hover:text-white transition-all duration-500 disabled:opacity-20">
-                  {addedMsg ? t("product_details.done") : t("cart")}
-                </button>
-                <button 
-                  onClick={() => { handleAddToCart(); if (allComplete) router.push("/checkout"); }}
-                  disabled={effectiveStock === 0 || !allComplete}
-                  className="py-4 rounded-[1.5rem] bg-primary text-white border-2 border-primary font-black text-[9px] uppercase tracking-[0.4em] hover:scale-[1.02] active:scale-95 transition-all duration-300 disabled:opacity-20 shadow-xl shadow-primary/30">
-                  {t("buy_now")}
-                </button>
+                <button onClick={handleAddToCart} disabled={effectiveStock === 0 || !allComplete} className="py-4 rounded-[1.5rem] border-2 border-primary text-primary font-black text-[9px] uppercase tracking-[0.4em] hover:bg-primary hover:text-white transition-all duration-500 disabled:opacity-20">{addedMsg ? t("product_details.done") : t("cart")}</button>
+                <button onClick={() => { handleAddToCart(); if (allComplete) router.push("/checkout"); }} disabled={effectiveStock === 0 || !allComplete} className="py-4 rounded-[1.5rem] bg-primary text-white border-2 border-primary font-black text-[9px] uppercase tracking-[0.4em] hover:scale-[1.02] active:scale-95 transition-all duration-300 disabled:opacity-20 shadow-xl shadow-primary/30">{t("buy_now")}</button>
               </div>
             </div>
-  
-            {/* Seller Small Card - Simplified */}
+ 
             <div className="bg-muted/10 border border-border/5 p-4 rounded-[2rem] flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center font-black text-xl uppercase shadow-lg">
-                  {product.seller.name.charAt(0)}
-                </div>
+                <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center font-black text-xl uppercase shadow-lg">{product.seller.name.charAt(0)}</div>
                 <div>
                   <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-1">{t("product_details.storefront_label")}</p>
                   <Link href={`/shop/${product.seller.id}`} className="text-base font-black uppercase hover:text-primary transition-colors tracking-tight">{product.seller.name}</Link>
                 </div>
               </div>
             </div>
+ 
+            <div className="pt-6 border-t border-border/10 grid grid-cols-3 gap-2">
+              {(["description", "specifications", "reviews"] as const).map(tab => (
+                <button 
+                  key={tab}
+                  onClick={() => setDetailTab(tab)}
+                  className={`py-3 px-1 rounded-2xl border-2 transition-all duration-500 text-[8px] font-black uppercase tracking-widest text-center ${detailTab === tab ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" : "bg-muted/30 border-border/10 text-muted-foreground hover:border-primary/50"}`}
+                >
+                  {t(`product_details.${tab}`)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-  
-        {/* Tabs Section - Vertical Architectural Layout */}
-        <div className="max-w-6xl mx-auto py-12 px-6 flex flex-col md:flex-row gap-16 items-start">
-          <div className="flex flex-col gap-5 w-full md:w-60 sticky top-32">
-            {(["description", "specifications", "reviews"] as const).map(tab => (
-              <button 
-                key={tab}
-                onClick={() => setDetailTab(tab)}
-                className={`text-left text-[10px] font-black uppercase tracking-[0.3em] transition-all py-2 pl-4 ${detailTab === tab ? "text-primary opacity-100" : "text-muted-foreground opacity-40 hover:opacity-80"}`}
-              >
-                {t(`product_details.${tab}`)}
-              </button>
-            ))}
-          </div>
-          
-          <div className="flex-1 bg-white/10 dark:bg-slate-900/10 backdrop-blur-sm h-[500px] overflow-y-auto p-6 md:p-8 custom-scrollbar rounded-[2rem] border border-border/5 w-full">
-            <div className="max-w-2xl mx-auto">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={detailTab}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {detailTab === "description" && (
-                    <div className="text-[11px] font-bold leading-relaxed whitespace-pre-wrap text-foreground/70 opacity-90 tracking-wide lowercase">
-                      {product.description || t("product_details.updating_data")}
-                    </div>
-                  )}
-
-                  {detailTab === "specifications" && (
-                    <div className="grid gap-2">
+ 
+        <div className="py-4 animate-in slide-in-from-bottom-5 duration-700 relative z-10">
+          <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/20 dark:border-slate-800/10 rounded-[3rem] p-10 md:p-14 shadow-2xl h-[700px] overflow-y-auto custom-scrollbar w-full">
+            <AnimatePresence mode="wait">
+              <motion.div key={detailTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.4 }} className="w-full">
+                {detailTab === "description" && (
+                  <div className="w-full">
+                     <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-8 border-b border-border/10 pb-4">{t("product_details.description")}</h2>
+                     <div className="text-sm font-bold leading-relaxed whitespace-pre-wrap text-foreground/70 tracking-wide lowercase italic max-w-5xl">{product.description || t("product_details.updating_data")}</div>
+                  </div>
+                )}
+                {detailTab === "specifications" && (
+                  <div className="w-full">
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-8 border-b border-border/10 pb-4">{t("product_details.specifications")}</h2>
+                    <div className="flex flex-col gap-4">
                       {product.attributes.map(attr => (
-                        <div key={attr.id} className="grid grid-cols-[160px_1fr] bg-muted/10 rounded-lg overflow-hidden border border-border/5">
-                          <div className="p-2.5 bg-primary/5 text-[8px] font-black uppercase tracking-widest text-primary border-r border-border/5 flex items-center opacity-60">{attr.attribute_name}</div>
-                          <div className="p-2.5 text-[10px] font-bold uppercase px-5 flex items-center text-foreground/80">{attr.attribute_value}</div>
+                        <div key={attr.id} className="grid grid-cols-[200px_1fr] bg-muted/5 rounded-2xl overflow-hidden border border-border/5">
+                          <div className="p-5 bg-primary/5 text-[9px] font-black uppercase tracking-widest text-primary border-r border-border/5 flex items-center">{attr.attribute_name}</div>
+                          <div className="p-5 text-xs font-bold uppercase px-8 flex items-center text-foreground/80">{attr.attribute_value}</div>
                         </div>
                       ))}
                     </div>
-                  )}
-
-                  {detailTab === "reviews" && (
-                    <div className="space-y-5">
-                      <div className="p-5 rounded-[1.5rem] bg-primary text-white flex items-center justify-between shadow-lg">
-                        <div>
-                          <div className="text-3xl font-black tracking-tighter leading-none mb-1">{avgRating.toFixed(1)}</div>
-                          <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-60">{t("product_details.verified_rating")}</p>
-                        </div>
-                        <StarRow rating={avgRating} />
-                      </div>
-                      
-                      <div className="grid gap-3">
-                        {reviews.map(r => (
-                          <div key={r.id} className="p-6 rounded-[1.5rem] border border-border/10 bg-white/40 dark:bg-slate-800/40 backdrop-blur-3xl shadow-sm relative overflow-hidden group">
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center font-black text-[9px] text-primary">
-                                  {r.customer.name.charAt(0)}
-                                </div>
-                                <div className="space-y-0.5">
-                                  <p className="font-black text-[10px] uppercase tracking-wider text-foreground/80">{r.customer.name}</p>
-                                  <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest opacity-30">{new Date(r.created_at).toLocaleDateString()}</p>
-                                </div>
-                              </div>
-                              <StarRow rating={r.rating} />
-                            </div>
-                            {r.comment && <div className="text-[10px] font-bold leading-relaxed italic border-l-2 border-primary/10 pl-4 py-1 text-foreground/60">{r.comment}</div>}
-                          </div>
-                        ))}
-                      </div>
+                  </div>
+                )}
+                {detailTab === "reviews" && (
+                  <div className="w-full space-y-10">
+                    <div className="flex items-center justify-between border-b border-border/10 pb-6">
+                       <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">{t("product_details.reviews")} // {reviews.length} total</h2>
+                       <div className="flex items-center gap-6 bg-primary text-white px-6 py-3 rounded-2xl shadow-xl shadow-primary/20">
+                          <span className="text-2xl font-black">{avgRating.toFixed(1)}</span>
+                          <StarRow rating={avgRating} />
+                       </div>
                     </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {reviews.length === 0 ? (
+                        <div className="col-span-full text-center py-24 bg-muted/5 rounded-[3rem] border-2 border-dashed border-border/10">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-40">{t("product_details.no_reviews") || "No reviews yet"}</p>
+                        </div>
+                      ) : reviews.map(r => (
+                        <div key={r.id} className="p-8 rounded-[2.5rem] border border-border/5 bg-white/20 dark:bg-slate-800/10 backdrop-blur-md relative group hover:bg-white/30 transition-all duration-500">
+                          <div className="flex justify-between items-start mb-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center font-black text-xs text-primary">{r.customer.name.charAt(0)}</div>
+                              <div className="space-y-1">
+                                <p className="font-black text-xs uppercase tracking-wider text-foreground/80">{r.customer.name}</p>
+                                <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest opacity-40">{new Date(r.created_at).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                            <StarRow rating={r.rating} />
+                          </div>
+                          {r.comment && <div className="text-sm font-bold leading-relaxed italic border-l-4 border-primary/20 pl-6 py-2 text-foreground/70">{r.comment}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>
