@@ -9,7 +9,7 @@ import {
   Search, Send, Image as ImageIcon, CheckCheck,
   Bell, MessageCircle, Package, CheckCircle, Info, Star, Store,
   ChevronLeft, Plus, X, Trash2, FileText, Link as LinkIcon,
-  MoreVertical, User, ShieldAlert
+  MoreVertical, User, ShieldAlert, Loader2
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
@@ -66,6 +66,16 @@ export function UnifiedInbox() {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const activeConvRef = useRef<any>(null);
+  const tokenRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeConvRef.current = activeConv;
+  }, [activeConv]);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
@@ -116,27 +126,116 @@ export function UnifiedInbox() {
 
   useEffect(() => {
     if (activeConv && token) {
-      fetchMessages(activeConv.id, 1).then(() => fetchUnreadCounts(token));
+      // 1. Instantly clear unread dot locally
+      setConversations(prev => prev.map(c => Number(c.id) === Number(activeConv.id) ? { ...c, unread_count: 0 } : c));
+      
+      // 2. Fetch latest from server without clearing current list to avoid "running down" effect
+      fetchMessages(Number(activeConv.id), 1).then(() => {
+        fetchUnreadCounts(token);
+        // Instant scroll to bottom on first load
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      });
     }
   }, [activeConv, token]);
 
   useEffect(() => {
-    if (!activeConv || !token || !echo) return;
+    if (!token || !echo || !user) return;
 
-    const channel = echo!.private(`chat.${activeConv.id}`);
+    const userChannel = echo!.private(`App.Models.User.${user.id}`);
 
-    channel.listen('.App\\Events\\NewChatMessage', (e: any) => {
-      setMessages(prev => {
-        if (prev.some(m => m.id === e.message.id)) return prev;
-        return [...prev, e.message];
+    const handleNewMessage = (e: any) => {
+      const msg = e.message;
+      if (!msg) return;
+
+      const msgConvId = Number(msg.conversation_id);
+      const currentRefIdAtTime = activeConvRef.current ? Number(activeConvRef.current.id) : null;
+      
+      // 1. Update Sidebar Instantly
+      setConversations(prev => {
+        const idx = prev.findIndex(c => Number(c.id) === msgConvId);
+        
+        if (idx !== -1) {
+          const updated = [...prev];
+          const isAtThisConv = currentRefIdAtTime === msgConvId;
+          
+          updated[idx] = {
+            ...updated[idx],
+            last_message: msg,
+            updated_at: msg.created_at,
+            unread_count: isAtThisConv ? 0 : (Number(updated[idx].unread_count || 0) + 1)
+          };
+          
+          // Move to Top
+          const item = updated[idx];
+          const others = updated.filter((_, i) => i !== idx);
+          return [item, ...others];
+        } else {
+          // New conversation appeared or list belongs to a different view
+          refreshData(); 
+          return prev;
+        }
       });
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    });
 
+      // 2. Update Messages if matching current view
+      if (currentRefIdAtTime === msgConvId) {
+        // Sync the active conversation object too
+        setActiveConv(prev => (prev && Number(prev.id) === msgConvId) ? { ...prev, last_message: msg, updated_at: msg.created_at } : prev);
+
+        setMessages(prev => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          const filtered = prev.filter(m => !(m.is_optimistic && m.sender_id === msg.sender_id && m.message_text === msg.message_text));
+          return [...filtered, msg].sort((a, b) => Number(a.id) - Number(b.id));
+        });
+        
+        // Mark as read (optional since viewing handles it, but good for real-time)
+        axios.get(`${API}/chat/${msgConvId}?page=1`, { headers: { Authorization: `Bearer ${tokenRef.current}` } })
+          .then(() => fetchUnreadCounts(tokenRef.current!))
+          .catch(() => {});
+          
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+      } else {
+        // INSTANT: Optimistically increment the global message dot
+        useNotificationStore.getState().incrementMessages();
+        fetchUnreadCounts(tokenRef.current!);
+      }
+    };
+
+    userChannel.listen('.message.new', handleNewMessage);
+    userChannel.listen('message.new', handleNewMessage);
+    userChannel.listen('NewChatMessage', handleNewMessage);
+    userChannel.listen('.NewChatMessage', handleNewMessage);
+
+    return () => {
+      userChannel.stopListening('.message.new');
+      userChannel.stopListening('message.new');
+      userChannel.stopListening('NewChatMessage');
+      userChannel.stopListening('.NewChatMessage');
+    };
+  }, [user, token, echo]);
+
+  // Separate Failsafe Polling Effect
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+       if (tokenRef.current && activeTab === "messages") {
+          refreshData();
+          if (activeConvRef.current) {
+             fetchUnreadCounts(tokenRef.current);
+          }
+       }
+    }, 5000);
+    return () => clearInterval(pollInterval);
+  }, [activeTab]); // Include activeTab to toggle polling correctly // Do NOT depend on activeConv to prevent listener re-registration, use REF instead
+
+  // Specific Chat Channel for active conversation (optional redundancy but kept for events like typing indicators later)
+  useEffect(() => {
+    if (!activeConv || !token || !echo) return;
+    const channel = echo!.private(`chat.${activeConv.id}`);
+    // We already handle message.new in the global user channel to ensure we catch everything
+    // But we join here to stay subscribed to conversation-specific events
     return () => {
       echo!.leave(`chat.${activeConv.id}`);
     };
-  }, [activeConv, token]);
+  }, [activeConv, token, echo]);
 
   const refreshData = async () => {
     if (!token) return;
@@ -247,7 +346,7 @@ export function UnifiedInbox() {
         created_at: new Date().toISOString(),
         is_optimistic: true
       };
-      setMessages(prev => [...prev, tempMsg]);
+      setMessages(prev => [...prev, tempMsg].sort((a, b) => Number(a.id) - Number(b.id)));
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
       const res = await axios.post(`${API}/chat/${activeConv.id}`, formData, {
@@ -257,7 +356,25 @@ export function UnifiedInbox() {
         }
       });
 
-      setMessages(prev => prev.map(m => m.id === optimisticId ? res.data : m));
+      setMessages(prev => prev.map(m => m.id === optimisticId ? res.data : m).sort((a, b) => Number(a.id) - Number(b.id)));
+      
+      // Update Sidebar Preview for the sender
+      setConversations(prev => {
+        const idx = prev.findIndex(c => Number(c.id) === Number(activeConv.id));
+        if (idx !== -1) {
+          const updated = [...prev];
+          updated[idx] = { 
+            ...updated[idx], 
+            last_message: res.data, 
+            updated_at: res.data.created_at 
+          };
+          const item = updated[idx];
+          const others = updated.filter((_, i) => i !== idx);
+          return [item, ...others];
+        }
+        return prev;
+      });
+
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch (err: any) {
       console.error("Chat Error Detail:", err.response?.data || err.message || err);
@@ -361,14 +478,14 @@ export function UnifiedInbox() {
     <div className="flex flex-col md:flex-row bg-background w-full h-full overflow-hidden border border-border/50 shadow-sm rounded-[inherit]">
 
       {/* 1. Sidebar Control (Desktop) - Standardized Flat-Zoom */}
-      <div className="hidden md:flex w-[80px] border-r border-border/50 flex-col items-center py-8 gap-8 bg-card shrink-0">
+      <div className="hidden md:flex w-[80px] border-r border-border/50 flex-col items-center py-8 gap-8 bg-card shrink-0 relative z-30">
         <button
           onClick={() => { setActiveTab("chat"); setSelectedNotif(null); setActiveConv(null); }}
           className={`p-4 rounded-[22px] transition-all duration-300 relative group active:scale-95 hover:scale-110 ${activeTab === "chat" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
         >
           <MessageCircle size={24} />
           {hasUnreadMessages && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
-          <div className="absolute left-full ml-4 px-3 py-1.5 bg-foreground text-background text-[10px] font-black rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase tracking-widest border border-border/50">
+          <div className="absolute left-full ml-4 px-3 py-1.5 bg-foreground text-background text-[10px] font-black rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] uppercase tracking-widest border border-border/50 pointer-events-none">
             {t("inbox.messages")}
           </div>
         </button>
@@ -378,7 +495,7 @@ export function UnifiedInbox() {
         >
           <Bell size={24} />
           {hasUnreadNotifications && !isAdmin && <span className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-card" />}
-          <div className="absolute left-full ml-4 px-3 py-1.5 bg-foreground text-background text-[10px] font-black rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 uppercase tracking-widest border border-border/50">
+          <div className="absolute left-full ml-4 px-3 py-1.5 bg-foreground text-background text-[10px] font-black rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[100] uppercase tracking-widest border border-border/50 pointer-events-none">
             {t("inbox.notifications")}
           </div>
         </button>
@@ -426,17 +543,31 @@ export function UnifiedInbox() {
                 </div>
               )}
               {conversations.map(conv => (
-                <button key={conv.id} onClick={() => setActiveConv(conv)} className={`w-full p-5 flex items-center gap-4 hover:bg-muted/30 transition-all text-left ${activeConv?.id === conv.id ? "bg-primary/5 border-l-4 border-primary" : "border-l-4 border-transparent"}`}>
-                  <div className="w-12 h-12 rounded-2xl bg-background border border-border/50 flex items-center justify-center font-black shrink-0 overflow-hidden shadow-sm">
+                <button 
+                  key={conv.id} 
+                  onClick={() => setActiveConv(conv)} 
+                  className={`w-full p-6 flex gap-4 transition-all text-left relative overflow-hidden ${
+                    activeConv?.id === conv.id 
+                      ? "bg-muted/30" 
+                      : "hover:bg-card opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-2xl bg-background border border-border/50 flex items-center justify-center font-black shrink-0 overflow-hidden shadow-sm transition-all relative ${activeConv?.id === conv.id ? 'scale-105 shadow-md' : ''}`}>
                     {conv.other_user?.profile_image ? <img src={conv.other_user.profile_image} className="w-full h-full object-cover" /> : conv.other_user?.name?.charAt(0)}
+                    {conv.unread_count > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 border-2 border-background rounded-full animate-pulse" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="font-black text-xs uppercase tracking-tight truncate text-foreground">{conv.other_user?.name || t("admin.user")}</p>
+                      <p className={`text-xs uppercase tracking-tight truncate text-foreground transition-all ${activeConv?.id === conv.id ? "font-black" : "font-bold"}`}>
+                        {conv.other_user?.name || t("admin.user")}
+                      </p>
                       <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest">{conv.last_message ? new Date(conv.last_message.created_at).toLocaleDateString() : ""}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate font-medium opacity-80">{conv.last_message?.message_text || t("inbox.say_something")}</p>
-                    {conv.unread_count > 0 && <div className="mt-2 h-1.5 w-full bg-primary rounded-full" />}
+                    <p className={`text-xs truncate transition-all ${activeConv?.id === conv.id ? "font-bold text-foreground" : "text-muted-foreground font-medium"}`}>
+                      {conv.last_message?.message_text || t("inbox.say_something")}
+                    </p>
                   </div>
                 </button>
               ))}
@@ -444,20 +575,32 @@ export function UnifiedInbox() {
           ) : (
             <div className="divide-y divide-border/10">
               {notifications.map(n => (
-                <button key={n.id} onClick={() => { setSelectedNotif(n); if (!n.is_read) handleMarkAsRead(n.id); }} className={`w-full p-6 flex gap-4 hover:bg-muted/30 transition-all text-left ${selectedNotif?.id === n.id ? "bg-primary/5 border-l-4 border-primary" : "border-l-4 border-transparent"} ${n.is_read ? "opacity-60" : ""}`}>
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border border-border/50 shadow-sm ${n.is_read ? 'bg-muted/20' : 'bg-background'}`}>
+                <button 
+                  key={n.id} 
+                  onClick={() => { setSelectedNotif(n); if (!n.is_read) handleMarkAsRead(n.id); }} 
+                  className={`w-full p-6 flex gap-4 transition-all text-left ${
+                    selectedNotif?.id === n.id 
+                      ? "bg-muted/30" 
+                      : "hover:bg-card opacity-60 hover:opacity-100"
+                  } ${n.is_read ? "opacity-40" : ""}`}
+                >
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border border-border/50 shadow-sm transition-all ${selectedNotif?.id === n.id ? 'scale-105 shadow-md' : ''} ${n.is_read ? 'bg-muted/20' : 'bg-background'}`}>
                     <div className={isAdmin ? 'text-primary' : (n.is_read ? 'text-muted-foreground' : 'text-primary')}>
                       {getNotifIcon(n.type || "info")}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-black text-xs uppercase tracking-tight text-foreground truncate">{n.data?.title || n.title || t("common.note")}</p>
+                    <p className={`text-xs uppercase tracking-tight text-foreground truncate transition-all ${selectedNotif?.id === n.id ? "font-black" : "font-bold"}`}>
+                      {n.data?.title || n.title || t("common.note")}
+                    </p>
                     {isAdmin && (n as any).user && (
                       <p className="text-[9px] font-black text-primary/60 mt-1 uppercase tracking-widest opacity-80">
                         {t("inbox.recipient")}: {(n as any).user.name}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5 font-medium leading-relaxed">{n.data?.message || n.message}</p>
+                    <p className={`text-xs mt-1.5 leading-relaxed transition-all ${selectedNotif?.id === n.id ? "font-bold text-foreground" : "text-muted-foreground font-medium line-clamp-2"}`}>
+                      {n.data?.message || n.message}
+                    </p>
                   </div>
                   {!n.is_read && !isAdmin && <div className="w-2 h-2 rounded-full bg-primary shrink-0 self-center animate-pulse" />}
                 </button>
@@ -496,7 +639,7 @@ export function UnifiedInbox() {
                       variant="destructive"
                       size="icon"
                       onClick={() => setIsDeletingConv(true)}
-                      className="w-10 h-10 rounded-xl shadow-sm"
+                      className="w-10 h-10 rounded-xl shadow-sm hover:scale-110 active:scale-95 transition-all"
                       title={t("inbox.delete_conversation")}
                     >
                       <Trash2 size={18} strokeWidth={2.5} />
@@ -638,8 +781,17 @@ export function UnifiedInbox() {
                     className="flex-1 h-14 bg-muted/20 border-transparent focus:bg-background rounded-2xl md:px-6 shadow-none text-sm font-medium"
                   />
 
-                  <Button type="submit" size="icon" disabled={(!newMessage.trim() && !uploading && !selectedProductId) || uploading} className="w-14 h-14 rounded-2xl shadow-lg active:scale-95 transition-all">
-                    <Send size={24} strokeWidth={2.5} />
+                  <Button 
+                    type="submit" 
+                    size="icon" 
+                    disabled={(!newMessage.trim() && !uploading && !selectedProductId) || uploading} 
+                    className="w-14 h-14 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center"
+                  >
+                    {uploading ? (
+                      <Loader2 size={24} strokeWidth={2.5} className="animate-spin" />
+                    ) : (
+                      <Send size={24} strokeWidth={2.5} />
+                    )}
                   </Button>
                 </div>
 

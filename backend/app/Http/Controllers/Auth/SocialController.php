@@ -54,7 +54,8 @@ class SocialController extends Controller
             return redirect($frontendUrl . '/register/google?' . $params);
 
         } catch (\Exception $e) {
-            return redirect(env('FRONTEND_URL', 'http://localhost:3000') . '/login?error=google_auth_failed');
+            $errorMessage = urlencode($e->getMessage());
+            return redirect(env('FRONTEND_URL', 'http://localhost:3000') . '/login?error=google_auth_failed&msg=' . $errorMessage);
         }
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Store, Star, Package, Calendar, MessageCircle, ArrowLeft, Search, ShieldCheck } from "lucide-react";
@@ -39,9 +39,10 @@ interface Product {
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function SellerShopPage({ params }: { params: { id: string } }) {
+export default function SellerShopPage({ params }: { params: Promise<{ id: string }> }) {
   const { t } = useTranslation();
-  const { id } = params;
+  const unwrappedParams = use(params);
+  const id = unwrappedParams.id;
   const router = useRouter();
   const { formatPrice } = useCurrencyStore();
   const { token } = useAuthStore();

@@ -9,6 +9,7 @@ interface NotificationStore {
   hasUnreadMessages: boolean;
   fetchUnreadCounts: (token: string) => Promise<void>;
   setUnreadCount: (count: number) => void;
+  incrementMessages: () => void;
 }
 
 export const useNotificationStore = create<NotificationStore>((set) => ({
@@ -32,4 +33,8 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
     }
   },
   setUnreadCount: (count) => set({ unreadCount: count }),
+  incrementMessages: () => set(state => ({ 
+    unreadCount: state.unreadCount + 1, 
+    hasUnreadMessages: true 
+  })),
 }));

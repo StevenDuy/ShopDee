@@ -14,18 +14,30 @@ export default function SellerInboxPage() {
 
   return (
     <div className="h-full w-full overflow-hidden">
-      <AnimatePresence>
-        
-      </AnimatePresence>
-
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: loading ? 0 : 1 }}
         transition={{ duration: 0.5 }}
-        className="h-[calc(100vh-48px)] w-full overflow-hidden rounded-none md:rounded-[48px] shadow-2xl relative z-10 border border-border/50"
+        className="h-full w-full overflow-hidden relative z-10"
       >
         <UnifiedInbox />
       </motion.div>
+
+      <style jsx global>{`
+        main {
+          padding: 0 !important;
+          max-width: none !important;
+          overflow: hidden !important;
+          height: 100vh !important;
+        }
+        main > div {
+          max-width: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          height: 100% !important;
+          width: 100% !important;
+        }
+      `}</style>
     </div>
   );
 }

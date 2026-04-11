@@ -1,48 +1,47 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { UnifiedInbox } from "@/components/communication/UnifiedInbox";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 
 export default function CustomerInboxPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Removed blocking loader for faster perceived performance
-  // if (loading) return null;
-
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground animate-in fade-in duration-500">
-      {/* Mobile Sticky Header - Synchronized with Menu Button */}
-      <div className="lg:hidden sticky top-0 z-[100] bg-background border-b-2 border-primary flex h-[74px] items-stretch shrink-0">
-        <div className="w-14 shrink-0" />
-        <div className="flex-1 flex items-center justify-center font-black text-sm uppercase tracking-[0.2em]">
-          {t("messages")}
-        </div>
-        <div className="w-14 shrink-0" />
-      </div>
-
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full w-full overflow-hidden p-0 md:p-6 container-2d">
-          <div className="h-full w-full overflow-hidden border-2 border-border bg-card">
-            <UnifiedInbox />
-          </div>
-        </div>
-      </div>
+    <div className="h-full w-full overflow-hidden bg-background">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: loading ? 0 : 1 }}
+        transition={{ duration: 0.5 }}
+        className="h-full w-full overflow-hidden relative z-10"
+      >
+        <UnifiedInbox />
+      </motion.div>
 
       <style jsx global>{`
         /* Hide footer on inbox page */
         footer {
           display: none !important;
         }
-        /* Fix Layout padding */
+        /* Force full width and height fit with sidebar */
         main {
           padding: 0 !important;
+          max-width: none !important;
           overflow: hidden !important;
+          height: 100vh !important;
+        }
+        main > div {
+          max-width: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          height: 100% !important;
+          width: 100% !important;
         }
       `}</style>
     </div>

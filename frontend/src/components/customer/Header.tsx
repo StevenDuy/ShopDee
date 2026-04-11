@@ -27,7 +27,7 @@ export function CustomerHeader() {
   const { token } = useAuthStore();
   const { totalItems } = useCart();
 
-  const { unreadCount, fetchUnreadCounts } = useNotificationStore();
+  const { unreadCount, hasUnreadMessages, fetchUnreadCounts } = useNotificationStore();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function CustomerHeader() {
         >
           <div className="relative">
             <Menu size={28} strokeWidth={2.5} className="group-active:scale-90 transition-transform" />
-            {unreadCount > 0 && mounted && (
+            { (unreadCount > 0 || hasUnreadMessages) && mounted && (
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background animate-pulse" />
             )}
           </div>
@@ -106,8 +106,8 @@ export function CustomerHeader() {
                         {totalItems > 9 ? "9+" : totalItems}
                       </span>
                     )}
-                    {notificationBadge && unreadCount > 0 && mounted && (
-                      <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-background" />
+                    {notificationBadge && (unreadCount > 0 || hasUnreadMessages) && mounted && (
+                      <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-background animate-pulse shadow-sm" />
                     )}
                   </span>
                   <span>

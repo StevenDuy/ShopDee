@@ -9,6 +9,7 @@ import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import { Toaster } from "sonner";
 import { ConfigAlert } from "./config-alert";
+import { GlobalEventListener } from "./global-event-listener";
 
 function CurrencySync() {
   const { i18n } = useTranslation();
@@ -48,6 +49,7 @@ export function GlobalProviders({ children }: { children: React.ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <CurrencySync />
       <ConfigAlert />
+      <GlobalEventListener />
       {children}
       <Toaster position="top-right" richColors closeButton />
     </ThemeProvider>

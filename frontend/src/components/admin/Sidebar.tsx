@@ -14,7 +14,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const { token } = useAuthStore();
-  const { unreadCount, fetchUnreadCounts } = useNotificationStore();
+  const { unreadCount, hasUnreadMessages, fetchUnreadCounts } = useNotificationStore();
 
   useEffect(() => {
     if (token) {
@@ -74,8 +74,8 @@ export function AdminSidebar() {
               >
                 <div className="relative shrink-0">
                   <item.icon size={20} />
-                  {item.hasBadge && unreadCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-card" />
+                  {item.hasBadge && (unreadCount > 0 || hasUnreadMessages) && (
+                    <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-600 rounded-full border-2 border-background animate-pulse shadow-sm" />
                   )}
                 </div>
                 {item.label}
