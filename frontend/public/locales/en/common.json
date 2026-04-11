@@ -1,14 +1,11 @@
 {
-  "common": {
+    "total": "Total",
     "back": "Back",
     "search": "Search",
     "save": "Save Changes",
     "cancel": "Cancel",
     "delete": "Delete",
     "products": "Products",
-    "products_count": "{{count}} products",
-    "reviews_count": "{{count}} reviews",
-    "search_in_shop": "Search in shop",
     "select": "Select option...",
     "no_results": "No results found.",
     "thousand_short": "K",
@@ -21,8 +18,7 @@
     "deleted": "Deleted",
     "untitled": "Untitled",
     "sold": "Sold",
-    "note": "Note"
-  },
+    "note": "Note",
   "welcome": "Welcome to ShopDee",
   "search": "Search for products...",
   "dark_mode": "Dark Mode",
@@ -744,8 +740,11 @@
     "update_error": "Failed to update email"
   },
   "shop": {
-    "default_bio": "Welcome to my shop!",
-    "joined_at": "Joined {{year}}"
+    "default_bio": "Welcome to my shop! Happy shopping.",
+    "joined_at": "Joined {{year}}",
+    "products_count": "{{count}} products",
+    "reviews_count": "{{count}} reviews",
+    "search_in_shop": "Search in shop"
   },
   "permissions": {
     "title": "Access Request",

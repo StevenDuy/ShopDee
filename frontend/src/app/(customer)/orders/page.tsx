@@ -132,20 +132,17 @@ export default function MyOrdersPage() {
       
       {/* Precision Header */}
       <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-b border-border/10 mb-8 sticky top-0 z-[100]">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-           <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary border border-primary/20">
-                 <ReceiptText size={16} strokeWidth={3} />
+        <div className="px-8 md:px-14 h-16 flex items-center justify-between">
+           <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary border border-primary/20 shadow-inner">
+                 <ReceiptText size={20} strokeWidth={3} />
               </div>
-              <h1 className="text-[12px] font-black uppercase tracking-[0.3em]">{t("my_orders")}</h1>
+              <h1 className="text-[14px] font-black uppercase tracking-[0.4em] text-foreground">{t("my_orders")}</h1>
            </div>
-           <button onClick={() => router.push("/products")} className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:bg-primary/5 px-4 py-2 rounded-lg transition-all flex items-center gap-2 group">
-              {t("customer_orders.shop_now")} <ArrowRight size={14} className="group-hover:translate-x-1" />
-           </button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 md:px-6">
+      <div className="px-8 md:px-14">
         <AnimatePresence mode="wait">
           {orders.length === 0 && !loading ? (
              <motion.div
@@ -224,7 +221,7 @@ export default function MyOrdersPage() {
                            confirmId === order.id ? (
                               <div className="flex gap-1 animate-in zoom-in whitespace-nowrap">
                                  <button onClick={() => handleCancelOrder(order.id)} disabled={processingId === order.id} className="px-3 py-1.5 text-[8px] font-black uppercase bg-red-600 text-white rounded-lg">OK</button>
-                                 <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 text-[8px] font-black uppercase bg-white/10 text-white/50 rounded-lg">X</button>
+                                 <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 text-[8px] font-black uppercase bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-white/50 border border-border/10 rounded-lg hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">X</button>
                               </div>
                            ) : (
                               <button onClick={() => setConfirmId(order.id)} className="px-4 py-2 text-[8px] font-black uppercase text-red-600 border border-red-500/10 hover:bg-red-500/5 rounded-xl transition-all whitespace-nowrap">
@@ -237,7 +234,7 @@ export default function MyOrdersPage() {
                            confirmId === order.id ? (
                               <div className="flex gap-1 whitespace-nowrap">
                                  <button onClick={() => handleConfirmReceived(order.id)} className="px-4 py-1.5 text-[8px] font-black uppercase bg-green-600 text-white rounded-lg">{t("customer_orders.ack")}</button>
-                                 <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 text-[8px] font-black uppercase bg-white/10 text-white/50 rounded-lg">X</button>
+                                 <button onClick={() => setConfirmId(null)} className="px-3 py-1.5 text-[8px] font-black uppercase bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-white/50 border border-border/10 rounded-lg hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">X</button>
                               </div>
                            ) : (
                               <button onClick={() => setConfirmId(order.id)} className="px-5 py-2 text-[8px] font-black uppercase bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all whitespace-nowrap">

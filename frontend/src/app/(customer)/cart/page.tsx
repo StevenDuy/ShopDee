@@ -25,16 +25,16 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-background/20 text-foreground animate-in fade-in duration-1000 pb-20">
-      {/* Precision Header */}
-      <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-b border-border/10 mb-8">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary border border-primary/20">
-                <ShoppingCart size={20} strokeWidth={3} />
+      {/* Precision Header — Fluid layout for Sidebar */}
+      <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border-b border-border/10 mb-10 sticky top-0 z-[100]">
+        <div className="px-8 md:px-14 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary border border-primary/20 shadow-inner">
+                <ShoppingCart size={24} strokeWidth={3} />
              </div>
              <div>
-                <h1 className="text-sm font-black uppercase tracking-[0.3em] font-black">{t("cart_page.title")}</h1>
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                <h1 className="text-base font-black uppercase tracking-[0.4em] text-foreground">{t("cart_page.title")}</h1>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60">
                    {itemCount} {t("cart_page.items")} {t("cart_page.in_cart")}
                 </p>
              </div>
@@ -42,7 +42,7 @@ export default function CartPage() {
           {items.length > 0 && (
             <button 
               onClick={clearCart} 
-              className="text-[9px] font-black uppercase tracking-[0.2em] text-destructive hover:bg-destructive/10 px-4 py-2 rounded-xl transition-all border border-transparent hover:border-destructive/30"
+              className="text-[10px] font-black uppercase tracking-[0.3em] text-destructive hover:bg-destructive/10 px-6 py-3 rounded-2xl transition-all border border-destructive/10 hover:border-destructive/30"
             >
               {t("cart_page.clear_all")}
             </button>
@@ -54,27 +54,27 @@ export default function CartPage() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="min-h-[60vh] flex flex-col items-center justify-center p-6 gap-8 text-center"
+          className="min-h-[60vh] flex flex-col items-center justify-center p-8 gap-10 text-center"
         >
           <div className="relative">
-            <div className="w-32 h-32 bg-primary/5 rounded-[3rem] flex items-center justify-center border-4 border-dashed border-primary/20 rotate-6 transform transition-transform hover:rotate-0 duration-500">
-              <ShoppingBag size={56} className="text-primary opacity-20" />
+            <div className="w-36 h-36 bg-primary/5 rounded-[4rem] flex items-center justify-center border-4 border-dashed border-primary/20 rotate-6 transform transition-transform hover:rotate-0 duration-700">
+              <ShoppingBag size={64} className="text-primary opacity-30" />
             </div>
-            <div className="absolute -top-2 -right-2 w-10 h-10 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg animate-bounce">
-               <Plus size={20} strokeWidth={4} />
+            <div className="absolute -top-3 -right-3 w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-2xl animate-bounce">
+               <Plus size={24} strokeWidth={4} />
             </div>
           </div>
-          <div className="space-y-3">
-            <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">{t("cart_page.empty_cart")}</h2>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-60">{t("cart_page.empty_desc")}</p>
+          <div className="space-y-4">
+            <h2 className="text-4xl font-black uppercase tracking-tighter leading-none text-foreground">{t("cart_page.empty_cart")}</h2>
+            <p className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.4em] opacity-40">{t("cart_page.empty_desc")}</p>
           </div>
-          <Link href="/products" className="group relative px-10 py-5 overflow-hidden rounded-2xl bg-primary text-white font-black uppercase text-[10px] tracking-[0.4em] transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-primary/30">
+          <Link href="/products" className="group relative px-12 py-6 overflow-hidden rounded-2xl bg-primary text-white font-black uppercase text-[11px] tracking-[0.5em] transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-primary/40">
             <span className="relative z-10">{t("cart_page.browse_products")}</span>
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
           </Link>
         </motion.div>
       ) : (
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="px-8 md:px-14">
           <div className="grid lg:grid-cols-[1fr_380px] gap-12 items-start">
             
             {/* Items List - High Density Cards */}
@@ -144,9 +144,9 @@ export default function CartPage() {
                               </button>
                            </div>
 
-                           <div className="text-right">
-                              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40 mb-0.5">{formatPrice(item.salePrice ?? item.price)}{t("cart_page.unit")}</p>
-                              <p className="text-lg font-black text-primary tracking-tighter">{formatPrice((item.salePrice ?? item.price) * item.quantity)}</p>
+                           <div className="text-right flex flex-col items-end">
+                              <span className="text-[7.5px] font-black uppercase text-primary/60 tracking-[0.2em] mb-1">{t("total")}</span>
+                              <p className="text-2xl font-black text-primary tracking-tighter leading-none">{formatPrice((item.salePrice ?? item.price) * item.quantity)}</p>
                            </div>
                         </div>
                       </div>

@@ -1,14 +1,11 @@
 {
-  "common": {
+    "total": "Tổng cộng",
     "back": "Quay lại",
     "search": "Tìm kiếm",
     "save": "Lưu thay đổi",
     "cancel": "Hủy bỏ",
     "delete": "Xóa",
     "products": "Sản phẩm",
-    "products_count": "{{count}} sản phẩm",
-    "reviews_count": "{{count}} đánh giá",
-    "search_in_shop": "Tìm kiếm trong shop",
     "select": "Chọn tùy chọn...",
     "no_results": "Không tìm thấy kết quả.",
     "thousand_short": "nghìn",
@@ -21,8 +18,7 @@
     "deleted": "Đã xóa",
     "untitled": "Không tiêu đề",
     "sold": "Đã bán",
-    "note": "Ghi chú"
-  },
+    "note": "Ghi chú",
   "welcome": "Chào mừng đến với ShopDee",
   "search": "Tìm kiếm sản phẩm...",
   "dark_mode": "Chế độ tối",
@@ -745,7 +741,10 @@
   },
   "shop": {
     "default_bio": "Chào mừng bạn đến với cửa hàng của tôi! Chúc bạn mua sắm vui vẻ.",
-    "joined_at": "Tham gia {{year}}"
+    "joined_at": "Tham gia {{year}}",
+    "products_count": "{{count}} sản phẩm",
+    "reviews_count": "{{count}} đánh giá",
+    "search_in_shop": "Tìm kiếm trong shop"
   },
   "permissions": {
     "title": "Yêu cầu quyền truy cập",

@@ -85,7 +85,7 @@ export const useCart = () => {
     [store.items, userId]
   );
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalItems = items.length;
   const totalPrice = items.reduce((sum, i) => sum + (i.salePrice ?? i.price) * i.quantity, 0);
 
   return {

@@ -86,92 +86,93 @@ export default function SellerShopPage({ params }: { params: Promise<{ id: strin
       >
         {seller && (
           <>
-            {/* Header / Cover (Restored Old Layout) */}
-            <div className="bg-card border-b border-border/50 pt-8 pb-12 px-6 md:px-10 shadow-sm relative overflow-hidden">
-                <div className="max-w-7xl mx-auto relative z-10">
+            {/* Header / Cover — Fluid layout to fit with sidebar */}
+            <div className="bg-card/40 backdrop-blur-3xl border-b border-border/10 lg:p-14 p-8 relative overflow-hidden">
+                <div className="relative z-10">
                     <button 
                         onClick={() => router.back()} 
-                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all mb-8 active:scale-95 group"
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all mb-10 active:scale-95 group"
                     >
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> {t("common.back")}
+                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> {t("back")}
                     </button>
 
                     <motion.div 
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        className="flex flex-col md:flex-row gap-8 items-start md:items-center"
+                        className="flex flex-col xl:flex-row gap-10 items-start xl:items-center"
                     >
-                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-4xl font-black shrink-0 border border-primary/20 shadow-inner overflow-hidden relative group">
+                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary text-5xl font-black shrink-0 border border-primary/20 shadow-2xl overflow-hidden relative group">
                             {seller.profile?.profile_image ? (
                                 <img src={seller.profile.profile_image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={seller.name} />
                             ) : (
                                 seller.name.charAt(0)
                             )}
-                            <div className="absolute top-1 right-1">
-                                <ShieldCheck size={16} className="text-emerald-500 fill-emerald-500/20" />
+                            <div className="absolute top-3 right-3">
+                                <ShieldCheck size={20} className="text-emerald-500 fill-emerald-500/20" />
                             </div>
                         </div>
                         
-                        <div className="flex-1 space-y-5">
+                        <div className="flex-1 space-y-6">
                             <div>
-                                <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase leading-none">{seller.name}</h1>
-                                <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed font-bold opacity-70">
+                                <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none text-foreground">{seller.name}</h1>
+                                <p className="text-muted-foreground mt-3 max-w-3xl text-sm md:text-base leading-relaxed font-bold opacity-60">
                                     {seller.profile?.bio || t("shop.default_bio")}
                                 </p>
                             </div>
 
-                            <div className="flex flex-wrap gap-4 md:gap-8 border-t border-border/5 pt-4">
-                                <div className="flex items-center gap-1.5 opacity-60 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                                    <Package size={16} strokeWidth={2.5} className="text-primary" />
-                                    <span>{t("common.products_count", { count: seller.products_count })}</span>
+                            <div className="flex flex-wrap gap-6 md:gap-10 border-t border-border/10 pt-6">
+                                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary">
+                                    <Package size={18} strokeWidth={2.5} />
+                                    <span>{t("shop.products_count", { count: seller.products_count })}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 opacity-60 text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                                    <Star size={16} strokeWidth={2.5} className="text-yellow-500 fill-yellow-500/20" />
-                                    <span>{t("common.reviews_count", { count: seller.avg_rating || 0 })}</span>
+                                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-yellow-500">
+                                    <Star size={18} strokeWidth={2.5} className="fill-yellow-500/20" />
+                                    <span>{t("shop.reviews_count", { count: seller.avg_rating || 0 })}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                                    <Calendar size={16} strokeWidth={2.5} />
+                                    <Calendar size={18} strokeWidth={2.5} />
                                     <span>{t("shop.joined_at", { year: new Date(seller.created_at).getFullYear() })}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex gap-3 w-full md:w-auto">
+                        <div className="flex gap-4 w-full xl:w-auto">
                             <Button 
                                 onClick={handleChat}
-                                className="flex-1 md:flex-none h-14 px-10 rounded-2xl bg-primary text-primary-foreground font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.03] active:scale-95 transition-all text-[11px]"
+                                className="flex-1 xl:flex-none h-16 px-12 rounded-[2rem] bg-primary text-white font-black uppercase tracking-[0.3em] shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all text-[12px] border-b-4 border-primary-foreground/20"
                             >
-                                <MessageCircle size={20} className="mr-3" /> Chat ngay
+                                <MessageCircle size={22} className="mr-3" /> {t("chat")}
                             </Button>
                         </div>
                     </motion.div>
                 </div>
-                {/* Decorative Pattern */}
-                <div className="absolute -bottom-20 -right-20 opacity-[0.03] pointer-events-none rotate-12">
-                   <Store size={400} />
+                {/* Decorative Pattern / Lighting */}
+                <div className="absolute -bottom-20 -right-20 opacity-[0.05] pointer-events-none rotate-12 text-primary">
+                   <Store size={500} />
                 </div>
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
             </div>
 
-            {/* Product List Section (Restored Old Layout) */}
-            <div className="px-6 md:px-10 py-12 max-w-7xl mx-auto space-y-10">
+            {/* Product List Section — Expansive Grid */}
+            <div className="lg:p-14 p-8 space-y-12">
                 <motion.div 
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="flex flex-col md:flex-row items-center justify-between gap-6 flex-wrap"
+                    className="flex flex-col md:flex-row items-center justify-between gap-8"
                 >
-                    <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
-                            <Package size={18} strokeWidth={2.5} />
+                    <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
+                            <Package size={22} strokeWidth={3} />
                         </div>
-                        Tất cả sản phẩm
+                        {t("footer.all_products")}
                     </h2>
                     
                     <div className="relative w-full md:w-80 group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" size={18} />
                         <Input 
                             type="text" 
-                            placeholder={t("common.search_in_shop")} 
+                            placeholder={t("shop.search_in_shop")} 
                             value={search}
                             onChange={(e) => {
                                 const val = e.target.value;
@@ -187,7 +188,7 @@ export default function SellerShopPage({ params }: { params: Promise<{ id: strin
                     <Card className="rounded-[3rem] border-dashed border-2 border-border/30 bg-muted/5 p-20 text-center grayscale opacity-40">
                         <Package size={64} className="mx-auto mb-4 opacity-10" />
                         <p className="text-[12px] font-black uppercase tracking-widest leading-none">
-                            Không có sản phẩm nào
+                            {t("products_page.no_products")}
                         </p>
                     </Card>
                 ) : (
