@@ -34,6 +34,11 @@ class SocialController extends Controller
                     ]);
                 }
 
+                if ($user->status === 'banned') {
+                    $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+                    return redirect($frontendUrl . '/login?error=account_banned&msg=' . urlencode('Tài khoản của bạn đã bị khóa: ' . $user->ban_reason));
+                }
+
                 $token = $user->createToken('auth-token')->plainTextToken;
                 
                 // Redirect về frontend với token

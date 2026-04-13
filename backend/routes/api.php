@@ -184,6 +184,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/ai/products', [\App\Http\Controllers\AISimulationController::class, 'products']);
     Route::get('/ai/monitor', [\App\Http\Controllers\AISimulationController::class, 'monitor']);
     Route::get('/ai/metrics', [\App\Http\Controllers\AISimulationController::class, 'metrics']);
+    Route::post('/ai/logs', [\App\Http\Controllers\AISimulationController::class, 'storeLog']);
     Route::post('/ai/train', [\App\Http\Controllers\AISimulationController::class, 'train']);
     Route::post('/ai/retrain', [\App\Http\Controllers\AISimulationController::class, 'retrain']);
     Route::post('/ai/simulate', [\App\Http\Controllers\AISimulationController::class, 'simulate']);

@@ -18,6 +18,16 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             /** @var \App\Models\User $user */
             $user = Auth::user();
+
+            if ($user->status === 'banned') {
+                Auth::logout();
+                return response()->json([
+                    'message' => 'Tài khoản của bạn đã bị khóa do vi phạm chính sách bảo mật của ShopDee.',
+                    'reason' => $user->ban_reason,
+                    'status' => 'banned'
+                ], 403);
+            }
+
             $token = $user->createToken('test-token')->plainTextToken;
             
             return response()->json([

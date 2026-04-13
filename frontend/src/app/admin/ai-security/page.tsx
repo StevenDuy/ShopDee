@@ -22,6 +22,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +50,7 @@ interface User {
   name: string;
   email: string;
   status: string;
+  role?: string;
   ban_reason?: string | null;
 }
 
@@ -154,6 +158,33 @@ export default function AdminAISecurityPage() {
   const [selectedUserDetails, setSelectedUserDetails] = useState<{ logs: any[] } | null>(null);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
+  // Map State
+  const [waypoints, setWaypoints] = useState<[number, number][]>([]);
+  const [currentMapCenter, setCurrentMapCenter] = useState<[number, number]>([10.762622, 106.660172]);
+  const [mapType, setMapType] = useState<"street" | "satellite">("street");
+
+  // Bot Click Custom Route
+  const [botRoute, setBotRoute] = useState<{ path: string; speed: number }[]>([]);
+
+  // Leaflet Marker Fix
+  useEffect(() => {
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+      iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+    });
+  }, []);
+
+  const MapClickHandler = () => {
+    useMapEvents({
+      click(e) {
+        setWaypoints((prev) => [...prev, [e.latlng.lat, e.latlng.lng]]);
+      },
+    });
+    return null;
+  };
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
   // Setup authorization
@@ -258,40 +289,108 @@ export default function AdminAISecurityPage() {
     setSimResult(null);
 
     try {
-      const payload: any = {
-        ...simParams,
-        user_id: simParams.user_id,
-        scenario: activeScenario || ScenarioType.BOT_CLICK,
-        type: getTypeForScenario(activeScenario || ScenarioType.BOT_CLICK),
-        lat: simParams.lat || 10.762622,
-        lng: simParams.lng || 106.660172,
-      };
-
-      const response = await axios.post(`${API_URL}/ai/simulate`, payload);
-
-      if (response.data?.results?.length > 0) {
-        const result = response.data.results[0];
-        setSimResult(result);
-
-        if (result.prediction) {
-          const rfRisk = (result.prediction.details?.random_forest || 0) / 100;
-          const svmRisk = (result.prediction.details?.svm || 0) / 100;
-
-          if (rfRisk > 0.85 || svmRisk > 0.85) {
-            toast.error("⚠️ AI Detected High Risk Activity!");
-          } else if (rfRisk > 0.70 || svmRisk > 0.70) {
-            toast.warning("🔔 AI Flagged Suspicious Activity");
-          } else {
-            toast.success("✓ Simulation normal - Telemetry saved");
-          }
+      if (activeScenario === ScenarioType.BOT_CLICK) {
+        if (botRoute.length < 2) {
+          toast.error("Vui lòng thêm ít nhất 2 trang (Bắt đầu -> Trang đích) để cấu thành lộ trình.");
+          setSimulating(false);
+          return;
         }
 
-        // Refresh monitor data
-        setTimeout(() => loadDashboard(), 1000);
+        let prevPath = botRoute[0].path;
+
+        // Trang khởi đầu (Landing Page - Không có thời gian delay)
+        await axios.post(`${API_URL}/ai/simulate`, {
+            ...simParams,
+            scenario: ScenarioType.BOT_CLICK,
+            type: "page_view",
+            path: botRoute[0].path,
+            prev_path: "external",
+            nav_time_ms: 0,
+            auto_block: autoBlockEnabled,
+        });
+
+        // Chạy qua các trang tiếp theo trong chuỗi
+        for (let i = 1; i < botRoute.length; i++) {
+          const step = botRoute[i];
+          
+          const payload = {
+            ...simParams,
+            scenario: ScenarioType.BOT_CLICK,
+            type: "page_view",
+            path: step.path,
+            prev_path: prevPath,
+            nav_time_ms: step.speed,
+            auto_block: autoBlockEnabled,
+          };
+          
+          const res = await axios.post(`${API_URL}/ai/simulate`, payload);
+          const result = res.data;
+          if (i === botRoute.length - 1 && result) setSimResult(result.log);
+          
+          if (result?.user_status === 'banned') {
+             toast.error("BOT DETECTED & BANNED!", { duration: 5000 });
+             break; // Stop loop if banned
+          }
+          prevPath = step.path;
+          
+          // Đợi thời gian thực tế giữa các trang để sâu chuỗi Logs
+          await new Promise(r => setTimeout(r, step.speed));
+        }
+      } else if (activeScenario === ScenarioType.LOCATION_CHANGE) {
+        let prevPath = "/";
+        for (let i = 0; i < waypoints.length; i++) {
+          const [lat, lng] = waypoints[i];
+          const payload = {
+            ...simParams,
+            scenario: ScenarioType.LOCATION_CHANGE,
+            type: "location_update",
+            lat,
+            lng,
+            path: "/profile",
+            prev_path: prevPath,
+            nav_time_ms: 1000,
+            auto_block: autoBlockEnabled,
+          };
+          const res = await axios.post(`${API_URL}/ai/simulate`, payload);
+          const result = res.data;
+          if (i === waypoints.length - 1 && result) setSimResult(result.log);
+          
+          if (result?.user_status === 'banned') {
+            toast.error("LOCATION SPOOFING DETECTED & BANNED!", { duration: 5000 });
+            break;
+          }
+          await new Promise(r => setTimeout(r, 200));
+        }
+      } else {
+        const typeMap: Record<string, string> = {
+          [ScenarioType.LOGIN_FAIL]: "login_attempt",
+          [ScenarioType.ABNORMAL_PURCHASE]: "purchase_attempt"
+        };
+        const payload = {
+          ...simParams,
+          scenario: activeScenario,
+          type: typeMap[activeScenario as string] || "page_view",
+          auto_block: autoBlockEnabled,
+        };
+        const res = await axios.post(`${API_URL}/ai/simulate`, payload);
+        const result = res.data; // Backend returns {log, prediction, user_status}
+        if (result) {
+          setSimResult(result.log);
+          const risk = result.prediction?.risk_percentage || 0;
+          if (risk > 90) toast.error(`Detection: ${risk.toFixed(0)}% RISK!`);
+          else if (risk > 70) toast.warning(`Flagged: ${risk.toFixed(0)}% Suspicious`);
+          else toast.success("Simulation completed");
+
+          if (result.user_status === 'banned') {
+            toast.error("USER HAS BEEN AUTOMATICALLY BANNED!", { duration: 5000 });
+          }
+        }
       }
+
+      loadDashboard();
     } catch (error: any) {
       console.error("Simulation failed", error);
-      toast.error(error.response?.data?.message || "Giả lập thất bại - kiểm tra lại tham số");
+      toast.error(error.response?.data?.message || "Giả lập thất bại");
     } finally {
       setSimulating(false);
     }
@@ -465,6 +564,75 @@ export default function AdminAISecurityPage() {
                       </Card>
                     ))}
                   </div>
+
+                  {/* MODEL COMPARISON SUMMARY */}
+                  <Card className="rounded-[2rem] p-8 bg-card/50 border-border/50 overflow-hidden relative">
+                    <div className="absolute top-0 right-0 p-8 opacity-5">
+                      <BarChart3 size={120} />
+                    </div>
+                    
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                      <div>
+                        <h3 className="text-xl font-black uppercase flex items-center gap-2">
+                          <Layers size={22} className="text-primary" /> Model Performance Comparison
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1">Side-by-side behavioral analysis benchmarking.</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-1">REAL DATASET</Badge>
+                        <Badge className="bg-blue-500/10 text-blue-500 border-none px-3 py-1">ENSEMBLE ACTIVE</Badge>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-border/50">
+                            <th className="pb-4 text-[10px] font-black uppercase text-muted-foreground">Model Algorithm</th>
+                            <th className="pb-4 text-[10px] font-black uppercase text-muted-foreground text-center">Accuracy</th>
+                            <th className="pb-4 text-[10px] font-black uppercase text-muted-foreground text-center">Precision</th>
+                            <th className="pb-4 text-[10px] font-black uppercase text-muted-foreground text-center">Recall</th>
+                            <th className="pb-4 text-[10px] font-black uppercase text-muted-foreground text-center">F1-Score</th>
+                            <th className="pb-4 text-[10px] font-black uppercase text-muted-foreground text-right">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-sm">
+                          {[
+                            { name: "Random Forest", data: metrics.rf, color: "text-primary", icon: Activity },
+                            { name: "Support Vector Machine", data: metrics.svm, color: "text-indigo-500", icon: Network },
+                          ].map((model, i) => (
+                            <tr key={i} className="border-b border-border/10 last:border-0 group hover:bg-muted/5 transition-colors">
+                              <td className="py-5">
+                                <div className="flex items-center gap-3">
+                                  <div className={cn("p-2 rounded-lg bg-muted/50", model.color)}>
+                                    <model.icon size={16} />
+                                  </div>
+                                  <span className="font-black">{model.name}</span>
+                                </div>
+                              </td>
+                              <td className="py-5 text-center font-bold">
+                                {model.data ? `${(model.data.accuracy * 100).toFixed(1)}%` : "N/A"}
+                              </td>
+                              <td className="py-5 text-center font-bold text-muted-foreground">
+                                {model.data ? `${(model.data.precision * 100).toFixed(1)}%` : "N/A"}
+                              </td>
+                              <td className="py-5 text-center font-bold text-muted-foreground">
+                                {model.data ? `${(model.data.recall * 100).toFixed(1)}%` : "N/A"}
+                              </td>
+                              <td className="py-5 text-center font-bold text-muted-foreground">
+                                {model.data ? `${(model.data.f1 * 100).toFixed(1)}%` : "N/A"}
+                              </td>
+                              <td className="py-5 text-right">
+                                <Badge className={cn("bg-emerald-500/10 text-emerald-600 border-none", !model.data && "bg-red-500/10 text-red-600")}>
+                                  {model.data ? "OPTIMIZED" : "PENDING"}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Random Forest */}
@@ -669,31 +837,88 @@ export default function AdminAISecurityPage() {
 
                     {/* Scenario-Specific Parameters */}
                     {activeScenario === ScenarioType.BOT_CLICK && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-black mb-2">Click Speed (ms)</label>
-                          <input
-                            type="number"
-                            value={simParams.click_speed_ms}
-                            onChange={(e) => setSimParams({ ...simParams, click_speed_ms: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
-                          />
+                      <div className="md:col-span-2 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <label className="block text-sm font-black uppercase">Lộ trình giả lập (Bot Route)</label>
+                          <div className="flex gap-2">
+                            {/* Role based page quick-add */}
+                            {(() => {
+                              const selectedUser = (users as User[]).find(u => u.id === simParams.user_id);
+                              const isSeller = selectedUser?.role === 'seller';
+                              const pages = isSeller 
+                                ? ["/seller/dashboard", "/seller/products", "/seller/orders", "/seller/profile"]
+                                : ["/", "/products", "/cart", "/checkout", "/profile", "/search"];
+                              
+                              return pages.map(p => (
+                                <Button 
+                                  key={p} 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => setBotRoute([...botRoute, { path: p, speed: 500 }])}
+                                  className="text-[9px] h-7 font-black border-primary/30 text-primary hover:bg-primary/5"
+                                >
+                                  + {p.split('/').pop() || 'HOME'}
+                                </Button>
+                              ));
+                            })()}
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-black mb-2">Click Count</label>
-                          <input
-                            type="number"
-                            value={simParams.click_count}
-                            onChange={(e) => setSimParams({ ...simParams, click_count: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
-                          />
+
+                        <div className="space-y-4 max-h-[250px] overflow-auto pr-2 pb-4 pt-2">
+                          {botRoute.map((step, idx) => (
+                            <div key={idx} className="flex flex-col relative w-full">
+                              {idx > 0 && (
+                                <div className="flex flex-col items-center py-1 relative">
+                                  <div className="w-[2px] h-3 border-l-2 border-dashed border-primary/40"></div>
+                                  <div className="flex items-center bg-background border border-border/50 text-[10px] font-black rounded-full px-3 py-1.5 text-muted-foreground shadow-sm relative z-10 w-max my-1">
+                                    <Clock size={12} className="mr-1.5 text-primary" />
+                                    CHỜ 
+                                    <input 
+                                      type="number" 
+                                      value={step.speed} 
+                                      onChange={(e) => {
+                                        const newRoute = [...botRoute];
+                                        newRoute[idx].speed = Number(e.target.value);
+                                        setBotRoute(newRoute);
+                                      }}
+                                      className="w-12 mx-1.5 bg-transparent text-primary text-center font-black focus:outline-none border-b mx-1 border-primary/30"
+                                    />
+                                    ms ráp vào trang:
+                                  </div>
+                                  <div className="w-[2px] h-3 border-l-2 border-dashed border-primary/40"></div>
+                                </div>
+                              )}
+                              <div className={cn("flex items-center gap-4 bg-muted/10 p-3 rounded-2xl border transition-all z-20 hover:bg-muted/30", idx === 0 ? "border-primary/50 bg-primary/5" : "border-border/50 mt-4")}>
+                                <span className={cn("text-xs font-black min-w-[60px] text-center", idx === 0 ? "text-primary" : "text-muted-foreground")}>
+                                  {idx === 0 ? "BẮT ĐẦU" : (idx === botRoute.length - 1 ? "KẾT THÚC" : `BƯỚC ${idx}`)}
+                                </span>
+                                <div className="flex-1 border-l border-border/50 pl-4">
+                                  <p className="text-[9px] font-black uppercase text-muted-foreground">{idx === 0 ? "Landing Page" : "Target Node"}</p>
+                                  <p className="text-sm font-bold tracking-tight text-foreground">{step.path}</p>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => setBotRoute(botRoute.filter((_, i) => i !== idx))}
+                                  className="h-8 w-8 text-red-500 hover:bg-red-500/10 rounded-xl"
+                                >
+                                  <X size={14} />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                          {botRoute.length === 0 && (
+                            <div className="text-center py-8 border-2 border-dashed border-border/50 rounded-2xl text-xs text-muted-foreground font-bold">
+                              Chưa có lộ trình. Hãy thêm các trang ở trên.
+                            </div>
+                          )}
                         </div>
-                      </>
+                      </div>
                     )}
 
                     {activeScenario === ScenarioType.LOGIN_FAIL && (
-                      <div>
-                        <label className="block text-sm font-black mb-2">Failed Attempts</label>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-black mb-2">Số lần đăng nhập sai (Failed Attempts)</label>
                         <input
                           type="number"
                           value={simParams.wrong_password_attempts}
@@ -704,26 +929,28 @@ export default function AdminAISecurityPage() {
                     )}
 
                     {activeScenario === ScenarioType.LOCATION_CHANGE && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-black mb-2">Location Changes</label>
-                          <input
-                            type="number"
-                            value={simParams.location_changes}
-                            onChange={(e) => setSimParams({ ...simParams, location_changes: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-black mb-2">Interval (ms)</label>
-                          <input
-                            type="number"
-                            value={simParams.interval_ms}
-                            onChange={(e) => setSimParams({ ...simParams, interval_ms: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
-                          />
-                        </div>
-                      </>
+                      <div className="md:col-span-2">
+                         <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/20 mb-4">
+                            <div>
+                               <p className="font-black text-sm">Location Spoofing Mode</p>
+                               <p className="text-xs text-muted-foreground">Click trên bản đồ bên dưới để chọn nhiều vị trí di chuyển.</p>
+                            </div>
+                            <Button 
+                               variant="outline" 
+                               size="sm"
+                               onClick={() => {
+                                  const randomMarkers: [number, number][] = Array.from({ length: 3 }).map(() => [
+                                    10.762622 + (Math.random() - 0.5) * 0.1,
+                                    106.660172 + (Math.random() - 0.5) * 0.1
+                                  ]);
+                                  setWaypoints(randomMarkers);
+                               }}
+                               className="font-black text-[10px] h-8"
+                            >
+                               RANDOM POSITIONS
+                            </Button>
+                         </div>
+                      </div>
                     )}
 
                     {activeScenario === ScenarioType.ABNORMAL_PURCHASE && (
@@ -737,14 +964,11 @@ export default function AdminAISecurityPage() {
                             className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
                           />
                         </div>
-                        <div>
-                          <label className="block text-sm font-black mb-2">Purchase Value (₫)</label>
-                          <input
-                            type="number"
-                            value={simParams.purchase_value}
-                            onChange={(e) => setSimParams({ ...simParams, purchase_value: Number(e.target.value) })}
-                            className="w-full rounded-xl border border-border/50 bg-background px-4 py-2 font-mono text-sm"
-                          />
+                        <div className="opacity-50 pointer-events-none">
+                          <label className="block text-sm font-black mb-2">Auto-Calculated Value (₫)</label>
+                          <div className="w-full rounded-xl border border-border/50 bg-muted/20 px-4 py-2 font-mono text-sm flex items-center h-10">
+                            {((products.find(p => p.id === simParams.product_id)?.price || 0) * (simParams.purchase_quantity || 0)).toLocaleString()}₫
+                          </div>
                         </div>
                       </>
                     )}
@@ -778,8 +1002,55 @@ export default function AdminAISecurityPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
 
+                    {/* MAP INTEGRATION (Only visible for Location & Bot types if multi-point) */}
+                    {(activeScenario === ScenarioType.LOCATION_CHANGE) && (
+                      <div className="md:col-span-2 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <label className="block text-sm font-black uppercase flex items-center gap-2">
+                            <Globe size={16} className="text-primary" /> Location Waypoints ({waypoints.length})
+                          </label>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setWaypoints([])}
+                            className="text-[10px] font-black text-red-500 hover:bg-red-500/10"
+                          >
+                            CLEAR ALL POINTS
+                          </Button>
+                        </div>
+                      
+                      <div className="h-[300px] rounded-3xl overflow-hidden border-2 border-border/50 relative z-0">
+                        <MapContainer center={currentMapCenter} zoom={13} style={{ height: "100%", width: "100%" }}>
+                          <TileLayer 
+                             url={mapType === 'street' 
+                                ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+                                : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                             } 
+                          />
+                          <MapClickHandler />
+                          {waypoints.map((wp, idx) => (
+                            <Marker key={idx} position={wp}>
+                              <Popup>Waypoint {idx + 1}</Popup>
+                            </Marker>
+                          ))}
+                        </MapContainer>
+                        <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+                           <Button 
+                              onClick={() => setMapType(mapType === 'street' ? 'satellite' : 'street')}
+                              className="bg-background/80 backdrop-blur-md border border-border/50 text-foreground hover:bg-background h-10 px-4 font-black text-[10px]"
+                           >
+                              {mapType === 'street' ? 'SATELLITE VIEW' : 'STREET VIEW'}
+                           </Button>
+                        </div>
+                        <div className="absolute bottom-4 left-4 z-[1000] bg-background/80 backdrop-blur-md p-2 rounded-lg border border-border/50 text-[10px] font-black pointer-events-none uppercase">
+                          Click on map to pick location history
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  </div>
+                  
                   {/* Execute Button */}
                   <Button
                     onClick={handleRunSimulation}
@@ -790,69 +1061,96 @@ export default function AdminAISecurityPage() {
                   </Button>
                 </Card>
 
-                {/* Results */}
-                {simResult && (
-                  <Card className="rounded-3xl p-8 bg-card/50 border-border/50">
-                    <h3 className="font-black text-lg mb-6 uppercase">Prediction Results</h3>
+                  {/* Results */}
+                  {simResult && (
+                    <Card className="rounded-3xl p-8 bg-card/50 border-border/50">
+                      <h3 className="font-black text-lg mb-6 uppercase">Prediction Results</h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* RF Result */}
-                      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6">
-                        <p className="text-primary font-black mb-4">Random Forest Analyzer</p>
-                        {simResult.prediction?.details?.random_forest !== undefined && (
-                          <div className="space-y-3">
-                            <div>
-                              <div className="flex justify-between mb-2">
-                                <span className="text-sm">Risk Score</span>
-                                <span className="font-black">{simResult.prediction.details.random_forest.toFixed(1)}%</span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* RF Result */}
+                        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6">
+                          <p className="text-primary font-black mb-4">Random Forest Analyzer</p>
+                          {simResult.prediction?.details?.random_forest !== undefined && (
+                            <div className="space-y-3">
+                              <div>
+                                <div className="flex justify-between mb-2">
+                                  <span className="text-sm">Risk Score</span>
+                                  <span className="font-black">{simResult.prediction.details.random_forest.toFixed(1)}%</span>
+                                </div>
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary"
+                                    style={{ width: `${simResult.prediction.details.random_forest}%` }}
+                                  />
+                                </div>
                               </div>
-                              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-primary"
-                                  style={{ width: `${simResult.prediction.details.random_forest}%` }}
-                                />
-                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Model Confidence: <span className="font-black">HIGH</span>
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              Model Confidence: <span className="font-black">HIGH</span>
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
 
-                      {/* SVM Result */}
-                      <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-6">
-                        <p className="text-indigo-500 font-black mb-4">SVM Decision Boundary</p>
-                        {simResult.prediction?.details?.svm !== undefined && (
-                          <div className="space-y-3">
-                            <div>
-                              <div className="flex justify-between mb-2">
-                                <span className="text-sm">Risk Score</span>
-                                <span className="font-black">{simResult.prediction.details.svm.toFixed(1)}%</span>
+                        {/* SVM Result */}
+                        <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-6">
+                          <p className="text-indigo-500 font-black mb-4">SVM Decision Boundary</p>
+                          {simResult.prediction?.details?.svm !== undefined && (
+                            <div className="space-y-3">
+                              <div>
+                                <div className="flex justify-between mb-2">
+                                  <span className="text-sm">Risk Score</span>
+                                  <span className="font-black">{simResult.prediction.details.svm.toFixed(1)}%</span>
+                                </div>
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-indigo-500"
+                                    style={{ width: `${simResult.prediction.details.svm}%` }}
+                                  />
+                                </div>
                               </div>
-                              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-indigo-500"
-                                  style={{ width: `${simResult.prediction.details.svm}%` }}
-                                />
-                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Model Confidence: <span className="font-black">STABLE</span>
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              Model Confidence: <span className="font-black">STABLE</span>
-                            </p>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                )}
-              </div>
-            </motion.div>
-          )}
+                    </Card>
+                  )}
+                </div>
+              </motion.div>
+            )}
 
           {/* MONITOR TAB */}
           {activeTab === "monitor" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
+              
+              {/* Auto Block Control Card */}
+              <div className="bg-card/30 p-6 rounded-3xl border border-border/50 flex justify-between items-center backdrop-blur-xl hover:border-primary/50 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center border", autoBlockEnabled ? "bg-red-500/10 border-red-500/20 text-red-500" : "bg-muted border-border/50 text-muted-foreground")}>
+                    {autoBlockEnabled ? <ShieldAlert size={20} /> : <Shield size={20} />}
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm uppercase">Real-time Auto-Blocking</h3>
+                    <p className="text-xs text-muted-foreground font-medium">Bật để AI tự động khóa các yêu cầu có nguy cơ &gt;95% (Hỗ trợ trong Simulator)</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAutoBlockEnabled(!autoBlockEnabled)}
+                  className={cn(
+                    "relative inline-flex h-7 w-14 items-center rounded-full transition-colors",
+                    autoBlockEnabled ? "bg-red-500" : "bg-muted-foreground/30"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-5 w-5 transform rounded-full bg-white transition-transform",
+                      autoBlockEnabled ? "translate-x-8" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
 
               {/* Risk Trend Analytics */}
               <div className="bg-card/30 p-8 rounded-[2.5rem] border border-border/50 backdrop-blur-xl">
@@ -1148,7 +1446,9 @@ export default function AdminAISecurityPage() {
                                   </div>
                                   <div>
                                     <p className="font-black text-sm uppercase tracking-tight">{log.type}</p>
-                                    <span className="text-[10px] text-muted-foreground font-mono">{new Date(log.created_at).toLocaleString('vi-VN')}</span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                      {log.created_at ? new Date(log.created_at).toLocaleString('vi-VN') : new Date().toLocaleString('vi-VN')}
+                                    </span>
                                   </div>
                                 </div>
                                 <Badge variant={log.is_anomaly ? "destructive" : "outline"} className="font-black text-[9px] uppercase">
@@ -1180,6 +1480,24 @@ export default function AdminAISecurityPage() {
                                   </div>
                                   <div className="h-1 bg-muted rounded-full overflow-hidden">
                                     <div className="h-full bg-indigo-500" style={{ width: `${log.payload?.ai_prediction?.details?.svm || 0}%` }} />
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-6 pt-6 border-t border-border/20 space-y-5">
+                                <div className="space-y-3 bg-muted/10 p-4 rounded-xl border border-border/50">
+                                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                                    <Activity size={12}/> Chuyển trang (Navigation)
+                                  </p>
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="outline" className="text-[10px] truncate max-w-[150px] py-1 border-muted-foreground/30">{log.prev_path === 'external' ? 'External Start' : (log.prev_path || 'Bắt đầu')}</Badge>
+                                    <div className="flex flex-col items-center flex-1 min-w-[50px]">
+                                      <span className="text-[10px] font-black text-primary mb-1">{log.nav_time_ms ? `${log.nav_time_ms} ms` : '0 ms'}</span>
+                                      <div className="w-full h-[2px] bg-border relative rounded-full">
+                                        <ArrowRight size={12} className="absolute -right-1 -top-[5px] text-muted-foreground" />
+                                      </div>
+                                    </div>
+                                    <Badge variant="default" className="text-[10px] truncate max-w-[150px] py-1 px-3 bg-primary text-primary-foreground">{log.path || 'N/A'}</Badge>
                                   </div>
                                 </div>
                               </div>

@@ -38,8 +38,8 @@ df = pd.read_csv(dataset_path)
 
 numeric_cols = [
     'lat', 'lng', 'duration_ms', 'distance_km', 
-    'wrong_password_attempts', 'address_changes', 
-    'click_speed_ms', 'purchase_quantity', 'purchase_value', 'click_count'
+    'wrong_password_attempts', 'nav_time_ms', 
+    'purchase_value', 'avg_purchase_value', 'click_speed_ms'
 ]
 
 # Preprocessing

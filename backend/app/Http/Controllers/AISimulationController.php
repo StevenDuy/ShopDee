@@ -30,7 +30,7 @@ class AISimulationController extends Controller
     {
         $logs = ActionLog::where('user_id', $userId)
             ->orderByDesc('id')
-            ->get(['id', 'user_id', 'type', 'lat', 'lng', 'is_anomaly', 'payload', 'created_at']);
+            ->get(['id', 'user_id', 'type', 'path', 'prev_path', 'nav_time_ms', 'distance_km', 'lat', 'lng', 'is_anomaly', 'payload', 'created_at']);
 
         return response()->json($logs);
     }
@@ -83,7 +83,7 @@ class AISimulationController extends Controller
         })->sortByDesc('created_at')->values();
 
         $blockedUsers = User::where('status', 'banned')
-            ->select('id', 'name', 'email', 'ban_reason', 'updated_at')
+            ->select('id', 'name', 'email', 'status', 'ban_reason', 'updated_at')
             ->orderByDesc('updated_at')
             ->limit(20)
             ->get();
@@ -241,97 +241,164 @@ class AISimulationController extends Controller
         return response()->json(['message' => 'User unblocked successfully.', 'user' => $user]);
     }
 
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        if (!$lat1 || !$lon1 || !$lat2 || !$lon2) return 0;
+        $earthRadius = 6371; // km
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat/2) * sin($dLat/2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon/2) * sin($dLon/2);
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        return $earthRadius * $c;
+    }
+
+    public function storeLog(Request $request)
+    {
+        $user = auth('sanctum')->user();
+        if (!$user) return response()->json(['message' => 'Unauthenticated'], 401);
+
+        $data = $request->validate([
+            'type' => 'required|string',
+            'path' => 'nullable|string',
+            'prev_path' => 'nullable|string',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric',
+            'duration_ms' => 'nullable|numeric',
+            'nav_time_ms' => 'nullable|numeric',
+            'click_speed_ms' => 'nullable|numeric',
+            'wrong_password_attempts' => 'nullable|integer',
+            'purchase_value' => 'nullable|numeric',
+            'payload' => 'nullable|array',
+        ]);
+
+        // Tính khoảng cách di chuyển từ lần cuối
+        $distanceKm = 0;
+        $lastLog = ActionLog::where('user_id', $user->id)
+            ->whereNotNull('lat')
+            ->orderByDesc('id')
+            ->first();
+        if ($lastLog && isset($data['lat']) && isset($data['lng'])) {
+            $distanceKm = $this->calculateDistance($lastLog->lat, $lastLog->lng, $data['lat'], $data['lng']);
+        }
+
+        // Lấy thông tin lịch sử mua hàng
+        $avgPurchaseValue = \App\Models\Order::where('customer_id', $user->id)->avg('total_amount') ?: 0;
+
+        $log = ActionLog::create(array_merge($data, [
+            'user_id' => $user->id,
+            'distance_km' => $distanceKm,
+            'avg_purchase_value' => $avgPurchaseValue,
+            'is_fraud_labeled' => false, // Vì đây là log thật của người dùng
+        ]));
+
+        // Kiểm tra AI thời gian thực
+        try {
+            $prediction = $this->aiPredict([
+                'user_id' => $user->id,
+                'type' => $data['type'],
+                'lat' => $data['lat'] ?? 0,
+                'lng' => $data['lng'] ?? 0,
+                'duration_ms' => $data['duration_ms'] ?? 0,
+                'distance_km' => $distanceKm,
+                'wrong_password_attempts' => $data['wrong_password_attempts'] ?? 0,
+                'click_speed_ms' => $data['click_speed_ms'] ?? 0,
+                'purchase_value' => $data['purchase_value'] ?? 0,
+            ]);
+
+            $log->update([
+                'confidence_score' => $prediction['risk_percentage'] / 100,
+                'is_anomaly' => $prediction['is_anomaly'],
+                'payload' => array_merge($data['payload'] ?? [], [
+                    'ai_flagged' => $prediction['is_anomaly'] ?? false,
+                    'ai_prediction' => $prediction
+                ])
+            ]);
+
+            // Logic tự động chặn nếu rủi ro quá cao (>95% và không phải admin)
+            if ($log->confidence_score > 0.95 && $user->role_id !== 1 && $user->status !== 'banned') {
+                $user->update([
+                    'status' => 'banned',
+                    'ban_reason' => 'Automatically blocked by AI security (Confidence: ' . round($prediction['risk_percentage'], 2) . '%)'
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'risk_score' => $log->confidence_score,
+                'is_anomaly' => $log->is_anomaly,
+                'banned' => $user->status === 'banned'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => true, 'message' => 'Log saved, AI service unavailable']);
+        }
+    }
+
     protected function aiPredict(array $input): array
     {
         $aiUrl = env('AI_API_URL', 'http://localhost:5000');
-
         try {
             $response = Http::timeout(10)->post("{$aiUrl}/api/predict", $input);
             if ($response->successful()) {
                 return $response->json();
             }
-
-            Log::warning('AI predict returned non-success response', ['status' => $response->status(), 'body' => $response->body()]);
-            throw new \RuntimeException('AI prediction returned unsuccessful response');
-        } catch (\Throwable $exception) {
-            Log::error('AI predict failed', ['error' => $exception->getMessage()]);
-            throw $exception;
+            throw new \RuntimeException('AI service error');
+        } catch (\Exception $e) {
+            Log::error('AI Predict Failure', ['error' => $e->getMessage()]);
+            throw $e;
         }
-    }
-
-    protected function buildPayload(array $baseData, array $prediction, bool $isFraud): array
-    {
-        $payload = array_merge($baseData, ['ai_prediction' => $prediction]);
-
-        if (isset($prediction['details']['random_forest']) && isset($prediction['details']['svm'])) {
-            $rfRisk = $prediction['details']['random_forest'] / 100;
-            $svmRisk = $prediction['details']['svm'] / 100;
-            
-            // Flag if either model detects high risk (>= 70%)
-            $payload['ai_flagged'] = $rfRisk >= 0.7 || $svmRisk >= 0.7;
-            $payload['risk_score'] = $prediction['risk_percentage'] / 100;
-            $payload['flagged_by'] = $payload['ai_flagged'] ? ($rfRisk >= 0.7 ? 'random_forest' : 'svm') : null;
-        }
-
-        $payload['simulated_fraud'] = $isFraud;
-        return $payload;
     }
 
     protected function createSimulationLog(User $user, string $type, float $lat, float $lng, bool $isFraud, array $payload, bool $autoBlock): array
     {
-        // Gửi data sang AI Service để lấy dự đoán hiện tại
+        // Gửi data sang AI Service để lấy dự đoán
         $predictionInput = array_merge([
             'user_id' => $user->id,
             'type' => $type,
             'lat' => $lat,
             'lng' => $lng,
-        ], array_filter($payload, fn($key) => in_array($key, [
-            'duration_ms', 'distance_jump', 'wrong_password_attempts', 'address_changes', 'click_speed_ms', 'purchase_quantity', 'purchase_value', 'click_count',
-        ]), ARRAY_FILTER_USE_KEY));
+            'distance_km' => $payload['distance_km'] ?? 0,
+        ], array_intersect_key($payload, array_flip([
+            'duration_ms', 'wrong_password_attempts', 'click_speed_ms', 'purchase_value'
+        ])));
 
         $prediction = $this->aiPredict($predictionInput);
-        $payload = $this->buildPayload($payload, $prediction, $isFraud);
-
-        // Lưu vào ActionLog để theo dõi
-        $log = ActionLog::create([
+        
+        $log = ActionLog::create(array_merge($payload, [
             'user_id' => $user->id,
             'type' => $type,
             'lat' => $lat,
             'lng' => $lng,
-            'is_anomaly' => $isFraud, // Đây là nhãn "Ground Truth" do Admin thiết lập khi giả lập
-            'payload' => $payload,
-        ]);
+            'is_anomaly' => $prediction['is_anomaly'],
+            'is_fraud_labeled' => $isFraud,
+            'confidence_score' => $prediction['risk_percentage'] / 100,
+            'payload' => array_merge($payload, [
+                'ai_prediction' => $prediction,
+                'ai_flagged' => ($prediction['is_anomaly'] || $isFraud) // Quan trọng để hiện bên Monitor
+            ])
+        ]));
 
-        // QUAN TRỌNG: Gửi feedback sang dữ liệu huấn luyện (Dataset) của AI
-        // Để khi bấm Retrain, AI sẽ học được từ chính ca giả lập này.
+        // Đồng bộ ngược lại dataset AI nếu Admin bấm gán nhãn
         try {
             $aiUrl = env('AI_API_URL', 'http://localhost:5000');
             Http::timeout(5)->post("{$aiUrl}/api/predict", array_merge($predictionInput, [
                 '_save_to_dataset' => true,
                 'is_anomaly' => $isFraud ? 1 : 0
             ]));
-        } catch (\Exception $e) {
-            Log::warning('Could not sync simulation to AI dataset', ['error' => $e->getMessage()]);
-        }
+        } catch (\Exception $e) { /* Ignore */ }
 
-        $autoBlocked = false;
-        $blockReason = null;
-
-        if (($payload['ai_flagged'] ?? false) && $autoBlock && $user->role_id !== 1 && $user->status !== 'banned') {
-            $user->status = 'banned';
-            $user->ban_reason = 'Auto-blocked by AI (' . ($payload['flagged_by'] ?? 'unknown') . ')';
-            $user->save();
-            $autoBlocked = true;
-            $blockReason = $user->ban_reason;
+        if ($log->is_anomaly && $autoBlock && $user->role_id !== 1 && $user->status !== 'banned') {
+            $user->update([
+                'status' => 'banned',
+                'ban_reason' => 'Simulated Auto-block by AI'
+            ]);
         }
 
         return [
             'log' => $log,
             'prediction' => $prediction,
-            'flagged' => $payload['ai_flagged'] ?? false,
-            'user_status' => $user->status,
-            'auto_blocked' => $autoBlocked,
-            'block_reason' => $blockReason,
+            'user_status' => $user->status
         ];
     }
 
@@ -343,58 +410,35 @@ class AISimulationController extends Controller
             'product_id' => 'nullable|integer|exists:products,id',
             'lat' => 'nullable|numeric',
             'lng' => 'nullable|numeric',
+            'distance_km' => 'nullable|numeric',
             'duration_ms' => 'nullable|numeric',
-            'distance_jump' => 'nullable|numeric',
-            'wrong_password_attempts' => 'nullable|integer|min:0',
-            'address_changes' => 'nullable|integer|min:0',
-            'click_speed_ms' => 'nullable|integer|min:0',
-            'purchase_quantity' => 'nullable|integer|min:0',
-            'purchase_value' => 'nullable|numeric|min:0',
-            'click_count' => 'nullable|integer|min:0',
+            'wrong_password_attempts' => 'nullable|integer',
+            'click_speed_ms' => 'nullable|integer',
+            'purchase_value' => 'nullable|numeric',
             'auto_block' => 'boolean',
-            'is_fraud' => 'boolean', // Nhãn do Admin quyết định khi bấm nút giả lập
+            'is_fraud' => 'boolean',
+            'path' => 'nullable|string',
+            'prev_path' => 'nullable|string',
+            'nav_time_ms' => 'nullable|numeric',
         ]);
 
-        try {
-            $user = User::findOrFail($request->user_id);
-            $product = $request->product_id ? Product::find($request->product_id) : null;
-            $autoBlock = $request->boolean('auto_block');
-            $isFraud = $request->boolean('is_fraud');
-            
-            // Lấy tọa độ mặc định nếu không gửi lên
-            $lat = $request->input('lat', 10.762);
-            $lng = $request->input('lng', 106.660);
+        $user = User::findOrFail($request->user_id);
+        $isFraud = $request->boolean('is_fraud');
+        $autoBlock = $request->boolean('auto_block');
 
-            $payload = [
-                'duration_ms' => $request->input('duration_ms', 5000),
-                'distance_jump' => $request->input('distance_jump', 0),
-                'wrong_password_attempts' => $request->input('wrong_password_attempts', 0),
-                'address_changes' => $request->input('address_changes', 0),
-                'click_speed_ms' => $request->input('click_speed_ms', 500),
-                'purchase_quantity' => $request->input('purchase_quantity', 0),
-                'purchase_value' => $request->input('purchase_value', 0),
-                'click_count' => $request->input('click_count', 0),
-                'scenario' => $request->scenario,
-            ];
+        $type = 'navigate';
+        if (str_contains($request->scenario, 'login')) $type = 'login';
+        if (str_contains($request->scenario, 'purchase')) $type = 'checkout';
+        if (str_contains($request->scenario, 'click')) $type = 'interaction';
 
-            // Xác định type dựa trên scenario
-            $type = 'navigate';
-            if (str_contains($request->scenario, 'login')) $type = 'login';
-            if (str_contains($request->scenario, 'purchase')) $type = 'checkout';
-            if (str_contains($request->scenario, 'click')) $type = 'interaction';
+        $payload = $request->only([
+            'duration_ms', 'distance_km', 'wrong_password_attempts', 
+            'click_speed_ms', 'purchase_value', 'path', 'prev_path', 'nav_time_ms'
+        ]);
+        $payload['scenario'] = $request->scenario;
 
-            $result = $this->createSimulationLog($user, $type, $lat, $lng, $isFraud, $payload, $autoBlock);
+        $result = $this->createSimulationLog($user, $type, $request->input('lat', 10.762), $request->input('lng', 106.660), $isFraud, $payload, $autoBlock);
 
-            return response()->json([
-                'scenario' => $request->scenario,
-                'user' => $user,
-                'results' => [$result],
-            ]);
-        } catch (\Throwable $exception) {
-            Log::error('AI simulation failed', ['error' => $exception->getMessage()]);
-            return response()->json([
-                'message' => 'AI simulation failed: ' . $exception->getMessage(),
-            ], 500);
-        }
+        return response()->json($result);
     }
 }
