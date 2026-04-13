@@ -102,13 +102,12 @@ export default function SellerOrdersPage() {
   const { formatPrice } = useCurrencyStore();
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-10">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2, ease: "circOut" }}
-        className="max-w-7xl mx-auto space-y-12"
-      >
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2, ease: "circOut" }}
+      className="space-y-12"
+    >
         {/* 1. ELITE HEADER */}
         <div className="flex flex-col md:flex-row items-center justify-between border-b border-border/5 pb-10 gap-8">
            <div className="text-center md:text-left">
@@ -150,16 +149,27 @@ export default function SellerOrdersPage() {
               <QuickStat icon={ShoppingBag} label={t("seller.orders.total_orders")} value={orders.length.toString()} />
               <QuickStat icon={Clock} label={t("seller.orders.pending_action")} value={orders.filter(o => o.status === 'pending').length.toString()} />
               
-              <div className="relative group h-14 min-w-[200px]">
-                <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-primary/60 z-20" size={18} strokeWidth={2.5} />
+              <div className="relative group">
                 <Select 
                    value={filter} 
                    onValueChange={(val: any) => { setFilter(val); setCurrentPage(1); }}
                 >
-                   <SelectTrigger className="w-full h-full pl-14 pr-10 bg-muted/20 border border-border/50 rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] appearance-none focus:ring-0 focus:border-primary/50 transition-all cursor-pointer relative z-10 shadow-sm focus:bg-background">
-                      <SelectValue placeholder={t("seller.orders.filter_status")}>
-                         {filter === "all" ? t("seller.orders.all_orders") : undefined}
-                      </SelectValue>
+                   <SelectTrigger className="h-[80px] flex-1 min-w-[200px] px-6 bg-muted/20 border border-border/50 rounded-[2rem] hover:bg-muted/30 transition-all cursor-pointer relative z-10 shadow-sm focus:bg-background outline-none ring-0 flex items-center gap-4 group/filter">
+                      <div className="w-12 h-12 rounded-xl bg-background border border-border/50 flex items-center justify-center text-primary shadow-sm group-hover/filter:scale-110 transition-transform duration-500 shrink-0">
+                         <Filter size={20} strokeWidth={2.5} />
+                      </div>
+                      <div className="flex flex-col items-start min-w-0">
+                         <span className="text-[10px] font-black uppercase tracking-[0.15em] opacity-40 leading-none mb-1.5">
+                            {t("seller.orders.filter_status")}
+                         </span>
+                         <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-foreground uppercase tracking-tight truncate">
+                               <SelectValue placeholder={t("seller.orders.filter_status")}>
+                                  {filter === "all" ? t("seller.orders.all_orders") : undefined}
+                               </SelectValue>
+                            </span>
+                         </div>
+                      </div>
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
                       <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.orders.all_orders")}</SelectItem>
@@ -304,14 +314,12 @@ export default function SellerOrdersPage() {
             />
           )}
         </AnimatePresence>
-      </motion.div>
-
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.1); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       `}</style>
-    </div>
+    </motion.div>
   );
 }
 
@@ -319,13 +327,13 @@ export default function SellerOrdersPage() {
 
 function QuickStat({ label, value, icon: Icon }: any) {
   return (
-    <div className="flex items-center gap-4 bg-muted/20 border border-border/50 px-6 py-4 rounded-[1.5rem] shadow-sm group hover:bg-muted/30 transition-all">
-       <div className="w-10 h-10 rounded-xl bg-background border border-border/50 flex items-center justify-center text-primary/60 group-hover:text-primary transition-colors">
-          <Icon size={20} strokeWidth={2.5} />
+    <div className="flex items-center gap-4 bg-muted/20 border border-border/50 px-6 py-4 rounded-[1.5rem] shadow-sm group hover:bg-muted/30 transition-all min-h-[80px]">
+       <div className="w-12 h-12 rounded-xl bg-background border border-border/50 flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform duration-500">
+          <Icon size={22} strokeWidth={2.5} />
        </div>
-       <div>
-          <p className="text-[9px] font-black uppercase opacity-40 tracking-widest leading-none mb-1">{label}</p>
-          <p className="text-[13px] font-black tracking-tight">{value}</p>
+       <div className="flex flex-col">
+          <p className="text-[10px] font-black uppercase tracking-[0.15em] opacity-40 leading-none mb-1.5">{label}</p>
+          <p className="text-xl font-black text-foreground leading-none">{value}</p>
        </div>
     </div>
   );

@@ -89,7 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications/unread-counts', [NotificationController::class, 'unreadCounts']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'store']);
-    Route::delete('/notifications/{id}', [\App\Http\Controllers\Admin\NotificationController::class, 'destroy']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
@@ -124,6 +124,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Finance
         Route::get('/finance', [\App\Http\Controllers\Seller\FinanceController::class, 'index']);
         Route::post('/finance/withdraw', [\App\Http\Controllers\Seller\FinanceController::class, 'withdraw']);
+
+        // Reviews
+        Route::get('/reviews', [\App\Http\Controllers\Seller\ReviewController::class, 'index']);
     });
 
     // --- ADMIN ROUTES ---

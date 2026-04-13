@@ -893,7 +893,9 @@
     "total": "Total",
     "purchased": "Purchased",
     "back_to_products": "Back to products",
-    "from_shop": "From Shop"
+    "from_shop": "From Shop",
+    "no_reviews": "No reviews yet",
+    "rating_avg": "AVERAGE RATING"
   },
   "common": {
     "deleted": "Deleted",
@@ -915,5 +917,22 @@
     "search": "Search...",
     "no_results": "No results found.",
     "authenticating": "Authenticating..."
+  },
+  "reviews": {
+    "title": "Rate & Review",
+    "quality_label": "PRODUCT QUALITY",
+    "rating_1": "— Regretful —",
+    "rating_2": "— Disappointed —",
+    "rating_3": "— Satisfied —",
+    "rating_4": "— Very Satisfied —",
+    "rating_5": "— Excellent —",
+    "comment_label": "WRITE YOUR REVIEW",
+    "placeholder": "What did you think of this product? Share your experience with others...",
+    "media_label": "PHOTO / VIDEO",
+    "add_media": "ADD MEDIA",
+    "submit": "SUBMIT REVIEW",
+    "success_msg": "Thank you for your feedback!",
+    "error_msg": "Failed to submit review. Try again.",
+    "select_rating_error": "Please select a star rating."
   }
 }

@@ -459,7 +459,6 @@ export function UnifiedInbox() {
   };
 
   const handleDeleteNotification = async (id: number) => {
-    if (!isAdmin) return;
     try {
       await axios.delete(`${API}/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       setNotifications(prev => prev.filter(n => n.id !== id));
@@ -861,9 +860,41 @@ export function UnifiedInbox() {
           ) : selectedNotif ? (
             <motion.div key="notif" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col h-full bg-background overflow-y-auto fixed md:absolute inset-0 md:relative z-[310] md:z-20 p-6 md:p-20 shadow-inner">
               {/* Notification Detail */}
-              <Button variant="ghost" size="icon" onClick={() => setSelectedNotif(null)} className="absolute top-8 left-8 w-12 h-12 bg-muted/50 rounded-full active:scale-90">
-                <ChevronLeft size={24} strokeWidth={3} />
-              </Button>
+              <div className="absolute top-8 left-8 right-8 flex items-center justify-between pointer-events-none">
+                <Button variant="ghost" size="icon" onClick={() => setSelectedNotif(null)} className="w-12 h-12 bg-muted/50 rounded-full active:scale-90 pointer-events-auto">
+                  <ChevronLeft size={24} strokeWidth={3} />
+                </Button>
+                
+                {!isConfirmingDelete ? (
+                  <Button 
+                    variant="destructive" 
+                    size="icon" 
+                    onClick={() => setIsConfirmingDelete(true)} 
+                    className="w-12 h-12 rounded-full shadow-lg active:scale-90 pointer-events-auto"
+                  >
+                    <Trash2 size={20} strokeWidth={2.5} />
+                  </Button>
+                ) : (
+                  <div className="flex gap-2 pointer-events-auto animate-in slide-in-from-right-4">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteNotification(selectedNotif.id)}
+                      className="px-4 h-10 font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg"
+                    >
+                      {isAdmin ? t("inbox.confirm_broadcast_delete") : t("inbox.confirm")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsConfirmingDelete(false)}
+                      className="px-4 h-10 font-bold text-[10px] uppercase tracking-widest rounded-xl"
+                    >
+                      {t("inbox.cancel_short")}
+                    </Button>
+                  </div>
+                )}
+              </div>
 
               <div className="max-w-2xl mx-auto w-full pt-16 md:pt-0">
                 <div className={`w-16 h-16 md:w-20 md:h-20 rounded-[2rem] flex items-center justify-center mb-10 shadow-xl border border-white/20 ${getNotifColor(selectedNotif.type || "system")}`}>
@@ -891,36 +922,6 @@ export function UnifiedInbox() {
                   </Button>
                 )}
 
-                {isAdmin && (
-                  <div className="mt-20 pt-10 border-t border-border/50 flex flex-col items-center gap-6">
-                    {!isConfirmingDelete ? (
-                      <Button
-                        variant="destructive"
-                        onClick={() => setIsConfirmingDelete(true)}
-                        className="flex items-center gap-2 px-8 h-12 rounded-xl font-black text-xs uppercase tracking-widest shadow-md"
-                      >
-                        <Trash2 size={16} strokeWidth={3} /> {t("inbox.delete")}
-                      </Button>
-                    ) : (
-                      <div className="flex items-center gap-4 animate-in zoom-in-95">
-                        <Button
-                          variant="destructive"
-                          onClick={() => handleDeleteNotification(selectedNotif.id)}
-                          className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95"
-                        >
-                          {t("inbox.confirm_broadcast_delete")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setIsConfirmingDelete(false)}
-                          className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest"
-                        >
-                          {t("inbox.cancel_short")}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </motion.div>
           ) : (

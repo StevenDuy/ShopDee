@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, MessageCircle, Package, ClipboardList, ChevronRight, ListFilter } from "lucide-react";
+import { Star, ShoppingCart, Zap, ArrowLeft, Plus, Minus, CheckCircle, MessageCircle, Package, ClipboardList, ChevronRight, ListFilter, Search, X } from "lucide-react";
 import axios from "axios";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +23,8 @@ interface Review {
   id: number; rating: number; comment: string | null; created_at: string;
   customer: { name: string };
   order_item?: { product: { title: string }; selected_options?: Record<string, string> | null; };
+  resolved_media?: string[];
+  media?: string[] | any;
 }
 interface Product {
   id: number; title: string; slug: string; description: string;
@@ -48,6 +50,16 @@ function StarRow({ rating }: { rating: number }) {
 
 export default function ProductDetailPage() {
   const { t } = useTranslation();
+  
+  const getFullMediaUrl = (url: any) => {
+    if (!url) return "";
+    if (typeof url !== "string") return "";
+    if (url.startsWith("http")) return url;
+    const cleanPath = url.startsWith("/") ? url.slice(1) : url;
+    const baseUrl = API.split("/api")[0];
+    if (cleanPath.startsWith("storage/")) return `${baseUrl}/${cleanPath}`;
+    return `${baseUrl}/storage/${cleanPath}`;
+  };
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
   const { formatPrice } = useCurrencyStore();
@@ -65,6 +77,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [addedMsg, setAddedMsg] = useState(false);
   const [detailTab, setDetailTab] = useState<"description" | "specifications" | "reviews">("description");
+  const [viewingReviewImage, setViewingReviewImage] = useState<string | null>(null);
   const { 
     scrollRef, 
     onMouseDown, 
@@ -323,6 +336,54 @@ export default function ProductDetailPage() {
                             <StarRow rating={r.rating} />
                           </div>
                           {r.comment && <div className="text-sm font-bold leading-relaxed italic border-l-4 border-primary/20 pl-6 py-2 text-foreground/70">{r.comment}</div>}
+                          {(() => {
+                            let mediaList: string[] = [];
+                            if (Array.isArray(r.resolved_media) && r.resolved_media.length > 0) {
+                              mediaList = r.resolved_media;
+                            } else if (Array.isArray(r.media) && r.media.length > 0) {
+                              mediaList = r.media;
+                            } else if (typeof r.media === 'string' && r.media.startsWith('[')) {
+                              try {
+                                const parsed = JSON.parse(r.media);
+                                if (Array.isArray(parsed)) mediaList = parsed;
+                              } catch (e) {}
+                            }
+
+                            if (mediaList.length === 0) return null;
+
+                            return (
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                 {mediaList.map((url: string, idx: number) => {
+                                   const fullUrl = getFullMediaUrl(url);
+                                   return (
+                                     <div 
+                                       key={idx} 
+                                       className="relative group w-20 h-20 rounded-xl overflow-hidden border border-border/10 cursor-pointer shadow-sm bg-muted/40 flex items-center justify-center"
+                                       onClick={() => setViewingReviewImage(fullUrl)}
+                                     >
+                                        <img 
+                                          src={fullUrl} 
+                                          alt="" 
+                                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                          onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            if (!target.src.includes('picsum.photos')) {
+                                              target.src = `https://picsum.photos/seed/${r.id + idx}/200/200`;
+                                              target.classList.add('opacity-40', 'grayscale');
+                                            }
+                                          }}
+                                        />
+                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                           <div className="p-2 bg-white/20 backdrop-blur-md rounded-full border border-white/20">
+                                              <Search className="text-white" size={14} strokeWidth={3} />
+                                           </div>
+                                        </div>
+                                     </div>
+                                   );
+                                 })}
+                              </div>
+                            );
+                          })()}
                         </div>
                       ))}
                     </div>
@@ -333,6 +394,36 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {viewingReviewImage && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-background/95 backdrop-blur-2xl" 
+            onClick={() => setViewingReviewImage(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }} 
+              className="relative max-w-5xl w-full" 
+              onClick={e => e.stopPropagation()}
+            >
+              <img src={viewingReviewImage} alt="Fullscreen" className="w-full h-auto max-h-[85vh] object-contain rounded-[2rem] shadow-2xl border border-border/20" />
+              <div className="absolute top-6 right-6">
+                <button 
+                   onClick={() => setViewingReviewImage(null)}
+                   className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/10 transition-all hover:scale-110 active:scale-95"
+                >
+                  <X size={24} strokeWidth={3} />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

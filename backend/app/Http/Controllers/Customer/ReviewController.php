@@ -88,22 +88,22 @@ class ReviewController extends Controller
                 ]);
             }
 
-            try {
-                // Notify seller
-                Notification::create([
-                    'user_id' => $orderItem->order->seller_id,
-                    'type'    => 'review',
-                    'data'    => [
-                        'order_id'      => $orderItem->order_id,
-                        'customer_name' => $request->user()->name,
-                        'product_title' => $orderItem->product->title ?? 'Sản phẩm',
-                        'rating'        => $request->rating,
-                    ],
-                    'is_read' => false,
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Review Notification Error: ' . $e->getMessage());
-            }
+            // try {
+            //     // Notify seller
+            //     Notification::create([
+            //         'user_id' => $orderItem->order->seller_id,
+            //         'type'    => 'review',
+            //         'data'    => [
+            //             'order_id'      => $orderItem->order_id,
+            //             'customer_name' => $request->user()->name,
+            //             'product_title' => $orderItem->product->title ?? 'Sản phẩm',
+            //             'rating'        => $request->rating,
+            //         ],
+            //         'is_read' => false,
+            //     ]);
+            // } catch (\Exception $e) {
+            //     Log::error('Review Notification Error: ' . $e->getMessage());
+            // }
 
             return response()->json([
                 'message' => 'Đánh giá sản phẩm thành công',

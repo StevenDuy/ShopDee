@@ -4,8 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import {  Package, Save, X, Plus, Trash2, Check,
   Upload, Image as ImageIcon, CheckCircle2, 
-  AlertCircle, ChevronRight, Info, Zap, Box, Edit, ChevronDown, AlertTriangle
+  AlertCircle, ChevronRight, Info, Zap, Box, Edit, ChevronDown, AlertTriangle, Star
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
 import { EliteCombobox } from "@/components/ui/elite-combobox";
@@ -45,6 +46,7 @@ const emptyValue = (): OptionValue => ({ option_value: "", price_adjustment: 0, 
 
 export function EditProductModal({ productId, onClose, onSuccess }: Props) {
   const { t } = useTranslation();
+  const router = useRouter();
   const { formatPrice, fromBaseCurrency, toBaseCurrency } = useCurrencyStore();
   const { token } = useAuthStore();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -787,6 +789,15 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
           </div>
           
           <div className="flex items-center gap-4">
+            <button 
+              type="button" 
+              onClick={() => router.push(`/seller/products/review?productId=${productId}`)}
+              className="px-6 h-12 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 border border-primary/20 transition-all flex items-center gap-2"
+            >
+              <Star size={18} fill="currentColor" />
+              {t("product_details.reviews")}
+            </button>
+            <div className="h-8 w-px bg-border/40 mx-1" />
             <button type="button" onClick={onClose} disabled={saving || deleting}
               className="px-8 h-12 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:bg-muted transition-all disabled:opacity-30 active:scale-95">{t("inbox.cancel")}</button>
             <button type="submit" form="edit-product-form" disabled={saving || deleting || formData.status === 'banned'}

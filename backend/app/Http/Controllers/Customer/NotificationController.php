@@ -72,4 +72,27 @@ class NotificationController extends Controller
             'total' => $notifCount + $msgCount
         ]);
     }
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+        $query = Notification::where('id', $id);
+        
+        // If not admin, only allow deleting own notification
+        if ($user->role_id !== 1) {
+            $query->where('user_id', $user->id);
+        }
+        
+        $notification = $query->firstOrFail();
+        
+        // Special logic for Admin deleting a broadcast batch
+        if ($user->role_id === 1 && isset($notification->data['batch_id'])) {
+            $batchId = $notification->data['batch_id'];
+            Notification::whereJsonContains('data->batch_id', $batchId)->delete();
+            return response()->json(['message' => 'Notification batch deleted successfully']);
+        }
+
+        $notification->delete();
+        
+        return response()->json(['message' => 'Notification deleted successfully']);
+    }
 }

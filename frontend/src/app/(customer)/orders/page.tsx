@@ -243,6 +243,29 @@ export default function MyOrdersPage() {
                            )
                         )}
 
+                        {order.status === 'completed' && (() => {
+                           const allReviewed = order.items.every(i => i.review);
+                           return allReviewed ? (
+                              <button 
+                                className="px-5 py-2 text-[8px] font-black uppercase bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 rounded-xl cursor-default flex items-center gap-2 whitespace-nowrap shadow-sm"
+                              >
+                                 <CheckCircle size={10} strokeWidth={3} className="text-emerald-500" />
+                                 {t("customer_orders.reviewed")}
+                              </button>
+                           ) : (
+                              <button 
+                                onClick={() => {
+                                  const itemToReview = order.items.find(i => !i.review) || order.items[0];
+                                  setReviewItem(itemToReview);
+                                  setIsReviewModalOpen(true);
+                                }} 
+                                className="px-5 py-2 text-[8px] font-black uppercase bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all whitespace-nowrap"
+                              >
+                                 {t("reviews.title") || "Review Now"}
+                              </button>
+                           );
+                        })()}
+
                         <div className="px-4 py-2 text-[8px] font-black uppercase bg-white/5 border border-border/10 text-muted-foreground/40 rounded-xl flex items-center gap-2 whitespace-nowrap">
                            {t("customer_orders.details")}
                         </div>

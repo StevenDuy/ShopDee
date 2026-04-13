@@ -36,8 +36,20 @@ type Order = {
     profile?: { phone: string };
     email: string;
   };
-  shipping_address: {
-    address_line1: string;
+  shippingAddress?: {
+    address_line_1: string;
+    address_line_2?: string;
+    address_line1?: string;
+    address_line2?: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  };
+  shipping_address?: {
+    address_line_1: string;
+    address_line_2?: string;
+    address_line1?: string;
     address_line2?: string;
     city: string;
     state: string;
@@ -64,7 +76,14 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
   useEffect(() => {
     if (!token) return;
     axios.get(`${API}/seller/orders/${orderId}`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res: { data: Order }) => setOrder(res.data))
+      .then(res => {
+        const data = res.data;
+        // Fix potential field mapping issues from API
+        if (data.payment_method) {
+          data.payment_method = data.payment_method.replace(/_/g, ' ');
+        }
+        setOrder(data);
+      })
       .catch((err: unknown) => console.error("Failed to fetch order details", err))
       .finally(() => setLoading(false));
   }, [orderId, token]);
@@ -139,7 +158,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                 onClick={() => {
                   router.push(`/seller/inbox?userId=${order.customer_id}`);
                 }}
-                className="w-full flex items-center justify-center gap-3 py-3 bg-primary/10 text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all shadow-xl shadow-primary/5 active:scale-95"
+                className="w-full flex items-center justify-center gap-3 py-3 bg-primary/10 text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-xl shadow-primary/5 active:scale-95"
               >
                 <MessageSquare size={16} strokeWidth={2.5} />
                 {t("inbox.say_something")}
@@ -149,12 +168,24 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
             {/* Shipping Info */}
             <div className="p-8 space-y-6 md:col-span-2">
                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] opacity-40 flex items-center gap-3"><MapPin size={16} strokeWidth={2.5} className="text-primary"/> {t("seller.settings.addresses")}</h3>
-               <div className="space-y-1">
-                  <p className="text-sm font-black uppercase tracking-tight">{order.shipping_address.address_line1}</p>
-                  {order.shipping_address.address_line2 && <p className="text-[11px] font-bold text-muted-foreground opacity-60">{order.shipping_address.address_line2}</p>}
-                  <p className="text-[11px] font-bold text-muted-foreground opacity-60 uppercase">{order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}</p>
-                  <p className="text-[11px] font-black text-primary/80 uppercase tracking-widest">{order.shipping_address.country}</p>
-               </div>
+                <div className="space-y-1">
+                   {(() => {
+                      const addr = order.shippingAddress || order.shipping_address;
+                      if (!addr) return <p className="text-sm font-black text-muted-foreground italic opacity-40">N/A</p>;
+                      
+                      const line1 = addr.address_line_1 || addr.address_line1;
+                      const line2 = addr.address_line_2 || addr.address_line2;
+
+                      return (
+                        <>
+                           <p className="text-sm font-black uppercase tracking-tight">{line1}</p>
+                           {line2 && <p className="text-[11px] font-bold text-muted-foreground opacity-60">{line2}</p>}
+                           <p className="text-[11px] font-bold text-muted-foreground opacity-60 uppercase">{addr.city}, {addr.state} {addr.postal_code}</p>
+                           <p className="text-[11px] font-black text-primary/80 uppercase tracking-widest">{addr.country}</p>
+                        </>
+                      );
+                   })()}
+                </div>
             </div>
           </div>
 
@@ -234,7 +265,7 @@ export function OrderDetailsModal({ orderId, onClose, onStatusChange }: OrderDet
                 <XCircle size={16} strokeWidth={2.5}/> {t("seller.orders.cancel_order")}
               </button>
               <button onClick={() => { handleUpdateStatus('processing'); onClose(); }}
-                className="bg-primary text-black h-12 px-8 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-primary/20 active:scale-95 flex items-center gap-3">
+                className="h-12 px-8 bg-primary/10 text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-xl shadow-primary/5 active:scale-95 flex items-center gap-3">
                 <CheckCircle size={16} strokeWidth={3}/> {t("seller.orders.approve_order")}
               </button>
             </>

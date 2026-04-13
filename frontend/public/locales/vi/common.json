@@ -893,7 +893,9 @@
     "total": "Tổng cộng",
     "purchased": "Đã mua",
     "back_to_products": "Quay lại sản phẩm",
-    "from_shop": "Cửa hàng"
+    "from_shop": "Cửa hàng",
+    "no_reviews": "Chưa có đánh giá nào",
+    "rating_avg": "Đánh giá trung bình"
   },
   "common": {
     "deleted": "Đã xóa",
@@ -914,6 +916,24 @@
     "select": "Chọn...",
     "search": "Tìm kiếm...",
     "no_results": "Không tìm thấy kết quả.",
-    "authenticating": "Đang xác thực..."
+    "authenticating": "Đang xác thực...",
+    "no_data": "Không có dữ liệu"
+  },
+  "reviews": {
+    "title": "Đánh giá Sản phẩm",
+    "quality_label": "CHẤT LƯỢNG SẢN PHẨM",
+    "rating_1": "— Tệ —",
+    "rating_2": "— Không hài lòng —",
+    "rating_3": "— Bình thường —",
+    "rating_4": "— Rất hài lòng —",
+    "rating_5": "— Tuyệt vời —",
+    "comment_label": "CHIA SẺ CẢM NHẬN",
+    "placeholder": "Bạn thấy sản phẩm này thế nào? Hãy chia sẻ trải nghiệm của bạn nhé...",
+    "media_label": "HÌNH ẢNH / VIDEO",
+    "add_media": "THÊM ẢNH/VIDEO",
+    "submit": "GỬI ĐÁNH GIÁ",
+    "success_msg": "Cảm ơn bạn đã gửi đánh giá!",
+    "error_msg": "Gửi đánh giá thất bại. Vui lòng thử lại.",
+    "select_rating_error": "Vui lòng chọn số sao đánh giá."
   }
 }

@@ -1042,53 +1042,60 @@ export default function AdminAISecurityPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {(monitorView === "flagged" ? flaggedUsers : blockedUsers).map((user) => (
-                      <Card key={user.id} className="rounded-2xl p-6 bg-card/50 border-border/50">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black">
-                            {user.name?.charAt(0).toUpperCase() || "U"}
+                    {(monitorView === "flagged" ? flaggedUsers : blockedUsers).map((dataOrUser: any) => {
+                      const user = monitorView === "flagged" ? dataOrUser.user : dataOrUser;
+                      const userId = monitorView === "flagged" ? dataOrUser.user_id : dataOrUser.id;
+                      
+                      if (!user) return null;
+
+                      return (
+                        <Card key={`${monitorView}-mgmt-${userId}`} className="rounded-2xl p-6 bg-card/50 border-border/50 hover:border-primary/30 transition-all">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black">
+                              {user.name?.charAt(0).toUpperCase() || "U"}
+                            </div>
+                            <Badge variant={user.status === "banned" ? "destructive" : "default"} className="font-black text-[10px] uppercase">
+                              {user.status}
+                            </Badge>
                           </div>
-                          <Badge variant={user.status === "banned" ? "destructive" : "default"}>
-                            {user.status}
-                          </Badge>
-                        </div>
-                        <div className="space-y-2">
-                          <p className="font-black text-sm">{user.name}</p>
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
-                          {user.ban_reason && (
-                            <p className="text-xs text-red-500">Reason: {user.ban_reason}</p>
-                          )}
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            onClick={() => {
-                              setSelectedUserLog({ user_id: user.id, user } as any);
-                              handleViewUserLogs(user.id);
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 rounded-lg"
-                          >
-                            <Eye size={14} />
-                          </Button>
-                          {monitorView === "blocked" ? (
+                          <div className="space-y-2">
+                            <p className="font-black text-sm">{user.name}</p>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                            {user.ban_reason && (
+                              <p className="text-xs text-red-500 font-bold">Reason: {user.ban_reason}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2 mt-6">
                             <Button
-                              onClick={() => handleUnblockUser(user.id)}
-                              className="flex-1 h-9 rounded-lg bg-green-600 text-white hover:bg-green-700 text-xs font-black"
+                              onClick={() => {
+                                setSelectedUserLog(monitorView === "flagged" ? dataOrUser : { user_id: userId, user } as any);
+                                handleViewUserLogs(userId);
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 rounded-xl h-10 font-bold"
                             >
-                              UNBLOCK
+                              <Eye size={14} className="mr-2" /> DETAIL
                             </Button>
-                          ) : (
-                            <Button
-                              onClick={() => handleBlockUser(user.id, "Manual block")}
-                              className="flex-1 h-9 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs font-black"
-                            >
-                              BLOCK
-                            </Button>
-                          )}
-                        </div>
-                      </Card>
-                    ))}
+                            {user.status === "banned" ? (
+                              <Button
+                                onClick={() => handleUnblockUser(userId)}
+                                className="flex-1 h-10 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-black"
+                              >
+                                UNBLOCK
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={() => handleBlockUser(userId, "Manual block")}
+                                className="flex-1 h-10 rounded-xl bg-red-600 text-white hover:bg-red-700 text-xs font-black"
+                              >
+                                BLOCK
+                              </Button>
+                            )}
+                          </div>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
