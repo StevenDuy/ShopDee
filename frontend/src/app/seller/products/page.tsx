@@ -146,10 +146,12 @@ export default function SellerProductsPage() {
                   onValueChange={(val: any) => { setStatusFilter(val); setCurrentPage(1); }}
                 >
                    <SelectTrigger className="w-full h-full pl-14 pr-10 bg-muted/20 border border-border/50 rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] appearance-none focus:ring-0 focus:border-primary/50 transition-all cursor-pointer relative z-10 shadow-sm focus:bg-background">
-                      <SelectValue placeholder={t("seller.products_manage.status_filter")} />
+                      <SelectValue placeholder={t("seller.products_manage.status_filter")}>
+                        {statusFilter === "all" ? t("seller.products_manage.all") : undefined}
+                      </SelectValue>
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
-                      <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.all_listings")}</SelectItem>
+                      <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.all")}</SelectItem>
                       <SelectItem value="active" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.active").toUpperCase()}</SelectItem>
                       <SelectItem value="hide" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.hide").toUpperCase()}</SelectItem>
                       <SelectItem value="out_of_stock" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.products_manage.out_of_stock").toUpperCase()}</SelectItem>
@@ -199,7 +201,12 @@ export default function SellerProductsPage() {
                                    <div className="flex items-center gap-4 min-w-[200px]">
                                       <div className="w-14 h-14 bg-muted/50 rounded-2xl flex items-center justify-center overflow-hidden border border-border/50 transition-transform group-hover:scale-110 duration-500 shadow-sm relative">
                                          {p.media && p.media.length > 0 ? (
-                                            <img src={p.media[0].full_url} alt={p.title} loading="lazy" className="object-cover w-full h-full" />
+                                            <img 
+                                              src={p.media.find(m => String(m.is_primary) === 'true' || String(m.is_primary) === '1' || m.is_primary === true)?.full_url || p.media[0].full_url} 
+                                              alt={p.title} 
+                                              loading="lazy" 
+                                              className="object-cover w-full h-full" 
+                                            />
                                          ) : (
                                             <ImageIcon size={24} className="opacity-20" />
                                          )}

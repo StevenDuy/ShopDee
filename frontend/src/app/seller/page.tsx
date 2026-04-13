@@ -51,12 +51,12 @@ export default function SellerDashboard() {
   const { formatPrice } = useCurrencyStore();
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-10">
+    <div className="min-h-screen animate-in fade-in duration-700">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: loading ? 0 : 1 }}
         transition={{ duration: 0.2, ease: "circOut" }}
-        className="max-w-7xl mx-auto space-y-12"
+        className="space-y-12"
       >
         {/* 1. ELITE SELLER HEADER */}
         <div className="flex flex-col md:flex-row items-center justify-between border-b border-border/5 pb-10 gap-8">
@@ -66,15 +66,15 @@ export default function SellerDashboard() {
                     <Store size={22} strokeWidth={2.5} />
                  </div>
                   <Badge variant="outline" className="font-black text-[9px] tracking-[0.2em] uppercase py-1 px-3 bg-background border-border/50">
-                   <span className="text-white/40">{t("seller.center")}</span>
+                    <span className="text-muted-foreground">{t("seller.center")}</span>
                   </Badge>
-              </div>
-              <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-                {user?.name?.toUpperCase() || t("seller.store_label")}
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 border border-primary/30 text-primary font-medium">
-                  {t("dashboard_v2.performance")}
-                </span>
-              </h1>
+               </div>
+               <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-foreground leading-none flex flex-wrap items-center gap-4">
+                 {user?.name?.toUpperCase() || t("seller.store_label")}
+                 <span className="text-[10px] font-black uppercase px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 tracking-widest shadow-emerald-500/10 shadow-lg">
+                   {t("dashboard_v2.performance")}
+                 </span>
+               </h1>
            </div>
            
            <div className="hidden lg:flex items-center gap-6 bg-muted/20 backdrop-blur-md p-6 rounded-[2.5rem] border border-border/40 shadow-sm">
@@ -138,9 +138,9 @@ export default function SellerDashboard() {
                        <table className="w-full text-left border-separate border-spacing-0">
                           <thead className="bg-muted/30 border-b border-border/30 text-muted-foreground">
                              <tr>
-                                <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black">{t("customer_manage.name").toUpperCase()}</th>
-                                <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black">{t("order_manage.status").toUpperCase()}</th>
-                                <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black text-right">{t("order_manage.total").toUpperCase()}</th>
+                                <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black">{t("seller.orders.customer").toUpperCase()}</th>
+                                <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black">{t("seller.orders.status").toUpperCase()}</th>
+                                <th className="px-8 py-6 uppercase tracking-[0.2em] text-[10px] font-black text-right">{t("seller.orders.total").toUpperCase()}</th>
                              </tr>
                           </thead>
                           <tbody className="divide-y divide-border/20">
@@ -166,7 +166,7 @@ export default function SellerDashboard() {
                                    </td>
                                    <td className="px-8 py-4">
                                       <Badge variant="outline" className="px-2 py-0.5 rounded-lg font-black text-[8px] tracking-widest uppercase border-border/50 text-muted-foreground">
-                                         {order.status}
+                                         {t(`seller.orders.status_${order.status}`)}
                                       </Badge>
                                    </td>
                                    <td className="px-8 py-4 text-right font-black text-[13px] text-primary tabular-nums">
@@ -277,11 +277,11 @@ function StatsCard({ label, value, icon: Icon, trend, subLabel, delay, t }: any)
                         <div className="flex items-center px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-[10px] font-black">
                            <ArrowUpRight size={14} className="mr-0.5" /> {trend}
                         </div>
-                         <span className="text-[10px] font-black uppercase opacity-20 tracking-widest tracking-tighter">{t("dashboard_v2.vs_last_month")}</span>
+                         <span className="text-[10px] font-black uppercase opacity-40 tracking-widest tracking-tighter">{t("dashboard_v2.vs_last_month")}</span>
                      </div>
                   )}
                   {subLabel && (
-                     <p className="text-[10px] font-black uppercase opacity-20 tracking-widest">
+                     <p className="text-[10px] font-black uppercase opacity-40 tracking-widest">
                         {subLabel}
                      </p>
                   )}

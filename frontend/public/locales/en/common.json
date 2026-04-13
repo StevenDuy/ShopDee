@@ -1,4 +1,22 @@
 {
+  "dashboard_v2": {
+    "performance": "Performance",
+    "vs_last_month": "vs last month",
+    "inventory_healthy": "Inventory Healthy",
+    "tip_highlight": "Tip: High-quality product images can increase conversion by 30%",
+    "operational_status": "Operational Status",
+    "store_online": "Store Online",
+    "analytics": "Analytics",
+    "reports": "Reports"
+  },
+  "ORDER_MANAGE": {
+    "STATUS": "Status",
+    "TOTAL": "Total",
+    "CUSTOMER": "Customer"
+  },
+  "CUSTOMER_MANAGE": {
+    "NAME": "Customer Name"
+  },
     "total": "Total",
     "back": "Back",
     "search": "Search",
@@ -269,6 +287,7 @@
       "active_listings": "Active Listings",
       "total_stock": "Total Stock",
       "status_filter": "STATUS",
+      "all": "All Products",
       "all_listings": "ALL LISTINGS",
       "unclassified": "UNCLASSIFIED",
       "units_available": "UNITS AVAILABLE",
@@ -297,6 +316,7 @@
       "delete_product": "Delete Product",
       "banned_readonly_hint": "This product is banned by Admin. You can only view details.",
       "primary": "PRIMARY IMAGE",
+      "set_primary": "Set as Primary",
       "adding": "Adding...",
       "add_category": "Add Category",
       "none": "None",
@@ -319,6 +339,8 @@
       "product_label": "Product",
       "value_placeholder": "e.g. Red",
       "from_sub": "Calculate from sub-variants",
+      "option": "Option Group",
+      "option_name": "Option Name",
       "add_sub_option_title": "Add Level 2 Option",
       "sub_value": "Sub-option value",
       "sub_value_placeholder": "e.g. XL",
@@ -891,6 +913,7 @@
     "note": "Note",
     "select": "Select...",
     "search": "Search...",
-    "no_results": "No results found."
+    "no_results": "No results found.",
+    "authenticating": "Authenticating..."
   }
 }

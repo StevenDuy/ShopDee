@@ -1,4 +1,22 @@
 {
+  "dashboard_v2": {
+    "performance": "Hiệu suất",
+    "vs_last_month": "so với tháng trước",
+    "inventory_healthy": "Kho hàng ổn định",
+    "tip_highlight": "Mẹo: Cập nhật hình ảnh sản phẩm chất lượng cao sẽ tăng tỷ lệ chuyển đổi lên 30%",
+    "operational_status": "Trạng thái vận hành",
+    "store_online": "Cửa hàng trực tuyến",
+    "analytics": "Phân tích",
+    "reports": "Báo cáo"
+  },
+  "ORDER_MANAGE": {
+    "STATUS": "Trạng thái",
+    "TOTAL": "Tổng cộng",
+    "CUSTOMER": "Khách hàng"
+  },
+  "CUSTOMER_MANAGE": {
+    "NAME": "Tên khách hàng"
+  },
     "total": "Tổng cộng",
     "back": "Quay lại",
     "search": "Tìm kiếm",
@@ -269,6 +287,7 @@
       "active_listings": "Sản phẩm đang bán",
       "total_stock": "Tổng tồn kho",
       "status_filter": "TRẠNG THÁI",
+      "all": "Tất cả sản phẩm",
       "all_listings": "TẤT CẢ SẢN PHẨM",
       "unclassified": "CHƯA PHÂN LOẠI",
       "units_available": "SẢN PHẨM CÓ SẴN",
@@ -297,6 +316,7 @@
       "delete_product": "Xóa sản phẩm",
       "banned_readonly_hint": "Sản phẩm này đang bị cấm bởi Quản trị viên. Bạn chỉ có thể xem chi tiết mà không thể chỉnh sửa.",
       "primary": "ẢNH CHÍNH",
+      "set_primary": "Đặt làm ảnh chính",
       "adding": "Đang thêm...",
       "add_category": "Thêm danh mục",
       "none": "Không có",
@@ -319,6 +339,8 @@
       "product_label": "Sản phẩm",
       "value_placeholder": "VD: Đỏ",
       "from_sub": "Tính từ phân loại con",
+      "option": "Nhóm phân loại",
+      "option_name": "Tên phân loại",
       "add_sub_option_title": "Thêm phân loại cấp 2",
       "sub_value": "Phân loại con",
       "sub_value_placeholder": "VD: XL",
@@ -891,6 +913,7 @@
     "note": "Ghi chú",
     "select": "Chọn...",
     "search": "Tìm kiếm...",
-    "no_results": "Không tìm thấy kết quả."
+    "no_results": "Không tìm thấy kết quả.",
+    "authenticating": "Đang xác thực..."
   }
 }

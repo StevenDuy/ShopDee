@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import {  Package, Save, X, Plus, Trash2, 
+import {  Package, Save, X, Plus, Trash2, Check,
   Upload, Image as ImageIcon, CheckCircle2, 
   AlertCircle, ChevronRight, Info, Zap, Box, Edit, ChevronDown, AlertTriangle
 } from "lucide-react";
@@ -56,6 +56,8 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
 
   const [formData, setFormData] = useState<Product | null>(null);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [primaryRef, setPrimaryRef] = useState<{ type: 'existing' | 'new', id?: number, index?: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [options, setOptions] = useState<ProductOption[]>([]);
   const [attributes, setAttributes] = useState<{ attribute_name: string; attribute_value: string }[]>([]);
 
@@ -105,7 +107,12 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setNewFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+    if (e.target.files) {
+      setNewFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+    if (e.target.value) {
+      e.target.value = "";
+    }
   };
 
   const deleteExistingMedia = async (mediaId: number) => {
@@ -120,7 +127,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
   const setOpts = (fn: (p: ProductOption[]) => ProductOption[]) => setOptions(fn);
 
   const addOption = () => setOpts(p => [...p, { 
-    option_name: `Option ${options.length + 1}`, 
+    option_name: `${t("seller.products_manage.option")} ${options.length + 1}`, 
     values: [emptyValue(), emptyValue()] 
   }]);
   const removeOption = (oi: number) => setOpts(p => p.filter((_, i) => i !== oi));
@@ -269,13 +276,22 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
         price: finalPrice,
         stock_quantity: finalStock,
         description: formData.description, status: formData.status,
-        attributes: attributes.filter(a => a?.attribute_name?.trim() && a?.attribute_value?.trim()),
+        attributes: attributes.filter(a => a?.attribute_name?.trim() && a?.attribute_value?.trim())
       }, { headers: { Authorization: `Bearer ${token}` } });
 
-      for (const file of newFiles) {
+      for (let i = 0; i < newFiles.length; i++) {
+        const file = newFiles[i];
         const fd = new FormData();
         fd.append("file", file);
+        if (primaryRef?.type === 'new' && primaryRef.index === i) {
+           fd.append("is_primary", "1");
+        }
         await axios.post(`${API}/seller/products/${productId}/media`, fd, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } });
+      }
+
+      // If existing media was selected as primary
+      if (primaryRef?.type === 'existing' && primaryRef.id) {
+         await axios.put(`${API}/seller/products/${productId}/media/${primaryRef.id}/primary`, {}, { headers: { Authorization: `Bearer ${token}` } });
       }
 
       await axios.post(`${API}/seller/products/${productId}/options/sync`, { options: validOptions }, { headers: { Authorization: `Bearer ${token}` } });
@@ -446,36 +462,82 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
                  <h3 className="text-base font-black uppercase tracking-tight">{t("seller.products_manage.media")}</h3>
               </div>
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-6 pt-2">
-                {formData.media?.map(m => (
-                  <div key={m.id} className="relative aspect-square border-2 border-border/40 rounded-[1.2rem] overflow-hidden group shadow-sm transition-transform hover:scale-105 active:scale-95">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={m.full_url} alt="" className="object-cover w-full h-full" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                       <button type="button" onClick={() => deleteExistingMedia(m.id)}
-                         className="p-2 bg-red-600 text-white rounded-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">
-                         <Trash2 size={16} strokeWidth={2.5} />
-                       </button>
-                    </div>
-                    {m.is_primary && (
-                       <Badge className="absolute bottom-2 left-2 px-2 py-0.5 bg-primary text-primary-foreground text-[7px] tracking-widest font-black uppercase rounded-lg border-none shadow-lg">
-                          {t("seller.products_manage.primary")}
-                       </Badge>
-                    )}
-                  </div>
-                ))}
-                {newFiles.map((file, i) => (
-                  <div key={`new-${i}`} className="relative aspect-square border-2 border-primary/20 bg-primary/5 rounded-[1.2rem] overflow-hidden group shadow-inner transition-transform hover:scale-105 active:scale-95">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={URL.createObjectURL(file)} alt="" className="object-cover w-full h-full opacity-60" />
-                    <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black tracking-widest text-primary bg-primary/10 text-center px-1 uppercase">{t("seller.products_manage.new")}</div>
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                       <button type="button" onClick={() => setNewFiles(prev => prev.filter((_, idx) => idx !== i))}
-                         className="p-2 bg-red-600 text-white rounded-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">
-                         <Trash2 size={16} strokeWidth={2.5} />
-                       </button>
-                    </div>
-                  </div>
-                ))}
+                 {formData.media?.map(m => {
+                    const isPrimary = primaryRef?.type === 'existing' ? primaryRef.id === m.id : m.is_primary && !primaryRef;
+                    return (
+                      <div key={m.id} 
+                        className={cn(
+                          "relative aspect-square border-2 rounded-[1.2rem] overflow-hidden group shadow-sm transition-all",
+                          isPrimary ? "border-primary ring-2 ring-primary/20" : "border-border/40 hover:border-primary/50"
+                        )}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={m.full_url} alt="" className="object-cover w-full h-full" />
+                        
+                        {/* Delete Button */}
+                        <button type="button" onClick={() => deleteExistingMedia(m.id)}
+                          className="absolute top-1.5 right-1.5 p-1.5 bg-red-600 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all z-20 hover:bg-red-700">
+                          <Trash2 size={12} strokeWidth={3} />
+                        </button>
+
+                        {/* Set Primary Button */}
+                        <button type="button" onClick={() => setPrimaryRef({ type: 'existing', id: m.id })}
+                          className={cn(
+                            "absolute top-1.5 left-1.5 p-1.5 rounded-lg transition-all z-20 shadow-lg",
+                            isPrimary 
+                              ? "bg-primary text-primary-foreground opacity-100 scale-110" 
+                              : "bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-primary"
+                          )}>
+                          <Check size={12} strokeWidth={4} />
+                        </button>
+
+                        {isPrimary && (
+                          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-primary/95 text-primary-foreground text-[7px] tracking-widest font-black uppercase rounded shadow-sm backdrop-blur-sm z-10">
+                              {t("seller.products_manage.primary")}
+                          </div>
+                        )}
+                      </div>
+                    );
+                 })}
+                 {newFiles.map((file, i) => {
+                    const isPrimary = primaryRef?.type === 'new' && primaryRef.index === i;
+                    return (
+                      <div key={`new-${i}`} 
+                        className={cn(
+                           "relative aspect-square border-2 rounded-[1.2rem] overflow-hidden group shadow-inner transition-all",
+                           isPrimary ? "border-primary ring-2 ring-primary/20" : "border-primary/20 bg-primary/5 hover:border-primary/50"
+                        )}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={URL.createObjectURL(file)} alt="" className="object-cover w-full h-full opacity-60" />
+                        <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black tracking-widest text-primary bg-primary/10 text-center px-1 uppercase">{t("seller.products_manage.new")}</div>
+                        
+                        {/* Delete Button */}
+                        <button type="button" onClick={() => {
+                              setNewFiles(prev => prev.filter((_, idx) => idx !== i));
+                              if (primaryRef?.type === 'new' && primaryRef.index === i) setPrimaryRef(null);
+                           }}
+                          className="absolute top-1.5 right-1.5 p-1.5 bg-red-600 text-white rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all z-20 hover:bg-red-700">
+                          <Trash2 size={12} strokeWidth={3} />
+                        </button>
+
+                        {/* Set Primary Button */}
+                        <button type="button" onClick={() => setPrimaryRef({ type: 'new', index: i })}
+                          className={cn(
+                            "absolute top-1.5 left-1.5 p-1.5 rounded-lg transition-all z-20 shadow-lg",
+                            isPrimary 
+                              ? "bg-primary text-primary-foreground opacity-100 scale-110" 
+                              : "bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-primary"
+                          )}>
+                          <Check size={12} strokeWidth={4} />
+                        </button>
+
+                        {isPrimary && (
+                          <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-primary/95 text-primary-foreground text-[7px] tracking-widest font-black uppercase rounded shadow-sm backdrop-blur-sm z-10">
+                              {t("seller.products_manage.primary")}
+                          </div>
+                        )}
+                      </div>
+                    );
+                 })}
                 <label className="aspect-square border-2 border-dashed border-border rounded-[1.2rem] flex flex-col items-center justify-center cursor-pointer hover:bg-primary/5 hover:border-primary/40 transition-all group relative overflow-hidden active:scale-95">
                   <input type="file" multiple accept="image/*,video/mp4" className="hidden" onChange={handleFileChange} />
                   <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -580,7 +642,7 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
 
                     {/* Column headers (Hidden on Mobile) */}
                     <div className="hidden sm:grid grid-cols-[1fr_120px_80px_auto] gap-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2">
-                      <span>OPTION NAME</span>
+                      <span>{t("seller.products_manage.option_name").toUpperCase()}</span>
                       <span className="text-[10px] bg-primary/10 text-primary px-3 py-1 rounded-full font-black uppercase tracking-widest border border-primary/10">
                         + {t("seller.products_manage.price")} ({t("currency_code")})
                       </span>
@@ -702,28 +764,28 @@ export function EditProductModal({ productId, onClose, onSuccess }: Props) {
         </div>
 
         {/* Elite Footer */}
-        <div className="px-10 py-8 border-t border-border/5 bg-muted/10 flex flex-wrap items-center justify-between gap-6 shrink-0 relative z-50">
-          {!confirmDelete ? (
-            <button type="button" onClick={() => { setError(null); setConfirmDelete(true); }} disabled={saving || deleting || formData.status === 'banned'}
-              className="flex items-center gap-3 px-6 h-12 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all border border-transparent hover:border-destructive/20 disabled:opacity-30 active:scale-95">
-              <Trash2 size={18} strokeWidth={2.5} /> {t("seller.products_manage.delete_product") || "DESTROY ENTRY"}
-            </button>
-          ) : (
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4 bg-destructive/10 border border-destructive/20 rounded-[1.5rem] px-6 py-3 shadow-sm">
-              <AlertTriangle size={20} className="text-destructive shrink-0" strokeWidth={2.5} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-destructive leading-none">{t("confirm_delete")}</span>
-              <div className="flex gap-2">
-                <button type="button" onClick={handleDelete} disabled={deleting}
-                  className="px-5 h-9 bg-destructive text-white rounded-xl text-[10px] font-black h uppercase tracking-widest hover:opacity-90 shadow-lg shadow-destructive/20 transition-all active:scale-95">
-                  {deleting ? t("loading") : t("seller.products_manage.yes_delete")}
-                </button>
-                <button type="button" onClick={() => setConfirmDelete(false)} disabled={deleting}
-                  className="px-5 h-9 bg-background border border-border/60 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-all active:scale-95">
-                  {t("profile_page.cancel")}
-                </button>
-              </div>
-            </motion.div>
-          )}
+        <div className="px-10 py-8 border-t border-border/5 bg-muted/10 flex items-center justify-between gap-6 shrink-0 relative z-50">
+          <div className="flex items-center gap-4">
+            {!confirmDelete ? (
+              <button type="button" onClick={() => { setError(null); setConfirmDelete(true); }} disabled={saving || deleting || formData.status === 'banned'}
+                className="w-12 h-12 flex items-center justify-center rounded-[1.2rem] text-destructive hover:bg-destructive/10 transition-all border border-transparent hover:border-destructive/20 disabled:opacity-30 active:scale-95">
+                <Trash2 size={20} strokeWidth={2.5} />
+              </button>
+            ) : (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex gap-2">
+                  <button type="button" onClick={handleDelete} disabled={deleting}
+                    className="w-10 h-10 bg-destructive text-white rounded-xl flex items-center justify-center hover:opacity-90 shadow-lg shadow-destructive/20 transition-all active:scale-95">
+                    {deleting ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check size={18} strokeWidth={3} />}
+                  </button>
+                  <button type="button" onClick={() => setConfirmDelete(false)} disabled={deleting}
+                    className="w-10 h-10 bg-background border border-border/60 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-muted transition-all active:scale-95">
+                    <X size={18} strokeWidth={3} />
+                  </button>
+              </motion.div>
+            )}
+            <div className="h-8 w-px bg-border/40 mx-2" />
+          </div>
+          
           <div className="flex items-center gap-4">
             <button type="button" onClick={onClose} disabled={saving || deleting}
               className="px-8 h-12 rounded-[1.2rem] text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:bg-muted transition-all disabled:opacity-30 active:scale-95">{t("inbox.cancel")}</button>

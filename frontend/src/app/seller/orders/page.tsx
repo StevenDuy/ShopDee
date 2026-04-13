@@ -157,7 +157,9 @@ export default function SellerOrdersPage() {
                    onValueChange={(val: any) => { setFilter(val); setCurrentPage(1); }}
                 >
                    <SelectTrigger className="w-full h-full pl-14 pr-10 bg-muted/20 border border-border/50 rounded-[1.5rem] font-black uppercase tracking-widest text-[9px] appearance-none focus:ring-0 focus:border-primary/50 transition-all cursor-pointer relative z-10 shadow-sm focus:bg-background">
-                      <SelectValue placeholder={t("seller.orders.filter_status")} />
+                      <SelectValue placeholder={t("seller.orders.filter_status")}>
+                         {filter === "all" ? t("seller.orders.all_orders") : undefined}
+                      </SelectValue>
                    </SelectTrigger>
                    <SelectContent className="rounded-2xl border-border/50 backdrop-blur-xl bg-card/80">
                       <SelectItem value="all" className="font-bold uppercase text-[10px] tracking-widest leading-none">{t("seller.orders.all_orders")}</SelectItem>

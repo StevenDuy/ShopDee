@@ -3,13 +3,14 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Image as ImageIcon, Trash2, Plus, X, ChevronDown, Box } from "lucide-react";
+import { ArrowLeft, Save, Image as ImageIcon, Trash2, Plus, X, ChevronDown, Box, Check } from "lucide-react";
 import "@/lib/echo"; // Initialize WebSocket client
 import { useTranslation } from "react-i18next";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { EliteCombobox } from "@/components/ui/elite-combobox";
 import axios from "axios";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -62,11 +63,8 @@ export default function NewProductPage() {
   });
 
   const [files, setFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Product Options state
+  const [primaryIndex, setPrimaryIndex] = useState(0);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [options, setOptions] = useState<ProductOption[]>([]);
   const [attributes, setAttributes] = useState<{ attribute_name: string; attribute_value: string }[]>([]);
 
@@ -76,6 +74,10 @@ export default function NewProductPage() {
   const [newCategoryParentId, setNewCategoryParentId] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
   const [addCategoryError, setAddCategoryError] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { 
     fetchCategories(); 
@@ -95,17 +97,22 @@ export default function NewProductPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setFiles([...files, ...Array.from(e.target.files)]);
+    if (e.target.files) {
+      setFiles([...files, ...Array.from(e.target.files)]);
+    }
+    // Clear the input value so the same file can be added again if deleted
+    if (e.target.value) {
+      e.target.value = "";
+    }
   };
 
   // ── Option helpers ─────────────────────────────────────────────────────
   const setOpts = (fn: (prev: ProductOption[]) => ProductOption[]) => setOptions(fn);
 
   const addOption = () => {
-    const nextIndex = options.length + 1;
     setOpts(prev => [...prev, { 
       ...emptyOption(), 
-      option_name: `Option ${nextIndex}` 
+      option_name: `${t("seller.products_manage.option")} ${options.length + 1}` 
     }]);
   };
   const removeOption = (oi: number) => setOpts(prev => prev.filter((_, i) => i !== oi));
@@ -300,7 +307,7 @@ export default function NewProductPage() {
         }
 
         fd.append("file", fileToUpload);
-        if (i === 0) fd.append("is_primary", "1");
+        if (i === primaryIndex) fd.append("is_primary", "1");
         await axios.post(`${API}/seller/products/${createdProductId}/media`, fd, {
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
         });
@@ -378,14 +385,40 @@ export default function NewProductPage() {
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 pt-3 pl-3">
               {files.map((file, i) => (
-                <div key={i} className="relative aspect-square border border-border rounded-xl overflow-hidden group">
+                <div key={i} 
+                  className={cn(
+                    "relative aspect-square border-2 rounded-xl overflow-hidden group transition-all",
+                    i === primaryIndex ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50"
+                  )}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={URL.createObjectURL(file)} alt="" className="object-cover w-full h-full" />
-                  <button type="button" onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
-                    className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Trash2 size={14} />
+                  
+                  {/* Delete Button */}
+                  <button type="button" onClick={() => {
+                    setFiles(files.filter((_, idx) => idx !== i));
+                    if (primaryIndex === i) setPrimaryIndex(0);
+                    else if (primaryIndex > i) setPrimaryIndex(prev => prev - 1);
+                  }}
+                    className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg hover:bg-red-700">
+                    <Trash2 size={12} strokeWidth={3} />
                   </button>
-                  {i === 0 && <span className="absolute bottom-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-[10px] uppercase font-bold rounded-md">{t("seller.products_manage.primary")}</span>}
+
+                  {/* Set Primary Button */}
+                  <button type="button" onClick={() => setPrimaryIndex(i)}
+                    className={cn(
+                       "absolute top-1 left-1 p-1 rounded-md transition-all z-20 shadow-lg",
+                       i === primaryIndex 
+                        ? "bg-primary text-primary-foreground opacity-100 scale-110" 
+                        : "bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-primary"
+                    )}>
+                    <Check size={12} strokeWidth={4} />
+                  </button>
+
+                  {i === primaryIndex && (
+                    <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-primary/95 text-primary-foreground text-[8px] uppercase font-black rounded shadow-sm backdrop-blur-sm z-10">
+                      {t("seller.products_manage.primary")}
+                    </div>
+                  )}
                 </div>
               ))}
               <label className="aspect-square border border-dashed border-border rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors group">
@@ -505,7 +538,7 @@ export default function NewProductPage() {
 
                   {/* Column headers (Hidden on Mobile) */}
                   <div className="hidden sm:grid grid-cols-[1fr_120px_80px_auto] gap-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2">
-                    <span>OPTION NAME</span>
+                    <span>{t("seller.products_manage.option_name").toUpperCase()}</span>
                     <span className="text-[10px] bg-primary/10 text-primary px-3 py-1 rounded-full font-black uppercase tracking-widest border border-primary/10">
                     + {t("seller.products_manage.price")} ({t("currency_code")})
                     </span>
