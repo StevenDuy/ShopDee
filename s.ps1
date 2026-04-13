@@ -13,7 +13,8 @@ function Test-PortOpen($port) {
     try {
         $connection = Test-NetConnection -ComputerName 127.0.0.1 -Port $port -InformationLevel Quiet -WarningAction SilentlyContinue
         return $connection
-    } catch {
+    }
+    catch {
         return $false
     }
 }
@@ -70,7 +71,8 @@ if (-not $apache -or -not $mysql) {
     Write-Host "      XAMPP chua chay! Vui long mo XAMPP Control Panel va bat Apache + MySQL." -ForegroundColor Red
     Write-Host "      Nhan phim bat ky de tiep tuc sau khi da bat..." -ForegroundColor Red
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-} else {
+}
+else {
     Write-Host "      OK - Apache va MySQL dang hoat dong." -ForegroundColor Green
 }
 
@@ -79,7 +81,8 @@ Write-Section 2 5 "Khoi dong Backend Laravel..."
 Start-Window 'ShopDee Backend :8000' "$ROOT\backend" 'php artisan serve --host=127.0.0.1 --port=8000'
 if (Wait-PortOpen 8000) {
     Write-Host "      Backend: http://localhost:8000" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      Loi: Backend khong phan hoi tren port 8000." -ForegroundColor Red
 }
 
@@ -88,7 +91,8 @@ Write-Section 3 5 "Khoi dong Frontend Next.js..."
 Start-Window 'ShopDee Frontend :3000' "$ROOT\frontend" 'npm run dev'
 if (Wait-PortOpen 3000) {
     Write-Host "      Frontend: http://localhost:3000" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      Loi: Frontend khong phan hoi tren port 3000." -ForegroundColor Red
 }
 
@@ -97,7 +101,8 @@ Write-Section 4 5 "Khoi dong AI Fraud Detection..."
 Start-Window 'ShopDee AI API :5000' "$ROOT\shopdee-ai" 'python api.py'
 if (Wait-PortOpen 5000) {
     Write-Host "      AI API: http://localhost:5000" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "      Loi: AI API khong phan hoi tren port 5000." -ForegroundColor Red
 }
 
@@ -106,10 +111,12 @@ Write-Section 5 5 "Khoi dong Cloudflare Tunnel..."
 $cloudflaredProcess = Get-Process -Name 'cloudflared' -ErrorAction SilentlyContinue
 if ($cloudflaredProcess) {
     Write-Host "      OK - Cloudflare tunnel dang chay." -ForegroundColor Green
-} else {
+}
+else {
     if (-Not (Test-Path "$ROOT\cloudflared.exe")) {
         Write-Host "      Bo qua (Khong tim thay cloudflared.exe)" -ForegroundColor Gray
-    } else {
+    }
+    else {
         Start-Window 'ShopDee Cloudflare Tunnel' "$ROOT" '.\cloudflared.exe tunnel --config cloudflare-config.yml run'
         Write-Host "      OK - Tunnel dang khoi tao..." -ForegroundColor Green
     }

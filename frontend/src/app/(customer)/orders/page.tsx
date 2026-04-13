@@ -243,9 +243,9 @@ export default function MyOrdersPage() {
                            )
                         )}
 
-                        <Link href={`/orders/${order.id}`} className="px-4 py-2 text-[8px] font-black uppercase bg-white/10 border border-border/10 hover:bg-primary hover:text-white rounded-xl transition-all flex items-center gap-2 group/btn whitespace-nowrap">
-                           {t("customer_orders.details")} <ChevronRight size={10} className="group-hover/btn:translate-x-1 transition-transform" />
-                        </Link>
+                        <div className="px-4 py-2 text-[8px] font-black uppercase bg-white/5 border border-border/10 text-muted-foreground/40 rounded-xl flex items-center gap-2 whitespace-nowrap">
+                           {t("customer_orders.details")}
+                        </div>
                       </div>
 
                     </div>

@@ -101,13 +101,53 @@ Mở thư mục `ShopDee` trên máy tính của bạn. Bạn sẽ thấy 2 thư
 
 ---
 
-## 🌐 GIAI ĐOẠN 5: ĐƯA WEB LÊN INTERNET (CLOUDFLARE TUNNEL)
+## 🌐 GIAI ĐOẠN 5: ĐƯA WEB LÊN INTERNET (CLOUDFLARE TUNNEL CỐ ĐỊNH)
 
-Nếu bạn muốn gửi link cho người khác xem (Public):
-1. Tải file `cloudflared.exe` vào thư mục gốc dự án.
-2. **Cho Backend:** Nhập lệnh `.\cloudflared.exe tunnel --url http://localhost:8000` -> Bạn sẽ nhận được 1 link HTTPS của Cloudflare.
-3. **CẬP NHẬT:** Lấy link đó, quay lại file `frontend/.env.local` và sửa dòng `NEXT_PUBLIC_API_URL` bằng link mới này (thêm `/api` ở cuối).
-4. **Cho Frontend:** Nhập lệnh `.\cloudflared.exe tunnel --url http://localhost:3000` -> Link HTTPS nhận được chính là trang web của bạn!
+Để có một địa chỉ web chuyên nghiệp (VD: `https://zetac.store`), bạn hãy thực hiện các bước sau:
+
+### 1. Chuẩn bị Domain & Cloudflare
+- Bạn cần sở hữu 1 Domain và đã trỏ **Nameservers** về Cloudflare để trạng thái là **Active**.
+- Tải file `cloudflared.exe` bỏ vào thư mục gốc của ShopDee.
+
+### 2. Thiết lập kết nối (Chạy 1 lần duy nhất)
+Mở Terminal tại thư mục gốc và chạy các lệnh sau:
+1. **Đăng nhập:** `.\cloudflared.exe login` (Chọn domain của bạn trên web).
+2. **Tạo hầm (Tunnel):** `.\cloudflared.exe tunnel create shopdee-tunnel` -> Lưu lại mã ID dài hiện ra.
+3. **Cấu hình Record DNS tự động:**
+   - Cho Web chính: `.\cloudflared.exe tunnel route dns shopdee-tunnel your-domain.com`
+   - Cho API: `.\cloudflared.exe tunnel route dns shopdee-tunnel api.your-domain.com`
+
+### 3. Cấu hình file `cloudflare-config.yml`
+Tạo file `cloudflare-config.yml` tại thư mục gốc với nội dung:
+```yaml
+tunnel: <MÃ_ID_TUNNEL_CỦA_BẠN>
+credentials-file: C:\Users\<Tên_Bạn>\.cloudflared\<MÃ_ID_TUNNEL>.json
+
+ingress:
+  - hostname: your-domain.com
+    service: http://localhost:3000
+  - hostname: api.your-domain.com
+    service: http://localhost:8000
+  - service: http_status:404
+```
+
+### 4. Cập nhật mã nguồn (QUAN TRỌNG)
+Để hệ thống nhận diện được domain mới, bạn **bắt buộc** phải sửa các file sau:
+- **Backend (`backend/.env`):**
+  - `APP_URL=https://api.your-domain.com`
+  - `FRONTEND_URL=https://your-domain.com`
+  - `SANCTUM_STATEFUL_DOMAINS=your-domain.com`
+- **Frontend (`frontend/.env.local`):**
+  - `NEXT_PUBLIC_API_URL=https://api.your-domain.com/api`
+
+### 5. Khởi động Tunnel
+Mỗi khi muốn đưa web lên mạng, chạy lệnh:
+```powershell
+.\cloudflared.exe tunnel --config cloudflare-config.yml run
+```
+
+> [!TIP]
+> Bạn có thể sử dụng script `s.ps1` để tự động khởi động toàn bộ dịch vụ kèm theo Tunnel này.
 
 > [!CAUTION]
 > **LỖI CẤU HÌNH:** Nếu bạn quên không điền bất kỳ khóa API nào ở Giai đoạn 2, hệ thống sẽ hiện một BẢNG CẢNH BÁO chặn toàn bộ trang web. Bạn phải điền đầy đủ và khởi động lại server thì bảng này mới biến mất.
