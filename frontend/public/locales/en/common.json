@@ -349,7 +349,10 @@
       "pricing_inventory": "Pricing & Inventory",
       "cheapest_price": "Starts from",
       "total_from_options": "Total from options",
-      "add_category_title": "Create New Category"
+      "add_category_title": "Create New Category",
+      "category_name": "Category Name",
+      "parent_category": "Parent Category",
+      "optional": "Optional"
     },
     "settings": {
       "title": "Shop Settings",

@@ -1,5 +1,5 @@
-tunnel: 2fd517aa-2c6b-43d8-a4b8-4ac0167bb09f
-credentials-file: C:\Users\duyh1\.cloudflared\2fd517aa-2c6b-43d8-a4b8-4ac0167bb09f.json
+tunnel: bd004e26-fe93-471d-8e77-418b297a97f3
+credentials-file: C:\Users\duyh1\.cloudflared\bd004e26-fe93-471d-8e77-418b297a97f3.json
 protocol: http2
 
 ingress:

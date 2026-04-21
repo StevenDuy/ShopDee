@@ -349,7 +349,10 @@
       "pricing_inventory": "Giá bán & Kho hàng",
       "cheapest_price": "Giá thấp nhất từ",
       "total_from_options": "Tổng cộng từ các phân loại",
-      "add_category_title": "Tạo danh mục mới"
+      "add_category_title": "Tạo danh mục mới",
+      "category_name": "Tên danh mục",
+      "parent_category": "Danh mục cha",
+      "optional": "Không bắt buộc"
     },
     "settings": {
       "title": "Cài đặt Cửa hàng",

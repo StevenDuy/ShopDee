@@ -21,8 +21,18 @@ return new class extends Migration
             $table->integer('purchase_quantity')->default(0)->nullable()->change();
             $table->decimal('purchase_value', 15, 2)->default(0)->nullable()->change();
             $table->integer('click_count')->default(0)->nullable()->change();
-            $table->decimal('distance_km', 12, 2)->default(0)->nullable()->change();
-            $table->decimal('confidence_score', 5, 4)->default(0)->nullable()->change();
+
+            if (!Schema::hasColumn('action_logs', 'distance_km')) {
+                $table->decimal('distance_km', 12, 2)->default(0)->nullable();
+            } else {
+                $table->decimal('distance_km', 12, 2)->default(0)->nullable()->change();
+            }
+
+            if (!Schema::hasColumn('action_logs', 'confidence_score')) {
+                $table->decimal('confidence_score', 5, 4)->default(0)->nullable();
+            } else {
+                $table->decimal('confidence_score', 5, 4)->default(0)->nullable()->change();
+            }
         });
     }
 
