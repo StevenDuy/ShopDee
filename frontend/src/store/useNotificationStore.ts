@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { useAuthStore } from './useAuthStore';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -28,8 +29,14 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
         hasUnreadNotifications: res.data.notifications > 0,
         hasUnreadMessages: res.data.messages > 0
       });
-    } catch (err) {
-      console.error("Failed to fetch unread counts", err);
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        // If unauthorized, just reset counts and logout to be safe
+        set({ unreadCount: 0, hasUnreadNotifications: false, hasUnreadMessages: false });
+        useAuthStore.getState().logout();
+      } else {
+        console.error("Failed to fetch unread counts", err);
+      }
     }
   },
   setUnreadCount: (count) => set({ unreadCount: count }),
