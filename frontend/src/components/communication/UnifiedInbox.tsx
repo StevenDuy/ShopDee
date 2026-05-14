@@ -127,7 +127,7 @@ export function UnifiedInbox() {
   useEffect(() => {
     if (activeConv && token) {
       // 1. Instantly clear unread dot locally
-      setConversations(prev => prev.map(c => Number(c.id) === Number(activeConv.id) ? { ...c, unread_count: 0 } : c));
+      setConversations((prev: any[]) => prev.map(c => Number(c.id) === Number(activeConv.id) ? { ...c, unread_count: 0 } : c));
       
       // 2. Fetch latest from server without clearing current list to avoid "running down" effect
       fetchMessages(Number(activeConv.id), 1).then(() => {
@@ -151,7 +151,7 @@ export function UnifiedInbox() {
       const currentRefIdAtTime = activeConvRef.current ? Number(activeConvRef.current.id) : null;
       
       // 1. Update Sidebar Instantly
-      setConversations(prev => {
+      setConversations((prev: any[]) => {
         const idx = prev.findIndex(c => Number(c.id) === msgConvId);
         
         if (idx !== -1) {
@@ -179,9 +179,9 @@ export function UnifiedInbox() {
       // 2. Update Messages if matching current view
       if (currentRefIdAtTime === msgConvId) {
         // Sync the active conversation object too
-        setActiveConv(prev => (prev && Number(prev.id) === msgConvId) ? { ...prev, last_message: msg, updated_at: msg.created_at } : prev);
+        setActiveConv((prev: any) => (prev && Number(prev.id) === msgConvId) ? { ...prev, last_message: msg, updated_at: msg.created_at } : prev);
 
-        setMessages(prev => {
+        setMessages((prev: any[]) => {
           if (prev.some(m => m.id === msg.id)) return prev;
           const filtered = prev.filter(m => !(m.is_optimistic && m.sender_id === msg.sender_id && m.message_text === msg.message_text));
           return [...filtered, msg].sort((a, b) => Number(a.id) - Number(b.id));
@@ -346,7 +346,7 @@ export function UnifiedInbox() {
         created_at: new Date().toISOString(),
         is_optimistic: true
       };
-      setMessages(prev => [...prev, tempMsg].sort((a, b) => Number(a.id) - Number(b.id)));
+      setMessages((prev: any[]) => [...prev, tempMsg].sort((a, b) => Number(a.id) - Number(b.id)));
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
       const res = await axios.post(`${API}/chat/${activeConv.id}`, formData, {
@@ -356,10 +356,10 @@ export function UnifiedInbox() {
         }
       });
 
-      setMessages(prev => prev.map(m => m.id === optimisticId ? res.data : m).sort((a, b) => Number(a.id) - Number(b.id)));
+      setMessages((prev: any[]) => prev.map(m => m.id === optimisticId ? res.data : m).sort((a, b) => Number(a.id) - Number(b.id)));
       
       // Update Sidebar Preview for the sender
-      setConversations(prev => {
+      setConversations((prev: any[]) => {
         const idx = prev.findIndex(c => Number(c.id) === Number(activeConv.id));
         if (idx !== -1) {
           const updated = [...prev];
@@ -461,7 +461,7 @@ export function UnifiedInbox() {
   const handleDeleteNotification = async (id: number) => {
     try {
       await axios.delete(`${API}/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      setNotifications((prev: any[]) => prev.filter(n => n.id !== id));
       if (selectedNotif?.id === id) setSelectedNotif(null);
       setIsConfirmingDelete(false);
       fetchUnreadCounts(token!);
