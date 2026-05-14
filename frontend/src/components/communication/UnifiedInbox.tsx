@@ -216,7 +216,7 @@ export function UnifiedInbox() {
   // Separate Failsafe Polling Effect
   useEffect(() => {
     const pollInterval = setInterval(() => {
-       if (tokenRef.current && activeTab === "messages") {
+       if (tokenRef.current && activeTab === "chat") {
           refreshData();
           if (activeConvRef.current) {
              fetchUnreadCounts(tokenRef.current);
