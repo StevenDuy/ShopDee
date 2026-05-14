@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { UnifiedInbox } from "@/components/communication/UnifiedInbox";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
@@ -21,7 +21,9 @@ export default function CustomerInboxPage() {
         transition={{ duration: 0.5 }}
         className="h-full w-full overflow-hidden relative z-10"
       >
-        <UnifiedInbox />
+        <Suspense fallback={null}>
+          <UnifiedInbox />
+        </Suspense>
       </motion.div>
 
       <style jsx global>{`

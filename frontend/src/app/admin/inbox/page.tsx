@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UnifiedInbox } from "@/components/communication/UnifiedInbox";
 
@@ -21,7 +21,9 @@ export default function AdminInboxPage() {
         transition={{ duration: 0.5 }}
         className="h-full w-full overflow-hidden relative z-10"
       >
-        <UnifiedInbox />
+        <Suspense fallback={null}>
+          <UnifiedInbox />
+        </Suspense>
       </motion.div>
 
       <style jsx global>{`
