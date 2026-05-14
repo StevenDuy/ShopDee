@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, SlidersHorizontal, Star, X, ArrowUpDown, ChevronRight, TrendingUp, Clock, ArrowDown, ArrowUp } from "lucide-react";
+import { Search, SlidersHorizontal, X, ArrowUpDown, TrendingUp, Clock, ArrowDown, ArrowUp } from "lucide-react";
 import axios from "axios";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { useTranslation } from "react-i18next";
@@ -67,8 +67,8 @@ function ProductCard({ product }: { product: Product }) {
     </Link>
   );
 }
- 
-export default function ProductsPage() {
+
+function ProductsContent() {
   const { t } = useTranslation();
   const { formatPrice, currency } = useCurrencyStore();
   const searchParams = useSearchParams();
@@ -131,12 +131,6 @@ export default function ProductsPage() {
   useEffect(() => { 
     axios.get(`${API}/products/categories`).then(r => setCategories(r.data)).catch(() => { }); 
   }, []);
- 
-  const filteredCategories = categories.filter(c => {
-    const matchParent = c.name.toLowerCase().includes(categorySearch.toLowerCase());
-    const matchChildren = c.children?.some(child => child.name.toLowerCase().includes(categorySearch.toLowerCase()));
-    return matchParent || matchChildren;
-  });
  
   return (
     <div className="min-h-screen bg-background text-foreground relative animate-in fade-in duration-700">
@@ -288,9 +282,19 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb), 0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      `}</style>
     </div>
   );
 }
 
-
-
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProductsContent />
+    </Suspense>
+  );
+}

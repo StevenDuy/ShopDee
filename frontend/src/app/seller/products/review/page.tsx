@@ -4,14 +4,9 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { Star, ArrowLeft, Search, MessageSquare, Package, Filter, Calendar } from "lucide-react";
+import { Star, ArrowLeft, Search, MessageSquare, Calendar } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
-import { useCurrencyStore } from "@/store/useCurrencyStore";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 

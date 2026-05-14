@@ -7,7 +7,7 @@ import Link from "next/link";
 import axios from "axios";
 import { 
   Package, Truck, CheckCircle, Clock, XCircle, AlertCircle, 
-  ArrowRight, ExternalLink, ReceiptText, ChevronRight 
+  ReceiptText 
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCurrencyStore } from "@/store/useCurrencyStore";
@@ -40,7 +40,7 @@ interface Order {
   }[];
 }
 
-export default function MyOrdersPage() {
+function OrdersContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const { token } = useAuthStore();
@@ -287,6 +287,14 @@ export default function MyOrdersPage() {
         onSuccess={fetchOrders}
       />
     </div>
+  );
+}
+
+export default function MyOrdersPage() {
+  return (
+    <Suspense fallback={null}>
+      <OrdersContent />
+    </Suspense>
   );
 }
 

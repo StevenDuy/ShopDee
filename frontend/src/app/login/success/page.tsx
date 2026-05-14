@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 
-export default function LoginSuccess() {
+function LoginSuccessContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,5 +47,13 @@ export default function LoginSuccess() {
         <h2 className="text-xl font-black uppercase tracking-widest">{t("common.authenticating")}</h2>
       </div>
     </div>
+  );
+}
+
+export default function LoginSuccess() {
+  return (
+    <Suspense fallback={null}>
+      <LoginSuccessContent />
+    </Suspense>
   );
 }

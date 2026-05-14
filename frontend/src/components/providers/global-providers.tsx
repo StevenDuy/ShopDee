@@ -52,7 +52,9 @@ export function GlobalProviders({ children }: { children: React.ReactNode }) {
       <CurrencySync />
       <ConfigAlert />
       <GlobalEventListener />
-      <TelemetryTracker />
+      <Suspense fallback={null}>
+        <TelemetryTracker />
+      </Suspense>
       <PermissionModal isOpen={false} onClose={() => {}} />
       {children}
       <Toaster position="top-right" richColors closeButton />

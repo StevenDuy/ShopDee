@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShoppingBag, User, Store, ArrowRight, ShieldCheck } from "lucide-react";
+import { User, Store, ArrowRight, ShieldCheck } from "lucide-react";
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-export default function GoogleRegisterPage() {
+function GoogleRegisterContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -155,5 +154,13 @@ export default function GoogleRegisterPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function GoogleRegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <GoogleRegisterContent />
+    </Suspense>
   );
 }
