@@ -1,7 +1,7 @@
 "use client";
 
 import { ThemeProvider } from "./theme-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import "../../lib/i18n/config"; // Initialize i18n
 import "../../lib/echo"; // Initialize WebSocket client
 import { useTranslation } from "react-i18next";
