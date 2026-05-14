@@ -14,3 +14,12 @@ Route::get('/run-migrate', function () {
         return "Lỗi khi migrate: " . $e->getMessage();
     }
 });
+
+Route::get('/run-seed', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+        return "Database seed thành công! <br><pre>" . \Illuminate\Support\Facades\Artisan::output() . "</pre>";
+    } catch (\Exception $e) {
+        return "Lỗi khi seed: " . $e->getMessage();
+    }
+});
