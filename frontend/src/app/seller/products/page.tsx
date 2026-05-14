@@ -36,7 +36,7 @@ type Product = {
   status: string;
   ban_reason?: string;
   category?: { name: string };
-  media?: { url: string; full_url: string }[];
+  media?: { url: string; full_url: string; is_primary?: boolean | number | string }[];
 };
 
 export default function SellerProductsPage() {
