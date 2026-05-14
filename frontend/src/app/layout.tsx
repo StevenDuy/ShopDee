@@ -26,7 +26,7 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased`}
       >
         <GlobalProviders>
-          <PermissionModal />
+          <PermissionModal isOpen={false} onClose={() => {}} />
           {children}
         </GlobalProviders>
       </body>
