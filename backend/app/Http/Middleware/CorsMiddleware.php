@@ -15,36 +15,52 @@ class CorsMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Allow CORS from frontend domain
+        // Get allowed origin from env or default to production
+        $frontendUrl = env('FRONTEND_URL', 'https://shopdee.io.vn');
+        
+        // Build the list of allowed origins
         $allowedOrigins = [
-            'https://shopdee.io.vn',
             'http://localhost:3000',
             'http://127.0.0.1:3000',
             'http://localhost:8080',
             'http://127.0.0.1:8080',
         ];
 
+        // Add the main frontend URL and its variants
+        if ($frontendUrl) {
+            $allowedOrigins[] = $frontendUrl;
+            
+            // If it's the root domain, also allow the www version
+            if (strpos($frontendUrl, 'https://shopdee.io.vn') !== false) {
+                $allowedOrigins[] = 'https://www.shopdee.io.vn';
+            }
+            // Conversely, if it's the www version, also allow the root
+            if (strpos($frontendUrl, 'https://www.shopdee.io.vn') !== false) {
+                $allowedOrigins[] = 'https://shopdee.io.vn';
+            }
+        }
+
         $origin = $request->header('Origin');
 
-        if (in_array($origin, $allowedOrigins)) {
-            return $next($request)
-                ->header('Access-Control-Allow-Origin', $origin)
-                ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
-                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
-                ->header('Access-Control-Allow-Credentials', 'true')
-                ->header('Access-Control-Max-Age', '86400');
-        }
-
-        // Handle preflight requests
+        // Handle preflight (OPTIONS) requests first to ensure headers are always present
         if ($request->getMethod() === 'OPTIONS') {
-            return response('')
-                ->header('Access-Control-Allow-Origin', $origin)
+            return response('', 204)
+                ->header('Access-Control-Allow-Origin', in_array($origin, $allowedOrigins) ? $origin : $frontendUrl)
                 ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
-                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Socket-ID, Accept')
                 ->header('Access-Control-Allow-Credentials', 'true')
                 ->header('Access-Control-Max-Age', '86400');
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        if (in_array($origin, $allowedOrigins)) {
+            $response->header('Access-Control-Allow-Origin', $origin)
+                     ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+                     ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Socket-ID, Accept')
+                     ->header('Access-Control-Allow-Credentials', 'true');
+        }
+
+        return $response;
     }
 }
