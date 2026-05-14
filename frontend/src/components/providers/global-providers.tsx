@@ -11,6 +11,7 @@ import { Toaster } from "sonner";
 import { ConfigAlert } from "./config-alert";
 import { GlobalEventListener } from "./global-event-listener";
 import TelemetryTracker from "../common/TelemetryTracker";
+import { PermissionModal } from "../PermissionModal";
 
 function CurrencySync() {
   const { i18n } = useTranslation();
@@ -52,6 +53,7 @@ export function GlobalProviders({ children }: { children: React.ReactNode }) {
       <ConfigAlert />
       <GlobalEventListener />
       <TelemetryTracker />
+      <PermissionModal isOpen={false} onClose={() => {}} />
       {children}
       <Toaster position="top-right" richColors closeButton />
     </ThemeProvider>

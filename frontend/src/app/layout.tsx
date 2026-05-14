@@ -8,7 +8,6 @@ const inter = Inter({
 });
 
 import { GlobalProviders } from "@/components/providers/global-providers";
-import { PermissionModal } from "@/components/PermissionModal";
 
 export const metadata: Metadata = {
   title: "ShopDee - E-Commerce",
@@ -26,7 +25,6 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased`}
       >
         <GlobalProviders>
-          <PermissionModal isOpen={false} onClose={() => {}} />
           {children}
         </GlobalProviders>
       </body>
