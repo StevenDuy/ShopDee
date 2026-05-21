@@ -100,8 +100,10 @@ def generate_enhanced_data(num_samples=50000):
             'click_speed_ms': max(1, int(add_noise(click_speed))),
             'purchase_quantity': purchase_qty,
             'purchase_value': max(0, add_noise(purchase_val)),
+            'avg_purchase_value': max(0, add_noise(purchase_val * random.uniform(0.8, 1.2))),
             'click_count': max(0, int(add_noise(click_cnt))),
             'distance_km': max(0, add_noise(dist_km)),
+            'nav_time_ms': max(0, add_noise(duration * random.uniform(0.5, 0.9))),
             'is_anomaly': label
         }
         
