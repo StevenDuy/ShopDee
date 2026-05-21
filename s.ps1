@@ -46,13 +46,13 @@ function Start-Window($title, $path, $command) {
 
 Write-Host ""
 Write-Host "================================================" -ForegroundColor Cyan
-Write-Host "   SHOPDEE MODERNIZED - SMART LOGISTICS AI      " -ForegroundColor Cyan
+Write-Host "   SHOPDEE LOCAL LAUNCHER - OFFLINE DEVELOPMENT " -ForegroundColor Cyan
 Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
 
 # --- 0. CLEANUP PORTS ---
-Write-Host "Dang lam sach cac port (3000, 8000, 5000)..." -ForegroundColor Gray
-npx kill-port 3000 8000 5000 > $null 2>&1
+Write-Host "Dang lam sach cac port (3000, 8000, 8080, 5000)..." -ForegroundColor Gray
+npx kill-port 3000 8000 8080 5000 > $null 2>&1
 
 # --- 1. CONFIGURATION CHECK ---
 if (-not (Test-Path "$ROOT\backend\.env")) {
@@ -86,8 +86,18 @@ else {
     Write-Host "      Loi: Backend khong phan hoi tren port 8000." -ForegroundColor Red
 }
 
-# --- 4. FRONTEND (Next.js) ---
-Write-Section 3 5 "Khoi dong Frontend Next.js..."
+# --- 4. REVERB WEBSOCKET ---
+Write-Section 3 5 "Khoi dong Reverb WebSocket..."
+Start-Window 'ShopDee Reverb :8080' "$ROOT\backend" 'php artisan reverb:start --port=8080'
+if (Wait-PortOpen 8080) {
+    Write-Host "      Reverb: ws://127.0.0.1:8080" -ForegroundColor Green
+}
+else {
+    Write-Host "      Loi: Reverb khong phan hoi tren port 8080." -ForegroundColor Red
+}
+
+# --- 5. FRONTEND (Next.js) ---
+Write-Section 4 5 "Khoi dong Frontend Next.js..."
 Start-Window 'ShopDee Frontend :3000' "$ROOT\frontend" 'npm run dev'
 if (Wait-PortOpen 3000) {
     Write-Host "      Frontend: http://localhost:3000" -ForegroundColor Green
@@ -96,8 +106,8 @@ else {
     Write-Host "      Loi: Frontend khong phan hoi tren port 3000." -ForegroundColor Red
 }
 
-# --- 5. AI MICROSERVICE ---
-Write-Section 4 5 "Khoi dong AI Fraud Detection..."
+# --- 6. AI MICROSERVICE ---
+Write-Section 5 5 "Khoi dong AI Fraud Detection..."
 Start-Window 'ShopDee AI API :5000' "$ROOT\shopdee-ai" 'python api.py'
 if (Wait-PortOpen 5000) {
     Write-Host "      AI API: http://localhost:5000" -ForegroundColor Green
@@ -106,33 +116,16 @@ else {
     Write-Host "      Loi: AI API khong phan hoi tren port 5000." -ForegroundColor Red
 }
 
-# --- 6. CLOUDFLARE TUNNEL ---
-Write-Section 5 5 "Khoi dong Cloudflare Tunnel..."
-$cloudflaredProcess = Get-Process -Name 'cloudflared' -ErrorAction SilentlyContinue
-if ($cloudflaredProcess) {
-    Write-Host "      OK - Cloudflare tunnel dang chay." -ForegroundColor Green
-}
-else {
-    if (-Not (Test-Path "$ROOT\cloudflared.exe")) {
-        Write-Host "      Bo qua (Khong tim thay cloudflared.exe)" -ForegroundColor Gray
-    }
-    else {
-        Start-Window 'ShopDee Cloudflare Tunnel' "$ROOT" '.\cloudflared.exe tunnel --config cloudflare-config.yml run'
-        Write-Host "      OK - Tunnel dang khoi tao..." -ForegroundColor Green
-    }
-}
-
 # --- COMPLETION ---
 Write-Host ""
 Write-Host "================================================" -ForegroundColor Green
-Write-Host "   HE THONG DA SẴN SÀNG!                       " -ForegroundColor Green
+Write-Host "   TOAN BO DICH VU LOCAL DA SAN SANG!           " -ForegroundColor Green
 Write-Host "================================================" -ForegroundColor Green
-Write-Host "  Admin Dash: http://localhost:3000/admin/ai-security" -ForegroundColor Cyan
 Write-Host "  Frontend:   http://localhost:3000" -ForegroundColor White
 Write-Host "  Backend:    http://localhost:8000" -ForegroundColor White
-Write-Host "  AI metrics: http://localhost:5000/metrics" -ForegroundColor White
+Write-Host "  Reverb WS:  ws://localhost:8080" -ForegroundColor White
+Write-Host "  AI Engine:  http://localhost:5000" -ForegroundColor White
 Write-Host "================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Luu y: Kiem tra API KEY trong .env neu co loi tinh nang." -ForegroundColor Cyan
-Write-Host "  Dong cac terminal rieng de dung tung dich vu." -ForegroundColor Yellow
+Write-Host "  Luu y: Đóng các terminal rieng de dung tung dich vu." -ForegroundColor Yellow
 Write-Host ""

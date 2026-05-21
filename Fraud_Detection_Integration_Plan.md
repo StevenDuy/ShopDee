@@ -1,46 +1,105 @@
-# Kế hoạch Tích hợp Chi tiết: Phát hiện Rủi ro Gian lận dựa trên Hành vi Tài khoản (RF vs SVM)
+# Detailed Integration Plan: Behavioral-Based Fraud Detection System (Random Forest vs. SVM)
 
-Tài liệu này cung cấp hướng dẫn từng bước để triển khai hệ thống nghiên cứu so sánh giữa **Random Forest (RF)** và **Support Vector Machine (SVM)**, tích hợp trực tiếp vào nền tảng ShopDee.
-
----
-
-## 1. Đánh giá sự đáp ứng yêu cầu (Compliance Review)
-
-Hệ thống này được thiết kế để đáp ứng chính xác các mục tiêu nghiên cứu của bạn:
-*   **Mục tiêu so sánh:** Triển khai song song cả RF và SVM để đánh giá hiệu năng (Accuracy, Time, F1) trong cùng một môi trường.
-*   **Hành vi tài khoản:** Tập trung vào các đặc trưng phi tài chính (Hành vi):
-    *   `failed_login_attempts`: Theo dõi đăng nhập sai.
-    *   `time_to_checkout`: Đo tốc độ thao tác (phát hiện bot).
-    *   `ip_distance`: Khoảng cách địa lý truy cập.
-    *   `amount_deviation`: Độ lệch chi tiêu so với lịch sử.
-*   **Kiến trúc 3 tầng:** Tách biệt rõ ràng Frontend (Next.js), Backend (Laravel), và ML Engine (Python/FastAPI).
-*   **Xử lý dữ liệu:** Bao gồm bước SMOTE (cân bằng dữ liệu) và Normalization (quan trọng cho SVM).
+This document outlines the step-by-step integration blueprint to deploy and evaluate a comparative fraud detection system utilizing **Random Forest (RF)** and **Support Vector Machine (SVM)** algorithms within the ShopDee e-commerce ecosystem.
 
 ---
 
-## 2. Hướng dẫn Triển khai Chi tiết (Step-by-Step)
+## 1. Executive Summary & AI Model Review
 
-### Bước 1: Chuẩn bị Dữ liệu và Mô hình (Offline - Google Colab)
-Bạn sẽ thực hiện bước này trên Colab để lấy các file mô hình đã huấn luyện.
+### Objectives of the AI Integration
+*   **Performance Comparison:** Run Random Forest (RF) and Support Vector Machine (SVM) models in parallel to evaluate execution latency, prediction accuracy, and F1-score in a live production-like environment.
+*   **Behavioral Diagnostics:** Focus on non-financial user interactions (behavioral features) rather than purchase history alone. This allows proactive bot and account-takeover detection.
+*   **Real-time Decision Making:** Build an asynchronous orchestration pipeline where the machine learning engine processes checkout actions and prompts immediate security interventions (e.g., OTP challenges) if risk thresholds are breached.
 
-1.  **Dataset:** Sử dụng bộ dữ liệu [IEEE-CIS Fraud Detection](https://www.kaggle.com/c/ieee-fraud-detection) (Kaggle).
-2.  **Feature Engineering:** Tạo các cột dựa trên hành vi như đã mô tả.
-3.  **Preprocessing:** 
-    - `imbalanced-learn` (SMOTE).
-    - `StandardScaler` từ `sklearn`.
-4.  **Export:**
-    - Sau khi `fit`, lưu mô hình:
-      ```python
-      import joblib
-      joblib.dump(rf_model, 'fraud_rf_model.pkl')
-      joblib.dump(svm_model, 'fraud_svm_model.pkl')
-      joblib.dump(standard_scaler, 'scaler.pkl')
-      ```
+### Algorithm Specifications & Preprocessing
+*   **Random Forest (RF):** An ensemble learning classifier consisting of multiple decision trees. RF is robust against overfitting, handles nonlinear relationships effectively, and excels at classifying complex behavioral features (e.g., erratic click speeds).
+*   **Support Vector Machine (SVM):** A classification algorithm that determines the optimal hyperplane separating fraud and non-fraud classes. Since SVM is highly sensitive to feature scales, a standard scaling pipeline is mandatory.
+*   **SMOTE (Synthetic Minority Over-sampling Technique):** Because fraud samples are naturally rare (<1% of typical e-commerce transactions), SMOTE is applied during offline training to generate synthetic fraud samples. This balances the dataset, preventing the classifiers from biassing towards the "non-fraudulent" majority class.
 
-### Bước 2: Xây dựng Tầng ML Engine (Python Service)
-Tạo thư mục `ml-engine` nằm ngoài thư mục frontend/backend của ShopDee.
+---
 
-1.  **Tạo file `requirements.txt`:**
+## 2. Architecture & Data Flow
+
+The system employs a decoupled **Three-Tier Architecture** consisting of the **Next.js Presentation Layer**, the **Laravel Orchestration Layer**, and the **Python/FastAPI Machine Learning Inference Engine**.
+
+### System Architecture Diagram
+```mermaid
+graph TD
+    %% Presentation Layer
+    subgraph Frontend [Next.js Presentation Layer]
+        UI[Customer Storefront]
+        Admin[Security Admin Dashboard]
+        Tracker[Behavioral Tracker Context]
+    end
+
+    %% Orchestration Layer
+    subgraph Backend [Laravel Orchestration Layer]
+        Router[API Route Handler]
+        Db[(MySQL Database)]
+        Calculator[Behavioral Feature Extractor]
+    end
+
+    %% Machine Learning Engine
+    subgraph MLEngine [ML Inference Engine - Python/FastAPI]
+        API[FastAPI Server :5000]
+        Scaler[StandardScaler - scaler.pkl]
+        RF[Random Forest - fraud_rf_model.pkl]
+        SVM[Support Vector Machine - fraud_svm_model.pkl]
+    end
+
+    %% Interactions
+    UI -->|1. Actions: Clicks, Logins| Tracker
+    UI -->|2. Trigger Checkout Request| Router
+    Router -->|3. Query Log History| Db
+    Db -->|4. Return User Logs| Calculator
+    Calculator -->|5. POST Payload: 4 Key Features| API
+    API -->|6. Normalize Inputs| Scaler
+    Scaler -->|7. Standardized Inputs| RF & SVM
+    RF & SVM -->|8. Predictions & Latency| API
+    API -->|9. JSON Response| Router
+    Router -->|10. Block Transaction or Challenge 2FA| UI
+    Router -->|11. Store Eval Metrics| Db
+    Db -->|12. Fetch Analytics| Admin
+```
+
+### Detailed Step-by-Step Data Flow
+1.  **User Action Tracking:** The Next.js frontend captures client-side metrics (e.g., failed logins, session duration, click rates) using a React Context.
+2.  **Checkout Triggers:** When a user clicks "Proceed to Checkout", a payment request is dispatched to the Laravel Backend.
+3.  **Behavioral Feature Extraction:** Rather than passing raw telemetry, Laravel queries `user_activity_logs` in MySQL and calculates **4 Normalized Behavioral Features**:
+    *   `failed_login_attempts`: Total unsuccessful login attempts within the past 24 hours.
+    *   `time_to_checkout`: Time elapsed (seconds) from the initial login timestamp to the checkout button click.
+    *   `ip_distance`: Distance (km) between the current request IP and the last recorded successful login location.
+    *   `amount_deviation`: Ratio comparing the current order total against the user's historical 10-order average.
+4.  **Inference Dispatch:** Laravel posts these 4 features to the Python ML Engine (`http://localhost:5000/api/predict`).
+5.  **Data Standardisation & Model Evaluation:**
+    *   The Python service loads the pickled scaler and normalizes the features.
+    *   Both models (RF and SVM) run inference asynchronously.
+    *   The API records exact inference latencies using CPU microsecond timers.
+6.  **Response Orchestration:** The Python service returns predictions from both models, their relative confidence, and latency metrics.
+7.  **Dynamic Mitigation:** If either model labels the session as fraudulent (Class 1), Laravel pauses checkout, flags the transaction, and returns a challenge request (e.g., 2FA verification) to Next.js.
+8.  **Admin Evaluation:** Dashboard pulls execution metrics from Laravel to visualize comparative benchmarks (Accuracy, Latency, F1-scores).
+
+---
+
+## 3. Implementation Steps
+
+### Step 1: Model Export (Offline Google Colab Training)
+Prepare and export models using your Jupyter notebook:
+1.  Train on [IEEE-CIS Fraud Detection](https://www.kaggle.com/c/ieee-fraud-detection) or custom synthetic behavioral logs.
+2.  Balance classes using SMOTE: `from imblearn.over_sampling import SMOTE`.
+3.  Standardize features: `from sklearn.preprocessing import StandardScaler`.
+4.  Serialize and dump binaries:
+    ```python
+    import joblib
+    joblib.dump(rf_model, 'fraud_rf_model.pkl')
+    joblib.dump(svm_model, 'fraud_svm_model.pkl')
+    joblib.dump(standard_scaler, 'scaler.pkl')
+    ```
+
+### Step 2: Set Up Machine Learning Engine (Python/FastAPI)
+Create a new directory named `shopdee-ai` at the root of the ShopDee project.
+
+1.  **Configure `requirements.txt`:**
     ```text
     fastapi
     uvicorn
@@ -49,55 +108,95 @@ Tạo thư mục `ml-engine` nằm ngoài thư mục frontend/backend của Shop
     pandas
     numpy
     ```
-2.  **Tạo file `main.py`:**
-    - Implement API nhận input, chuẩn hóa bằng `scaler.pkl`.
-    - Gọi dự đoán từ cả 2 model.
-    - Đo thời gian thực thi bằng `time.process_time()`.
+2.  **Develop `api.py` (FastAPI Server):**
+    ```python
+    from fastapi import FastAPI, HTTPException
+    from pydantic import BaseModel
+    import joblib
+    import time
+    import numpy as np
 
-### Bước 3: Tích hợp Tầng Backend (Laravel Gateway)
-Laravel đóng vai trò "người điều phối" (Orchestrator).
+    app = FastAPI(title="ShopDee ML Fraud Detection Engine")
 
-1.  **Tạo Controller mới:** `php artisan make:controller Api/FraudDetectionController`
-2.  **Log Logic:** Khi người dùng thực hiện các hành động (Login, Add to cart), Laravel sẽ ghi nhận vào bảng `user_activity_logs`.
-3.  **Bridge Logic:**
-    - Tại phương thức `simulateCheck` hoặc trong luồng `Checkout`, Laravel gọi tới Python Service:
-    ```php
-    $response = Http::post('http://localhost:5000/api/predict', $behaviorData);
-    return $response->json();
+    # Load serialized artifacts
+    try:
+        scaler = joblib.load("models/scaler.pkl")
+        rf_model = joblib.load("models/fraud_rf_model.pkl")
+        svm_model = joblib.load("models/fraud_svm_model.pkl")
+    except Exception as e:
+        print(f"Error loading models: {e}")
+
+    class PredictionInput(BaseModel):
+        failed_login_attempts: int
+        time_to_checkout: float
+        ip_distance: float
+        amount_deviation: float
+
+    @app.post("/api/predict")
+    def predict(data: PredictionInput):
+        # 1. Shape input vector
+        features = np.array([[
+            data.failed_login_attempts,
+            data.time_to_checkout,
+            data.ip_distance,
+            data.amount_deviation
+        ]])
+        
+        # 2. Standardize features
+        scaled_features = scaler.transform(features)
+        
+        # 3. Random Forest Inference
+        start_rf = time.process_time()
+        rf_pred = int(rf_model.predict(scaled_features)[0])
+        rf_prob = float(rf_model.predict_proba(scaled_features)[0][1])
+        rf_time = (time.process_time() - start_rf) * 1000 # convert to ms
+        
+        # 4. SVM Inference
+        start_svm = time.process_time()
+        svm_pred = int(svm_model.predict(scaled_features)[0])
+        # Note: Set probability=True during training to enable predict_proba for SVM
+        try:
+            svm_prob = float(svm_model.predict_proba(scaled_features)[0][1])
+        except Exception:
+            svm_prob = 1.0 if svm_pred == 1 else 0.0
+        svm_time = (time.process_time() - start_svm) * 1000 # convert to ms
+
+        return {
+            "random_forest": {
+                "prediction": rf_pred,
+                "probability": rf_prob,
+                "latency_ms": rf_time
+            },
+            "svm": {
+                "prediction": svm_pred,
+                "probability": svm_prob,
+                "latency_ms": svm_time
+            }
+        }
     ```
 
-### Bước 4: Tích hợp Tầng Ứng dụng Web (Frontend Next.js)
-Đây là nơi hiển thị Dashboard so sánh cho công trình nghiên cứu.
+### Step 3: Configure Laravel Backend Gateway
+1.  **Generate Controller:** Run `php artisan make:controller Api/FraudDetectionController`.
+2.  **Add Orchestration Logic:**
+    *   Retrieve client headers and credentials.
+    *   Aggregate failed login attempts, session delta times, and GeoIP locations.
+    *   Send POST payload to `http://localhost:5000/api/predict`.
+    *   Log metrics in a `fraud_logs` database table (store predictions, accuracy outputs, and latencies).
+    *   If fraud is flagged, interrupt request lifecycle and return verification payload.
 
-1.  **Tạo Tracker Context:**
-    - Tạo `src/context/BehaviorTracker.tsx` để ghi nhận: `pages_visited`, `start_time`, `click_count`.
-2.  **Xây dựng Admin Dashboard (`/admin/fraud-analysis`):**
-    - **Tab 1: Comparative Dashboard:** Dùng biểu đồ cột so sánh Accuracy, F1-Score của RF và SVM.
-    - **Tab 2: Simulator:** Form nhập liệu tay các thông số (Login fails, IP...) -> Nhấn "Test" -> Hiển thị kết quả so sánh thời gian thực.
-
----
-
-## 3. Cách Tính toán các "Đặc trưng Hành vi" trong ShopDee
-
-Để hệ thống thực sự "hiểu" hành vi, chúng ta sẽ cài đặt logic tính toán tại Backend:
-
-| Đặc trưng | Nguồn dữ liệu / Cách tính | Vai trò trong Fraud |
-| :--- | :--- | :--- |
-| **Login Fails** | Đếm số bản ghi `status=failed` trong bảng `login_attempts` của user ID trong 24h qua. | Dấu hiệu của Brute Force / Account Takeover. |
-| **Time to Checkout** | `(Giờ bấm Pay) - (Giờ Login)` lấy từ Session. | Bot thường thanh toán trong < 10 giây. |
-| **IP Distance** | Dùng thư viện GeoIP để lấy tọa độ IP hiện tại so với tọa độ IP gần nhất. | Dự đoán việc đánh cắp session từ nơi xa. |
-| **Amount Deviation** | `(Đơn hiện tại) / (Trung bình 10 đơn trước đó)`. | Gian lận thường cố gắng mua món đồ đắt tiền nhất có thể. |
+### Step 4: Build Next.js Dashboard & Simulator UI
+1.  **Simulator Component (`src/components/admin/FraudSimulator.tsx`):**
+    *   Develop a form enabling admins to input fake telemetry metrics (failed logins, deviations, coordinates).
+    *   Display side-by-side comparison tables detailing classification decisions and processing latencies.
+2.  **Evaluation Graphs (`src/components/admin/FraudMetricsChart.tsx`):**
+    *   Visualize long-term evaluation scores (F1, Accuracy, Latency distributions) comparing RF vs. SVM using Chart.js or Recharts.
 
 ---
 
-## 4. Hướng dẫn Quy trình tích hợp (Workflow)
-
-1.  **Tạo thư mục:** Khởi tạo `fraud-engine` và cài đặt môi trường ảo Python (`venv`).
-2.  **Copy mô hình:** Đưa 3 file `.pkl` từ Colab vào thư mục `models/` của engine.
-3.  **Chạy server:** `uvicorn main:app --port 5000`.
-4.  **Kiểm tra kết nối:** Dùng Postman test endpoint `/api/predict` để đảm bảo kết quả trả về đúng định dạng so sánh giữa RF và SVM.
-5.  **Cập nhật Sidebar:** Thêm menu "Fraud Dashboard" vào file `src/components/admin/Sidebar.tsx` của ShopDee.
-
----
-
-**Kết luận:** Quá trình này không chỉ là lập trình, mà là hiện thực hóa một bài toán Khoa học Dữ liệu vào một ứng dụng thực tế. Việc tích hợp này đáp ứng đầy đủ tiêu chí của một đề tài nghiên cứu chuyên sâu về an ninh thương mại điện tử.
+## 4. Verification and Local Testing
+1.  **Launch all services** locally using the startup automation launcher:
+    ```powershell
+    ./s.ps1
+    ```
+2.  **Simulate standard transactions:** Verify that standard mock checkouts succeed immediately with minimal routing latency.
+3.  **Simulate suspicious behavior:** Inject inputs like `failed_login_attempts: 12`, `time_to_checkout: 1.2s` (typical brute-force bot speed) via the Admin Simulator. Verify that the ML Engine immediately flags the request and the UI renders the appropriate security challenges.

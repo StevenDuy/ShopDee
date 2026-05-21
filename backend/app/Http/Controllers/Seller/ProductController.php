@@ -213,10 +213,10 @@ class ProductController extends Controller
             foreach ($product->media as $media) {
                 if ($media->public_id) {
                     try {
-                        $resourceType = ($media->media_type === 'video') ? 'video' : 'image';
-                        Cloudinary::uploadApi()->destroy($media->public_id, ['resource_type' => $resourceType]);
+                        $diskName = env('FILESYSTEM_DISK', 'public');
+                        Storage::disk($diskName)->delete($media->public_id);
                     } catch (\Exception $e) {
-                        Log::warning("Couldinary cleanup failed for product deletion: " . $e->getMessage());
+                        Log::warning("Storage cleanup failed for product deletion: " . $e->getMessage());
                     }
                 }
             }

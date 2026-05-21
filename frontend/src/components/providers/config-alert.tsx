@@ -10,6 +10,7 @@ const REQUIRED_VARS = [
 ];
 
 export function ConfigAlert() {
+  return null;
   const { t } = useTranslation();
   const [missingVars, setMissingVars] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);

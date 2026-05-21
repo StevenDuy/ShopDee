@@ -1,157 +1,142 @@
-# 🚀 ShopDee - Ultimate Setup & Installation Guide (Step-by-Step)
+# 🚀 ShopDee - E-Commerce Platform with AI-Powered Behavioral Fraud Detection
 
-Welcome to ShopDee! This comprehensive guide is designed to help anyone—even those with no prior programming experience—install and run the system successfully.
+Welcome to **ShopDee**! This is a modern e-commerce platform integrated with a real-time behavioral-based fraud detection system that comparatively evaluates two machine learning classifiers: **Random Forest (RF)** and **Support Vector Machine (SVM)**.
 
----
-
-## 📋 PHASE 1: PREREQUISITES (One-Time Setup)
-
-Before you begin, ensure you have the following three tools installed on your computer:
-1. **XAMPP**: To run the database. [Download here](https://www.apachefriends.org/download.html).
-2. **Node.js**: To run the user interface (Frontend). [Download LTS version here](https://nodejs.org/).
-3. **Composer**: To run the source code (Backend). [Download here](https://getcomposer.org/).
+The system is engineered using a decoupled **Three-Tier Architecture** and supports dynamic environment variable configurations, enabling 100% offline local testing or seamless deployment to cloud platforms like Vercel and Render.
 
 ---
 
-## 🛠️ PHASE 2: ACQUIRING API KEYS (Crucial)
+## 🖥️ 1. ShopDee Core Platform Features & Capabilities
 
-The system requires several "keys" for integration. Copy these into a temporary Notepad file to prepare for configuration.
+Below is a detailed breakdown of the features implemented in the ShopDee ecosystem:
 
-### 1. CLOUDINARY (For storing product images)
-1. Go to [Cloudinary](https://cloudinary.com/) -> Register for a free account.
-2. On your Dashboard, find and save: **Cloud Name**, **API Key**, and **API Secret**.
+### 🛍️ Full-Featured E-Commerce Ecosystem
+*   **Interactive Storefront:** A responsive catalog supporting product lookup, dynamic category filtering, client-side cart synchronization, and an streamlined checkout.
+*   **Merchant Inventory Control (Seller Hub):** A dedicated interface allowing registered sellers to list products, upload media, update stock, and track current order statuses.
+*   **Adaptive Media Hosting:** A flexible image storage pipeline utilizing the Laravel Storage Facade. Media uploads can be saved locally (`backend/storage/app/public`) for offline testing or routed to **Cloudinary** cloud storage simply by toggling `FILESYSTEM_DISK` in the `.env` settings.
+*   **Secure Authentication & Social Login:** Standard email/password verification supplemented with **Google Social OAuth** configuration to streamline customer signups.
 
-### 2. PUSHER (For real-time messaging)
-1. Go to [Pusher](https://pusher.com/) -> Register for an account.
-2. Click **Create App**:
-   - App Name: `ShopDee`.
-   - Cluster: `ap1 (Asia Pacific)`.
-3. Go to the **App Keys** menu on the left and save: `app_id`, `key`, `secret`, and `cluster`.
+### 💬 Real-Time Messaging & Communications
+*   **Peer-to-Peer Chat Hub:** A real-time chat interface connecting customers directly with merchants, allowing immediate order support.
+*   **Dual WebSocket Brokering:** A dynamic WebSocket driver configuration. It utilizes **Laravel Reverb** for local offline socket serving (port 8080) and easily shifts to **Pusher Cloud** for production-grade scale without modifying the underlying client-side codebase.
+*   **Live Event Dispatchers:** Immediate broadcast updates for order completions, inventory warnings, and message dispatches.
 
-### 3. GMAIL APP PASSWORD (For automated emails)
-1. Go to [Your Google Account - App Passwords](https://myaccount.google.com/apppasswords).
-2. Log in and create an app password for "ShopDee".
-3. Google will provide a **16-character code**. This is your application's email password.
-
-### 4. GOOGLE AUTH (For Google Social Login)
-1. Go to [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new Project -> Under **OAuth consent screen**, select `External` and fill in the app details.
-3. Under **Credentials** -> Click **Create Credentials** -> **OAuth client ID**.
-   - Select **Web Application**.
-   - **IMPORTANT:** In the **Authorized redirect URIs** field, enter: `http://localhost:8000/api/auth/google/callback`. (If using Cloudflare later, replace `http://localhost:8000` with your Cloudflare URL).
-4. Save the **Client ID** and **Client Secret**.
+### 🛡️ AI Security & Anti-Fraud Suite
+*   **Comparative Machine Learning Inference:** Evaluates transactional safety by piping behavioral telemetry to both **Random Forest (RF)** and **Support Vector Machine (SVM)** models simultaneously.
+*   **Security Metrics Dashboard:** A analytical view for administrators displaying real-time comparisons of model performance metrics (Accuracy, F1-score, and processing latency in milliseconds).
+*   **Interactive AI Simulator:** An administrative control panel enabling manual injection of custom telemetry (e.g., failed logins, checkout speed, spatial IP distance, price deviation) to instantly check classification scores.
+*   **Advanced ML Training Pipeline:** The models leverage **SMOTE** (Synthetic Minority Over-sampling Technique) to combat class imbalance during offline training and run input vectors through standard scaling via `scaler.pkl`.
 
 ---
 
-## ⚙️ PHASE 3: SYSTEM CONFIGURATION
+## 🛠️ 3. Step-by-Step Clone & Installation Guide
 
-### Step 1: Open Project Folder
-Open the `ShopDee` folder on your computer. You will see two subfolders: `backend` and `frontend`.
+Follow these instructions to download and run the entire environment on your local machine:
 
-### Step 2: Configure Backend (Server)
-1. Open the `backend` folder and find the `.env` file.
-2. Paste the API keys you collected in Phase 2 into the corresponding lines:
-   - `CLOUDINARY_URL`, `CLOUDINARY_CLOUD_NAME`, etc.
-   - `PUSHER_APP_ID`, `PUSHER_APP_KEY`, etc.
-   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
-   - `GOOGLE_REDIRECT_URL`: Your login API address (Crucial).
-   - `FRONTEND_URL`: Your web address (Default is `http://localhost:3000`).
-   - `MAIL_USERNAME`: (Your Email) and `MAIL_PASSWORD`: (16-character code from Phase 2, Step 3).
+### Step 1: System Prerequisites
+Ensure you have installed the following tools:
+1.  **XAMPP Control Panel** (To run Apache & MySQL).
+2.  **Node.js** (LTS Version).
+3.  **Composer** (PHP Package Manager).
+4.  **Python 3.8+** (Added to your system's Environment Variables).
 
-> [!TIP]
-> **PROD MODE (USING CLOUDFLARE):** You must change `FRONTEND_URL` to your Cloudflare website link so that Google Login redirects back to the correct site instead of localhost.
+### Step 2: Clone the Repository
+Open your Terminal or PowerShell and run:
+```bash
+git clone https://github.com/StevenDuy/ShopDee.git
+cd ShopDee
+```
 
-### Step 3: Configure Frontend (UI)
-1. Open the `frontend` folder and find the `.env.local` file.
-2. Fill in the following:
-   ```env
+### Step 3: Configure Environment Variables
+
+#### 1. Setup Backend environment:
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Duplicate the sample configuration file:
+   ```bash
+   copy .env.example .env
+   ```
+3. Open `.env` and verify that the local configurations are set as follows:
+   ```ini
+   FILESYSTEM_DISK=public
+   BROADCAST_CONNECTION=reverb
+   
+   REVERB_APP_ID=123456
+   REVERB_APP_KEY=shopdee_key
+   REVERB_APP_SECRET=shopdee_secret
+   REVERB_HOST=127.0.0.1
+   REVERB_PORT=8080
+   REVERB_SCHEME=http
+
+   CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+   ```
+
+#### 2. Setup Frontend environment:
+1. Return to the root folder, then open the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+2. Create your local config file:
+   ```bash
+   copy .env.local.example .env.local
+   ```
+3. Verify that `.env.local` contains the following localhost mappings:
+   ```ini
    NEXT_PUBLIC_API_URL=http://localhost:8000/api
-   NEXT_PUBLIC_PUSHER_APP_KEY="Your Pusher Key"
-   NEXT_PUBLIC_GOOGLE_CLIENT_ID="Your Google Client ID"
+   NEXT_PUBLIC_PUSHER_APP_KEY=shopdee_key
+   NEXT_PUBLIC_PUSHER_APP_CLUSTER=mt1
+   NEXT_PUBLIC_PUSHER_HOST=127.0.0.1
+   NEXT_PUBLIC_PUSHER_PORT=8080
+   NEXT_PUBLIC_PUSHER_SCHEME=http
    ```
 
 ---
 
-## 🚀 PHASE 4: RUNNING THE PROJECT
+## 🚀 4. Executing the Project Cucko-style (Local Testing)
 
-### Step 1: Start Database (XAMPP)
-1. Open the XAMPP Control Panel.
-2. Click **Start** for **Apache** and **MySQL**.
-3. Open your browser and go to `localhost/phpmyadmin`. Click **New** to create a database named `shopdee`.
+We have created an automated launcher script [s.ps1](file:///c:/Users/duyh1/Projects/ShopDee/s.ps1) to manage all background daemons.
 
-### Step 2: Run Backend (Open a New Terminal window)
-1. Navigate to the `backend` folder in Terminal or CMD.
-2. Run the following commands (press Enter after each):
-   ```bash
-   composer install
-   php artisan key:generate
-   php artisan migrate --seed
-   php artisan serve
-   ```
-   *Keep this window open.*
+### Step 1: Initialize Libraries & Databases (First-Time Only)
 
-### Step 3: Run Frontend (Open ANOTHER Terminal window)
-1. Navigate to the `frontend` folder in Terminal.
-2. Run the following commands:
-   ```bash
-   npm install
-   npm run dev
-   ```
-   *Keep this window open.* You can now visit `localhost:3000` to view the website.
+1.  **Install PHP libraries & create the public assets symlink:**
+    ```powershell
+    cd backend
+    composer install
+    php artisan key:generate
+    php artisan storage:link
+    ```
+2.  **Seed the Database:**
+    *   Open XAMPP Control Panel and start **Apache** and **MySQL**.
+    *   Open your browser, go to `http://localhost/phpmyadmin`, and create a new schema named `shopdee`.
+    *   Run migrations and populate mock store data:
+        ```powershell
+        php artisan migrate --seed
+        ```
+3.  **Install Node.js packages:**
+    ```powershell
+    cd ../frontend
+    npm install
+    ```
+4.  **Install Python machine learning dependencies:**
+    ```powershell
+    cd ../shopdee-ai
+    pip install -r requirements.txt
+    ```
 
----
-
-## 🌐 PHASE 5: BRINGING WEB TO INTERNET (FIXED CLOUDFLARE TUNNEL)
-
-To establish a professional web address (e.g., `https://your-domain.com`), follow these steps:
-
-### 1. Domain & Cloudflare Preparation
-- You must own a domain and point its **Nameservers** to Cloudflare so the status is **Active**.
-- Download `cloudflared.exe` and place it in the ShopDee root directory.
-
-### 2. Connection Setup (One-Time Only)
-Open Terminal in the root directory and run:
-1. **Login:** `.\cloudflared.exe login` (Select your domain on the web page).
-2. **Create Tunnel:** `.\cloudflared.exe tunnel create shopdee-tunnel` -> Save the long ID displayed.
-3. **Route DNS Records Automatically:**
-   - For Main Web: `.\cloudflared.exe tunnel route dns shopdee-tunnel your-domain.com`
-   - For API: `.\cloudflared.exe tunnel route dns shopdee-tunnel api.your-domain.com`
-
-### 3. Configure `cloudflare-config.yml`
-Create a `cloudflare-config.yml` file in the root directory with the following content:
-```yaml
-tunnel: <YOUR_TUNNEL_ID>
-credentials-file: C:\Users\<Your_Name>\.cloudflared\<TUNNEL_ID>.json
-
-ingress:
-  - hostname: your-domain.com
-    service: http://localhost:3000
-  - hostname: api.your-domain.com
-    service: http://localhost:8000
-  - service: http_status:404
-```
-
-### 4. Codebase Update (CRITICAL)
-To ensure the system recognizes the new domain, you **must** edit the following:
-- **Backend (`backend/.env`):**
-   - `APP_URL=https://api.your-domain.com`
-   - `FRONTEND_URL=https://your-domain.com`
-   - `SANCTUM_STATEFUL_DOMAINS=your-domain.com`
-- **Frontend (`frontend/.env.local`):**
-   - `NEXT_PUBLIC_API_URL=https://api.your-domain.com/api`
-
-### 5. Launch Tunnel
-Whenever you want to go live, run:
+### Step 2: One-Click Execution
+Navigate back to the root `ShopDee` directory, right-click [s.ps1](file:///c:/Users/duyh1/Projects/ShopDee/s.ps1) and choose **Run with PowerShell**, or execute the script in your terminal:
 ```powershell
-.\cloudflared.exe tunnel --config cloudflare-config.yml run
+./s.ps1
 ```
 
-> [!TIP]
-> You can use the `s.ps1` script to automatically start all services along with the Tunnel.
+The script will automatically clear bound ports, boot the Laravel server (`:8000`), launch the Reverb WebSocket daemon (`:8080`), build the Next.js development bundle (`:3000`), and run the Python AI service (`:5000`).
 
 ---
-> [!CAUTION]
-> **CONFIGURATION ERROR:** If you forget to provide any API key from Phase 2, the system will display a WARNING BANNER blocking the entire site. You must fill in all keys and restart the server to clear it.
 
----
-🚀 **ShopDee Team** - *Wishing you success on your journey to becoming an expert!*
+## 🧪 5. Testing the Fraud Detection AI
+1.  Navigate to the Admin Panel: `http://localhost:3000/admin/ai-security`.
+2.  Open the **AI Simulator** tab.
+3.  **Normal Transaction Test:** Enter safe inputs (Failed logins = 0, Time to checkout = 45s, IP distance = 2km, Deviation = 1.0) -> Click **Evaluate**. Both models will label the payload as `Safe`.
+4.  **Fraud Attack Simulation:** Enter high-risk telemetry (Failed logins = 8, Time to checkout = 2.1s, IP distance = 980km, Deviation = 6.4) -> Click **Evaluate**. The ML Engine will immediately output `Fraud` notifications from both RF and SVM, graphing their decision speeds side-by-side.

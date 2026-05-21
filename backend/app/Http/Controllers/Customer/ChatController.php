@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Events\NewChatMessage;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Product;
 
 class ChatController extends Controller
@@ -130,12 +131,12 @@ class ChatController extends Controller
 
         if ($request->hasFile('file')) {
             try {
-                // Using the v2/v3 SDK way since the macro isn't found
-                $uploadResult = cloudinary()->uploadApi()->upload($request->file('file')->getRealPath());
-                $mediaUrl = $uploadResult['secure_url'] ?? null;
-                \Illuminate\Support\Facades\Log::info("Cloudinary upload successful: " . $mediaUrl);
+                $diskName = env('FILESYSTEM_DISK', 'public');
+                $path = Storage::disk($diskName)->putFile('chats', $request->file('file'));
+                $mediaUrl = Storage::disk($diskName)->url($path);
+                \Illuminate\Support\Facades\Log::info("File upload successful via disk {$diskName}: " . $mediaUrl);
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error("Cloudinary upload failed: " . $e->getMessage());
+                \Illuminate\Support\Facades\Log::error("File upload failed: " . $e->getMessage());
             }
         }
 

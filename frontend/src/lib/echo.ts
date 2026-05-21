@@ -18,11 +18,15 @@ if (typeof window !== 'undefined') {
   if (pusherKey && pusherCluster) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
     
-    window.Echo = new Echo({
+    const wsHost = process.env.NEXT_PUBLIC_PUSHER_HOST;
+    const wsPort = process.env.NEXT_PUBLIC_PUSHER_PORT;
+    const wsScheme = process.env.NEXT_PUBLIC_PUSHER_SCHEME || 'https';
+
+    const echoConfig: any = {
       broadcaster: 'pusher',
       key: pusherKey,
       cluster: pusherCluster,
-      forceTLS: true,
+      forceTLS: wsScheme === 'https',
       authorizer: (channel: any) => {
         return {
           authorize: (socketId: string, callback: Function) => {
@@ -52,7 +56,16 @@ if (typeof window !== 'undefined') {
           }
         };
       }
-    });
+    };
+
+    if (wsHost) {
+      echoConfig.wsHost = wsHost;
+      echoConfig.wsPort = wsPort ? parseInt(wsPort) : (wsScheme === 'https' ? 443 : 80);
+      echoConfig.wssPort = wsPort ? parseInt(wsPort) : 443;
+      echoConfig.enabledTransports = ['ws', 'wss'];
+    }
+
+    window.Echo = new Echo(echoConfig);
   } else {
     console.warn("Pusher configuration missing. Real-time features (Chat, Notifications) will not work.");
   }

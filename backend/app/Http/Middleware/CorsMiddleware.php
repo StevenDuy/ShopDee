@@ -26,6 +26,13 @@ class CorsMiddleware
             'http://127.0.0.1:8080',
         ];
 
+        // Add origins from CORS_ALLOWED_ORIGINS env if specified (comma separated)
+        $corsAllowed = env('CORS_ALLOWED_ORIGINS');
+        if ($corsAllowed) {
+            $extraOrigins = array_map('trim', explode(',', $corsAllowed));
+            $allowedOrigins = array_merge($allowedOrigins, $extraOrigins);
+        }
+
         // Add the main frontend URL and its variants
         if ($frontendUrl) {
             $allowedOrigins[] = $frontendUrl;

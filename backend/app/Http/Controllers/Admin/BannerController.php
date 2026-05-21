@@ -60,16 +60,14 @@ class BannerController extends Controller
         if ($request->hasFile('image')) {
             try {
                 $file = $request->file('image');
-                $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
-                    'folder' => 'banners',
-                    'resource_type' => 'image'
-                ]);
+                $diskName = env('FILESYSTEM_DISK', 'public');
+                $path = Storage::disk($diskName)->putFile('banners', $file);
                 
-                $data['image_path'] = $result['secure_url'];
-                $data['public_id'] = $result['public_id'];
+                $data['image_path'] = Storage::disk($diskName)->url($path);
+                $data['public_id'] = $path;
             } catch (\Exception $e) {
                 Log::error('Banner upload error: ' . $e->getMessage());
-                return response()->json(['message' => 'Lỗi khi tải ảnh lên Cloudinary: ' . $e->getMessage()], 500);
+                return response()->json(['message' => 'Lỗi khi tải ảnh lên Storage: ' . $e->getMessage()], 500);
             }
         }
 
@@ -106,33 +104,26 @@ class BannerController extends Controller
         $data = $request->only(['title', 'subtitle', 'product_id', 'active', 'order']);
 
         if ($request->hasFile('image')) {
-            // Delete old image from Cloudinary if it exists
+            // Delete old image from Storage Disk if it exists
             if ($banner->public_id) {
                 try {
-                    Cloudinary::uploadApi()->destroy($banner->public_id);
+                    $diskName = env('FILESYSTEM_DISK', 'public');
+                    Storage::disk($diskName)->delete($banner->public_id);
                 } catch (\Exception $e) {
-                    Log::warning('Failed to delete old banner from Cloudinary: ' . $e->getMessage());
-                }
-            } else if ($banner->image_path && str_contains($banner->image_path, '/storage/')) {
-                // Cleanup old local files if any
-                $oldPath = str_replace('/storage/', '', $banner->image_path);
-                if (Storage::disk('public')->exists($oldPath)) {
-                    Storage::disk('public')->delete($oldPath);
+                    Log::warning('Failed to delete old banner from Storage: ' . $e->getMessage());
                 }
             }
 
             try {
                 $file = $request->file('image');
-                $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
-                    'folder' => 'banners',
-                    'resource_type' => 'image'
-                ]);
+                $diskName = env('FILESYSTEM_DISK', 'public');
+                $path = Storage::disk($diskName)->putFile('banners', $file);
                 
-                $data['image_path'] = $result['secure_url'];
-                $data['public_id'] = $result['public_id'];
+                $data['image_path'] = Storage::disk($diskName)->url($path);
+                $data['public_id'] = $path;
             } catch (\Exception $e) {
                 Log::error('Banner upload update error: ' . $e->getMessage());
-                return response()->json(['message' => 'Lỗi khi cập nhật ảnh lên Cloudinary: ' . $e->getMessage()], 500);
+                return response()->json(['message' => 'Lỗi khi cập nhật ảnh lên Storage: ' . $e->getMessage()], 500);
             }
         }
 
@@ -150,14 +141,10 @@ class BannerController extends Controller
         
         if ($banner->public_id) {
             try {
-                Cloudinary::uploadApi()->destroy($banner->public_id);
+                $diskName = env('FILESYSTEM_DISK', 'public');
+                Storage::disk($diskName)->delete($banner->public_id);
             } catch (\Exception $e) {
-                Log::warning('Failed to delete banner from Cloudinary: ' . $e->getMessage());
-            }
-        } else if ($banner->image_path && str_contains($banner->image_path, '/storage/')) {
-            $oldPath = str_replace('/storage/', '', $banner->image_path);
-            if (Storage::disk('public')->exists($oldPath)) {
-                Storage::disk('public')->delete($oldPath);
+                Log::warning('Failed to delete banner from Storage: ' . $e->getMessage());
             }
         }
 

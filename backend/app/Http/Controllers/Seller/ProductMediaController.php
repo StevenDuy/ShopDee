@@ -36,31 +36,27 @@ class ProductMediaController extends Controller
         $extension = strtolower($file->getClientOriginalExtension());
         $mediaType = in_array($extension, ['mp4', 'webm']) ? 'video' : 'image';
 
-        // Store file on Cloudinary using the SDK v2 method
+        // Store file on configured Storage Disk (Local or Cloudinary)
         try {
-            Log::info('Attempting Cloudinary upload', ['file' => $file->getClientOriginalName()]);
-            // Use uploadApi()->upload() for SDK v2
-            $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
-                'folder' => 'products',
-                'resource_type' => 'auto'
-            ]);
+            $diskName = env('FILESYSTEM_DISK', 'public');
+            Log::info('Attempting file upload via Storage disk', ['disk' => $diskName, 'file' => $file->getClientOriginalName()]);
             
-            if (!$result || !isset($result['secure_url'])) {
-                Log::error('Cloudinary upload returned invalid result', ['result' => $result]);
-                return response()->json(['message' => 'Cloudinary upload failed (invalid result)'], 500);
-            }
+            // putFile returns the relative path of the file
+            $path = Storage::disk($diskName)->putFile('products', $file);
+            $url = Storage::disk($diskName)->url($path);
             
-            $url = $result['secure_url'];
-            $publicId = $result['public_id'];
-            Log::info('Cloudinary upload success', ['url' => $url, 'public_id' => $publicId]);
+            // publicId will store the relative path (used for deleting the file later via Storage::disk()->delete())
+            $publicId = $path;
+            
+            Log::info('File upload success via Storage disk', ['url' => $url, 'public_id' => $publicId]);
         } catch (\Exception $e) {
-            Log::error('Cloudinary upload error: ' . $e->getMessage(), [
+            Log::error('File upload error: ' . $e->getMessage(), [
                 'exception' => get_class($e),
                 'trace' => substr($e->getTraceAsString(), 0, 500)
             ]);
             return response()->json([
-                'message' => 'Cloudinary upload error: ' . $e->getMessage(),
-                'hint' => 'Check your .env CLOUDINARY keys'
+                'message' => 'File upload error: ' . $e->getMessage(),
+                'hint' => 'Check your FILESYSTEM_DISK and config/filesystems.php settings'
             ], 500);
         }
 
@@ -103,13 +99,12 @@ class ProductMediaController extends Controller
 
         if ($media->public_id) {
             try {
-                // In Cloudinary SDK v2, destroy is called via uploadApi()
-                // Must specify resource_type for videos
-                $resourceType = ($media->media_type === 'video') ? 'video' : 'image';
-                Cloudinary::uploadApi()->destroy($media->public_id, ['resource_type' => $resourceType]);
+                $diskName = env('FILESYSTEM_DISK', 'public');
+                Storage::disk($diskName)->delete($media->public_id);
+                Log::info("Deleted file from storage disk: {$media->public_id} on disk {$diskName}");
             } catch (\Exception $e) {
                 // Log error but continue to delete from database
-                Log::warning("Cloudinary media deletion failed for ID: {$media->public_id}. Error: " . $e->getMessage());
+                Log::warning("File deletion failed from Storage for ID: {$media->public_id}. Error: " . $e->getMessage());
             }
         }
 
