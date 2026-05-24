@@ -13,8 +13,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNotificationStore } from "@/store/useNotificationStore";
-import echo from "@/lib/echo";
-
+import { useChatStore } from "@/store/useChatStore";
 import imageCompression from "browser-image-compression";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
 const getNotifIcon = (type: string) => {
   if (type.includes("order")) return <Package size={20} />;
@@ -48,26 +47,46 @@ const getNotifBadgeVariant = (type: string) => {
 export function UnifiedInbox() {
   const { t } = useTranslation();
   const { token, user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<"chat" | "notifications">("chat");
   const isAdmin = user?.role_id === 1;
 
-  const { unreadCount, hasUnreadMessages, hasUnreadNotifications, fetchUnreadCounts } = useNotificationStore();
+  const { hasUnreadMessages, hasUnreadNotifications, fetchUnreadCounts } = useNotificationStore();
 
   const searchParams = useSearchParams();
   const router = useRouter();
   const targetUserId = searchParams.get("userId");
 
+  // --- Zustand Chat Store Hook ---
+  const {
+    conversations,
+    setConversations,
+    activeConv,
+    setActiveConv,
+    notifications,
+    setNotifications,
+    selectedNotif,
+    setSelectedNotif,
+    activeTab,
+    setActiveTab,
+    loadingConversations,
+    loadingMessages,
+    messagesCache,
+    refreshData,
+    fetchMessages,
+    clearActiveConvUnread
+  } = useChatStore();
+
+  const messages = activeConv ? (messagesCache[activeConv.id]?.messages || []) : [];
+  const pagination = activeConv ? (messagesCache[activeConv.id]?.pagination || { current_page: 1, last_page: 1, has_more: false }) : { current_page: 1, last_page: 1, has_more: false };
+  const chatLoading = loadingConversations || (activeConv && loadingMessages && messages.length === 0);
   const [loading, setLoading] = useState(false);
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [activeConv, setActiveConv] = useState<any | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [pagination, setPagination] = useState({ current_page: 1, last_page: 1, has_more: false });
+
   const [loadingMore, setLoadingMore] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const activeConvRef = useRef<any>(null);
   const tokenRef = useRef<string | null>(null);
+  const paginationRef = useRef(pagination);
 
   useEffect(() => {
     activeConvRef.current = activeConv;
@@ -77,10 +96,9 @@ export function UnifiedInbox() {
     tokenRef.current = token;
   }, [token]);
 
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [selectedNotif, setSelectedNotif] = useState<any | null>(null);
-  const [viewingImage, setViewingImage] = useState<string | null>(null);
-  const [productSearch, setProductSearch] = useState("");
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
 
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,6 +113,8 @@ export function UnifiedInbox() {
   const [isAttachingProduct, setIsAttachingProduct] = useState(false);
   const [shopProducts, setShopProducts] = useState<any[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [productSearch, setProductSearch] = useState("");
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeConv || selectedNotif) {
@@ -109,9 +129,19 @@ export function UnifiedInbox() {
     setIsConfirmingDelete(false);
   }, [selectedNotif]);
 
+  const handleStartChat = async (tid: number) => {
+    try {
+      const res = await axios.post(`${API}/chat/start`, { target_user_id: tid }, { headers: { Authorization: `Bearer ${token}` } });
+      setActiveConv(res.data);
+      setIsSearching(false);
+      setSearchQuery("");
+      refreshData(token!);
+    } catch (e) { console.error(e); }
+  };
+
   useEffect(() => {
     if (!token) return;
-    refreshData().then(() => {
+    refreshData(token).then(() => {
       if (targetUserId && activeTab === "chat") {
         handleStartChat(parseInt(targetUserId));
       }
@@ -126,174 +156,157 @@ export function UnifiedInbox() {
 
   useEffect(() => {
     if (activeConv && token) {
-      // 1. Instantly clear unread dot locally
-      setConversations((prev: any[]) => prev.map(c => Number(c.id) === Number(activeConv.id) ? { ...c, unread_count: 0 } : c));
+      // 1. Instantly clear unread dot locally and globally
+      clearActiveConvUnread(token, activeConv.id);
       
-      // 2. Fetch latest from server without clearing current list to avoid "running down" effect
-      fetchMessages(Number(activeConv.id), 1).then(() => {
-        fetchUnreadCounts(token);
+      // 2. Fetch latest messages from server
+      fetchMessages(token, Number(activeConv.id), 1).then(() => {
         // Instant scroll to bottom on first load
         messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
       });
+
+      // 3. Load saved draft if exists
+      if (user) {
+        const savedDrafts = localStorage.getItem(`chat_drafts_${user.id}`);
+        if (savedDrafts) {
+          try {
+            const parsed = JSON.parse(savedDrafts);
+            setNewMessage(parsed[activeConv.id] || "");
+          } catch (e) {
+            setNewMessage("");
+          }
+        } else {
+          setNewMessage("");
+        }
+      }
     }
   }, [activeConv, token]);
 
-  useEffect(() => {
-    if (!token || !echo || !user) return;
+  const userId = user?.id;
 
-    const userChannel = echo!.private(`App.Models.User.${user.id}`);
+  // --- Real-time Drafts & Typing Indicators ---
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+  const isTypingRef = useRef(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleNewMessage = (e: any) => {
-      const msg = e.message;
-      if (!msg) return;
-
-      const msgConvId = Number(msg.conversation_id);
-      const currentRefIdAtTime = activeConvRef.current ? Number(activeConvRef.current.id) : null;
-      
-      // 1. Update Sidebar Instantly
-      setConversations((prev: any[]) => {
-        const idx = prev.findIndex(c => Number(c.id) === msgConvId);
-        
-        if (idx !== -1) {
-          const updated = [...prev];
-          const isAtThisConv = currentRefIdAtTime === msgConvId;
-          
-          updated[idx] = {
-            ...updated[idx],
-            last_message: msg,
-            updated_at: msg.created_at,
-            unread_count: isAtThisConv ? 0 : (Number(updated[idx].unread_count || 0) + 1)
-          };
-          
-          // Move to Top
-          const item = updated[idx];
-          const others = updated.filter((_, i) => i !== idx);
-          return [item, ...others];
-        } else {
-          // New conversation appeared or list belongs to a different view
-          refreshData(); 
-          return prev;
-        }
+  // Send typing status to backend
+  const sendTypingStatus = async (status: boolean) => {
+    if (!activeConv || !token) return;
+    try {
+      await axios.post(`${API}/chat/${activeConv.id}/typing`, { is_typing: status }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+    } catch (e) {}
+  };
 
-      // 2. Update Messages if matching current view
-      if (currentRefIdAtTime === msgConvId) {
-        // Sync the active conversation object too
-        setActiveConv((prev: any) => (prev && Number(prev.id) === msgConvId) ? { ...prev, last_message: msg, updated_at: msg.created_at } : prev);
-
-        setMessages((prev: any[]) => {
-          if (prev.some(m => m.id === msg.id)) return prev;
-          const filtered = prev.filter(m => !(m.is_optimistic && m.sender_id === msg.sender_id && m.message_text === msg.message_text));
-          return [...filtered, msg].sort((a, b) => Number(a.id) - Number(b.id));
-        });
-        
-        // Mark as read (optional since viewing handles it, but good for real-time)
-        axios.get(`${API}/chat/${msgConvId}?page=1`, { headers: { Authorization: `Bearer ${tokenRef.current}` } })
-          .then(() => fetchUnreadCounts(tokenRef.current!))
-          .catch(() => {});
-          
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-      } else {
-        // INSTANT: Optimistically increment the global message dot
-        useNotificationStore.getState().incrementMessages();
-        fetchUnreadCounts(tokenRef.current!);
+  // Text change handler for typing indicator and drafts
+  const handleTextChange = (text: string) => {
+    setNewMessage(text);
+    
+    // Save draft to localStorage
+    if (activeConv && user) {
+      const savedDrafts = localStorage.getItem(`chat_drafts_${user.id}`);
+      let parsed: Record<number, string> = {};
+      if (savedDrafts) {
+        try {
+          parsed = JSON.parse(savedDrafts);
+        } catch (e) {}
       }
-    };
+      parsed[activeConv.id] = text;
+      localStorage.setItem(`chat_drafts_${user.id}`, JSON.stringify(parsed));
+    }
 
-    userChannel.listen('.message.new', handleNewMessage);
-    userChannel.listen('message.new', handleNewMessage);
-    userChannel.listen('NewChatMessage', handleNewMessage);
-    userChannel.listen('.NewChatMessage', handleNewMessage);
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      sendTypingStatus(true);
+    }
 
-    return () => {
-      userChannel.stopListening('.message.new');
-      userChannel.stopListening('message.new');
-      userChannel.stopListening('NewChatMessage');
-      userChannel.stopListening('.NewChatMessage');
-    };
-  }, [user, token, echo]);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      sendTypingStatus(false);
+    }, 2000);
+  };
 
-  // Separate Failsafe Polling Effect
+  // Separate Failsafe Polling Effect + Recovery Sync
   useEffect(() => {
     const pollInterval = setInterval(() => {
        if (tokenRef.current && activeTab === "chat") {
-          refreshData();
+          refreshData(tokenRef.current);
           if (activeConvRef.current) {
              fetchUnreadCounts(tokenRef.current);
           }
        }
-    }, 5000);
-    return () => clearInterval(pollInterval);
+    }, 30000);
+
+    const handleRecoverySync = () => {
+      console.log("UnifiedInbox: Network restored. Syncing chat data...");
+      if (tokenRef.current && activeTab === "chat") {
+        refreshData(tokenRef.current);
+        if (activeConvRef.current) {
+          fetchUnreadCounts(tokenRef.current);
+        }
+      }
+    };
+
+    window.addEventListener('online', handleRecoverySync);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener('online', handleRecoverySync);
+    };
   }, [activeTab]); // Include activeTab to toggle polling correctly // Do NOT depend on activeConv to prevent listener re-registration, use REF instead
 
-  // Specific Chat Channel for active conversation (optional redundancy but kept for events like typing indicators later)
+  // Specific Chat Channel for active conversation (listening to typing indicators)
   useEffect(() => {
-    if (!activeConv || !token || !echo) return;
-    const channel = echo!.private(`chat.${activeConv.id}`);
-    // We already handle message.new in the global user channel to ensure we catch everything
-    // But we join here to stay subscribed to conversation-specific events
-    return () => {
-      echo!.leave(`chat.${activeConv.id}`);
-    };
-  }, [activeConv, token, echo]);
+    const echoInstance = typeof window !== 'undefined' ? window.Echo : null;
+    const currentConvId = activeConv?.id;
+    if (!currentConvId || !token || !echoInstance || !user) return;
+    
+    const channel = echoInstance.private(`chat.${currentConvId}`);
 
-  const refreshData = async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const [convRes, notifRes] = await Promise.all([
-        axios.get(`${API}/chat/conversations`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API}/notifications`, { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-
-      setConversations(convRes.data || []);
-      setNotifications(notifRes.data.data || notifRes.data || []);
-
-      await fetchUnreadCounts(token);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMessages = async (id: number, page = 1) => {
-    if (page === 1) setLoading(true);
-    else setLoadingMore(true);
-
-    const container = scrollContainerRef.current;
-    const oldScrollHeight = container?.scrollHeight || 0;
-
-    try {
-      const res = await axios.get(`${API}/chat/${id}?page=${page}`, { headers: { Authorization: `Bearer ${token}` } });
-      const newMessages = [...res.data.messages].reverse();
-
-      if (page === 1) {
-        setMessages(newMessages);
-        setPagination(res.data.pagination);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 200);
-      } else {
-        setMessages(prev => [...newMessages, ...prev]);
-        setPagination(res.data.pagination);
-
-        setTimeout(() => {
-          if (container) {
-            container.scrollTop = container.scrollHeight - oldScrollHeight;
-          }
-        }, 0);
+    const handleTypingEvent = (e: any) => {
+      if (Number(e.userId) !== Number(user.id)) {
+        setIsOtherUserTyping(e.isTyping);
       }
-    } catch (e) { console.error(e); }
-    finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
+    };
+
+    channel.listen('.user.typing', handleTypingEvent);
+    channel.listen('user.typing', handleTypingEvent);
+
+    return () => {
+      channel.stopListening('.user.typing');
+      channel.stopListening('user.typing');
+      echoInstance.leave(`chat.${currentConvId}`);
+      setIsOtherUserTyping(false);
+    };
+  }, [activeConv?.id, token, user]);
+
+
 
   const handleMarkAsRead = async (id: number) => {
     if (!token) return;
+    
+    // 1. Update store state for notifications
+    useChatStore.setState((state) => {
+      const updatedNotifications = state.notifications.map(x => x.id === id ? { ...x, is_read: true } : x);
+      return { notifications: updatedNotifications };
+    });
+
+    // 2. Optimistically clear global notification unread count instantly
+    const targetNotif = notifications.find(x => x.id === id);
+    if (targetNotif && !targetNotif.is_read) {
+      const store = useNotificationStore.getState();
+      const otherUnreadNotifExists = notifications.some(x => x.id !== id && !x.is_read);
+      
+      useNotificationStore.setState({
+        unreadCount: Math.max(0, store.unreadCount - 1),
+        hasUnreadNotifications: otherUnreadNotifExists
+      });
+    }
+
     try {
       await axios.put(`${API}/notifications/${id}/read`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setNotifications(n => n.map(x => x.id === id ? { ...x, is_read: true } : x));
       fetchUnreadCounts(token);
     } catch { }
   };
@@ -305,16 +318,6 @@ export function UnifiedInbox() {
     try {
       const res = await axios.get(`${API}/chat/users?search=${q}`, { headers: { Authorization: `Bearer ${token}` } });
       setSearchResults(res.data);
-    } catch (e) { console.error(e); }
-  };
-
-  const handleStartChat = async (tid: number) => {
-    try {
-      const res = await axios.post(`${API}/chat/start`, { target_user_id: tid }, { headers: { Authorization: `Bearer ${token}` } });
-      setActiveConv(res.data);
-      setIsSearching(false);
-      setSearchQuery("");
-      refreshData();
     } catch (e) { console.error(e); }
   };
 
@@ -346,7 +349,28 @@ export function UnifiedInbox() {
         created_at: new Date().toISOString(),
         is_optimistic: true
       };
-      setMessages((prev: any[]) => [...prev, tempMsg].sort((a, b) => Number(a.id) - Number(b.id)));
+      // Optimistic update in store
+      useChatStore.setState((state) => {
+        const cached = state.messagesCache[activeConv.id] || { messages: [], pagination: { current_page: 1, last_page: 1, has_more: false } };
+        const updatedMessages = [...cached.messages, tempMsg].sort((a, b) => Number(a.id) - Number(b.id));
+        
+        const updatedConversations = state.conversations.map(c => 
+          Number(c.id) === Number(activeConv.id) 
+            ? { ...c, last_message: tempMsg, updated_at: tempMsg.created_at } 
+            : c
+        );
+
+        return {
+          messagesCache: {
+            ...state.messagesCache,
+            [activeConv.id]: {
+              ...cached,
+              messages: updatedMessages
+            }
+          },
+          conversations: updatedConversations
+        };
+      });
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
 
       const res = await axios.post(`${API}/chat/${activeConv.id}`, formData, {
@@ -356,26 +380,49 @@ export function UnifiedInbox() {
         }
       });
 
-      setMessages((prev: any[]) => prev.map(m => m.id === optimisticId ? res.data : m).sort((a, b) => Number(a.id) - Number(b.id)));
-      
-      // Update Sidebar Preview for the sender
-      setConversations((prev: any[]) => {
-        const idx = prev.findIndex(c => Number(c.id) === Number(activeConv.id));
-        if (idx !== -1) {
-          const updated = [...prev];
-          updated[idx] = { 
-            ...updated[idx], 
-            last_message: res.data, 
-            updated_at: res.data.created_at 
-          };
-          const item = updated[idx];
-          const others = updated.filter((_, i) => i !== idx);
-          return [item, ...others];
-        }
-        return prev;
+      // Replace optimistic message with actual in store
+      useChatStore.setState((state) => {
+        const cached = state.messagesCache[activeConv.id] || { messages: [], pagination: { current_page: 1, last_page: 1, has_more: false } };
+        const updatedMessages = cached.messages.map(m => m.id === optimisticId ? res.data : m).sort((a, b) => Number(a.id) - Number(b.id));
+        
+        const updatedConversations = state.conversations.map(c => 
+          Number(c.id) === Number(activeConv.id) 
+            ? { ...c, last_message: res.data, updated_at: res.data.created_at } 
+            : c
+        );
+
+        return {
+          messagesCache: {
+            ...state.messagesCache,
+            [activeConv.id]: {
+              ...cached,
+              messages: updatedMessages
+            }
+          },
+          conversations: updatedConversations
+        };
       });
 
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+
+      // Clear draft
+      if (activeConv && user) {
+        const savedDrafts = localStorage.getItem(`chat_drafts_${user.id}`);
+        if (savedDrafts) {
+          try {
+            const parsed = JSON.parse(savedDrafts);
+            delete parsed[activeConv.id];
+            localStorage.setItem(`chat_drafts_${user.id}`, JSON.stringify(parsed));
+          } catch (e) {}
+        }
+      }
+
+      // Stop typing
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      isTypingRef.current = false;
+      sendTypingStatus(false);
     } catch (err: any) {
       console.error("Chat Error Detail:", err.response?.data || err.message || err);
       toast.error(t("common.error_send_message"));
@@ -386,9 +433,19 @@ export function UnifiedInbox() {
     try {
       await axios.delete(`${API}/chat/conversations/${convId}`, { headers: { Authorization: `Bearer ${token}` } });
       toast.success(t("inbox.conversation_deleted"));
-      setActiveConv(null);
+      
+      useChatStore.setState((state) => {
+        const newCache = { ...state.messagesCache };
+        delete newCache[convId];
+        return {
+          conversations: state.conversations.filter(c => Number(c.id) !== Number(convId)),
+          messagesCache: newCache
+        };
+      });
+
+      if (activeConv?.id === convId) setActiveConv(null);
       setIsDeletingConv(false);
-      refreshData();
+      fetchUnreadCounts(token!);
     } catch (err) {
       console.error(err);
       toast.error(t("inbox.error_delete_conversation"));
@@ -445,7 +502,7 @@ export function UnifiedInbox() {
 
       setForm({ title: "", message: "", link: "", role: "all" });
       setShowCreateModal(false);
-      refreshData();
+      refreshData(token!);
       toast.success(t("inbox.broadcast_success"));
     } catch (e: any) {
       console.error(e);
@@ -461,7 +518,11 @@ export function UnifiedInbox() {
   const handleDeleteNotification = async (id: number) => {
     try {
       await axios.delete(`${API}/notifications/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      setNotifications((prev: any[]) => prev.filter(n => n.id !== id));
+      
+      useChatStore.setState((state) => ({
+        notifications: state.notifications.filter(n => n.id !== id)
+      }));
+
       if (selectedNotif?.id === id) setSelectedNotif(null);
       setIsConfirmingDelete(false);
       fetchUnreadCounts(token!);
@@ -565,7 +626,13 @@ export function UnifiedInbox() {
                       <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-50 tracking-widest">{conv.last_message ? new Date(conv.last_message.created_at).toLocaleDateString() : ""}</span>
                     </div>
                     <p className={`text-xs truncate transition-all ${activeConv?.id === conv.id ? "font-bold text-foreground" : "text-muted-foreground font-medium"}`}>
-                      {conv.last_message?.message_text || t("inbox.say_something")}
+                      {conv.last_message?.message_text 
+                        ? conv.last_message.message_text 
+                        : conv.last_message?.media_url 
+                          ? `[${t("inbox.image_or_file", "Hình ảnh / Tệp tin")}]`
+                          : conv.last_message?.product_id
+                            ? `[${t("inbox.product_link", "Sản phẩm")}]`
+                            : t("inbox.say_something")}
                     </p>
                   </div>
                 </button>
@@ -625,10 +692,17 @@ export function UnifiedInbox() {
                   </div>
                   <div className="flex flex-col">
                     <h3 className="font-black text-sm uppercase tracking-tight leading-none text-foreground">{activeConv.other_user?.name}</h3>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-70">{t("inbox.online")}</span>
-                    </div>
+                    {isOtherUserTyping ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="w-2 h-2 bg-primary rounded-full animate-ping"></span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-primary animate-pulse">{t("inbox.typing", "Đang soạn tin...")}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-70">{t("inbox.online", "Trực tuyến")}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -683,66 +757,102 @@ export function UnifiedInbox() {
               {/* Message List */}
               <div
                 ref={scrollContainerRef}
+                onClick={() => activeConv && clearActiveConvUnread(token!, activeConv.id)}
+                onMouseEnter={() => activeConv && clearActiveConvUnread(token!, activeConv.id)}
+                onFocus={() => activeConv && clearActiveConvUnread(token!, activeConv.id)}
                 className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 custom-scrollbar flex flex-col bg-muted/5 shadow-inner"
               >
-                {pagination.has_more && (
-                  <button
-                    onClick={() => fetchMessages(activeConv.id, pagination.current_page + 1)}
-                    disabled={loadingMore}
-                    className="self-center px-6 py-2 rounded-full border border-border/50 bg-background text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 hover:text-primary transition-all shadow-sm hover:scale-105 active:scale-95"
-                  >
-                    {loadingMore ? t("inbox.loading") : t("inbox.load_older")}
-                  </button>
-                )}
-
-                {messages.map((msg, i) => {
-                  const isMe = msg.sender_id === user?.id;
-                  return (
-                    <div key={msg.id || i} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                      <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3 shadow-none border ${isMe ? "bg-primary text-primary-foreground border-primary rounded-tr-none" : "bg-card border-border/50 rounded-tl-none"}`}>
-                        {msg.media_url && (
-                          <div className="mb-3 rounded-xl overflow-hidden border border-black/5 dark:border-white/5 bg-muted/20 group relative shadow-sm">
-                            <img
-                              src={msg.media_url}
-                              alt="media"
-                              className="max-w-full h-auto object-cover hover:scale-105 transition-all duration-700 cursor-pointer"
-                              onClick={() => setViewingImage(msg.media_url)}
-                            />
-                            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                              <div className="p-3 bg-white/20 backdrop-blur-md rounded-full border border-white/20"><Search className="text-white" size={24} strokeWidth={3} /></div>
-                            </div>
-                          </div>
-                        )}
-                        {msg.product && (
-                          <div
-                            onClick={() => {
-                              if (user?.role_id === 2 || user?.role_id === 1) {
-                                router.push(`/seller/products?search=${encodeURIComponent(msg.product.title)}`);
-                              } else {
-                                router.push(`/products/${msg.product.slug}`);
-                              }
-                            }}
-                            className={`mb-3 p-3 rounded-xl border flex gap-4 cursor-pointer transition-all hover:bg-opacity-80 active:scale-[0.98] ${isMe ? "bg-white/10 border-white/20" : "bg-muted/30 border-border/50"}`}
-                          >
-                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden shrink-0 border border-black/5 dark:border-white/5 bg-background shadow-sm">
-                              <img src={msg.product.media?.[0]?.url || 'https://via.placeholder.com/200'} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1 min-w-0 py-1">
-                              <p className="text-[11px] font-black uppercase tracking-tight leading-tight line-clamp-1">{msg.product.title}</p>
-                              <p className={`text-[10px] font-black mt-2 inline-block px-2 py-0.5 rounded-full ${isMe ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
-                                {msg.product.price?.toLocaleString()} đ
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                        {msg.message_text && <p className="text-sm leading-relaxed font-medium">{msg.message_text}</p>}
-                        <div className={`text-[9px] mt-2 font-black uppercase tracking-widest opacity-40 flex items-center gap-2 ${isMe ? "justify-end" : ""}`}>
-                          {isMe && <CheckCheck size={10} strokeWidth={3} />}
-                        </div>
-                      </div>
+                {chatLoading && messages.length === 0 ? (
+                  <div className="space-y-8 animate-pulse flex-1 flex flex-col justify-end min-h-[300px]">
+                    <div className="flex justify-start">
+                      <div className="bg-muted/40 h-12 w-2/3 rounded-2xl rounded-tl-none"></div>
                     </div>
-                  );
-                })}
+                    <div className="flex justify-end">
+                      <div className="bg-primary/10 h-14 w-1/2 rounded-2xl rounded-tr-none"></div>
+                    </div>
+                    <div className="flex justify-start">
+                      <div className="bg-muted/40 h-10 w-1/3 rounded-2xl rounded-tl-none"></div>
+                    </div>
+                    <div className="flex justify-end">
+                      <div className="bg-primary/10 h-12 w-3/5 rounded-2xl rounded-tr-none"></div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {pagination.has_more && (
+                      <button
+                        onClick={() => fetchMessages(activeConv.id, pagination.current_page + 1)}
+                        disabled={loadingMore}
+                        className="self-center px-6 py-2 rounded-full border border-border/50 bg-background text-[9px] font-black uppercase tracking-[0.2em] text-primary/60 hover:text-primary transition-all shadow-sm hover:scale-105 active:scale-95"
+                      >
+                        {loadingMore ? t("inbox.loading") : t("inbox.load_older")}
+                      </button>
+                    )}
+
+                    {messages.map((msg, i) => {
+                      const isMe = msg.sender_id === user?.id;
+                      return (
+                        <div key={msg.id || i} className={`flex ${isMe ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                          <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3 shadow-none border ${isMe ? "bg-primary text-primary-foreground border-primary rounded-tr-none" : "bg-card border-border/50 rounded-tl-none"}`}>
+                            {msg.media_url && (
+                              <div className="mb-3 rounded-xl overflow-hidden border border-black/5 dark:border-white/5 bg-muted/20 group relative shadow-sm">
+                                <img
+                                  src={msg.media_url}
+                                  alt="media"
+                                  className="max-w-full h-auto object-cover hover:scale-105 transition-all duration-700 cursor-pointer"
+                                  onClick={() => setViewingImage(msg.media_url)}
+                                />
+                                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                  <div className="p-3 bg-white/20 backdrop-blur-md rounded-full border border-white/20"><Search className="text-white" size={24} strokeWidth={3} /></div>
+                                </div>
+                              </div>
+                            )}
+                            {msg.product && (
+                              <div
+                                onClick={() => {
+                                  if (user?.role_id === 2 || user?.role_id === 1) {
+                                    router.push(`/seller/products?search=${encodeURIComponent(msg.product.title)}`);
+                                  } else {
+                                    router.push(`/products/${msg.product.slug}`);
+                                  }
+                                }}
+                                className={`mb-3 p-3 rounded-xl border flex gap-4 cursor-pointer transition-all hover:bg-opacity-80 active:scale-[0.98] ${isMe ? "bg-white/10 border-white/20" : "bg-muted/30 border-border/50"}`}
+                              >
+                                <div className="w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden shrink-0 border border-black/5 dark:border-white/5 bg-background shadow-sm">
+                                  <img src={msg.product.media?.[0]?.url || 'https://via.placeholder.com/200'} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex-1 min-w-0 py-1">
+                                  <p className="text-[11px] font-black uppercase tracking-tight leading-tight line-clamp-1">{msg.product.title}</p>
+                                  <p className={`text-[10px] font-black mt-2 inline-block px-2 py-0.5 rounded-full ${isMe ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
+                                    {msg.product.price?.toLocaleString()} đ
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            {msg.message_text && <p className="text-sm leading-relaxed font-medium">{msg.message_text}</p>}
+                            <div className={`text-[9px] mt-2 font-black uppercase tracking-widest opacity-40 flex items-center gap-2 ${isMe ? "justify-end" : ""}`}>
+                              {isMe && <CheckCheck size={10} strokeWidth={3} />}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+                {isOtherUserTyping && (
+                  <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="bg-card border border-border/50 rounded-2xl px-5 py-3 rounded-tl-none flex items-center gap-3 max-w-[85%] md:max-w-[70%]">
+                      <div className="flex gap-1.5 items-center shrink-0">
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </div>
+                      <span className="text-xs text-muted-foreground font-bold italic">
+                        {activeConv.other_user?.name} {t("inbox.is_typing_desc", "đang soạn tin...")}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -774,7 +884,9 @@ export function UnifiedInbox() {
 
                   <Input
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => handleTextChange(e.target.value)}
+                    onClick={() => activeConv && clearActiveConvUnread(token!, activeConv.id)}
+                    onFocus={() => activeConv && clearActiveConvUnread(token!, activeConv.id)}
                     placeholder={uploading ? t("inbox.loading") : t("inbox.say_something")}
                     disabled={uploading}
                     className="flex-1 h-14 bg-muted/20 border-transparent focus:bg-background rounded-2xl md:px-6 shadow-none text-sm font-medium"

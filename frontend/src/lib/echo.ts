@@ -16,7 +16,7 @@ if (typeof window !== 'undefined') {
   const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_APP_CLUSTER;
 
   if (pusherKey && pusherCluster) {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
     
     const wsHost = process.env.NEXT_PUBLIC_PUSHER_HOST;
     const wsPort = process.env.NEXT_PUBLIC_PUSHER_PORT;

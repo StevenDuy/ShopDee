@@ -88,7 +88,7 @@ else {
 
 # --- 4. REVERB WEBSOCKET ---
 Write-Section 3 5 "Khoi dong Reverb WebSocket..."
-Start-Window 'ShopDee Reverb :8080' "$ROOT\backend" 'php artisan reverb:start --port=8080'
+Start-Window 'ShopDee Reverb :8080' "$ROOT\backend" 'php artisan reverb:start --port=8080 --debug'
 if (Wait-PortOpen 8080) {
     Write-Host "      Reverb: ws://127.0.0.1:8080" -ForegroundColor Green
 }

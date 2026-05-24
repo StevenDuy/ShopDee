@@ -16,6 +16,17 @@ class Notification extends Model
         'is_read' => 'boolean',
     ];
 
+    protected static function booted()
+    {
+        static::created(function ($notification) {
+            try {
+                broadcast(new \App\Events\NotificationCreated($notification));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("Notification broadcast failed: " . $e->getMessage());
+            }
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -24,7 +24,7 @@ interface ReviewModalProps {
   onSuccess: () => void;
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
 export default function ReviewModal({ isOpen, onClose, orderItem, onSuccess }: ReviewModalProps) {
   const { t } = useTranslation();

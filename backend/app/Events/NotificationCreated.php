@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Models\ChatMessage;
+use App\Models\Notification;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -11,18 +11,18 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class NewChatMessage implements ShouldBroadcastNow
+class NotificationCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $message;
+    public $notification;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(ChatMessage $message)
+    public function __construct(Notification $notification)
     {
-        $this->message = $message;
+        $this->notification = $notification;
     }
 
     /**
@@ -32,18 +32,8 @@ class NewChatMessage implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
-        $conversation = $this->message->conversation;
-        if (!$conversation) {
-            $conversation = \App\Models\ChatConversation::find($this->message->conversation_id);
-        }
-        
-        $recipientId = ((int) $conversation->user1_id === (int) $this->message->sender_id) 
-                        ? (int) $conversation->user2_id 
-                        : (int) $conversation->user1_id;
-
         return [
-            new PrivateChannel('chat.' . $this->message->conversation_id),
-            new PrivateChannel('App.Models.User.' . $recipientId),
+            new PrivateChannel('App.Models.User.' . $this->notification->user_id),
         ];
     }
 
@@ -52,6 +42,6 @@ class NewChatMessage implements ShouldBroadcastNow
      */
     public function broadcastAs(): string
     {
-        return 'message.new';
+        return 'notification.new';
     }
 }

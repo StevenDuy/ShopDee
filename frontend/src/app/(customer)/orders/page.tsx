@@ -52,7 +52,7 @@ function OrdersContent() {
 
   const [reviewItem, setReviewItem] = useState<any | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
   const STATUS_MAP: Record<string, { label: string, color: string, glow: string, icon: any }> = {
     pending: { label: t("customer_orders.status_pending"), color: "text-yellow-600 bg-yellow-500/10 border-yellow-500/20", glow: "shadow-yellow-500/20", icon: Clock },
@@ -300,7 +300,7 @@ export default function MyOrdersPage() {
 
 function OrderImageItem({ src, alt }: { src: string | null | undefined, alt: string }) {
   const [loaded, setLoaded] = useState(false);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
   const getFullImageUrl = (path: string | null | undefined) => {
     if (!path) return `https://picsum.photos/seed/${alt}/50/50`;
     if (path.startsWith("http") || path.startsWith("blob:") || path.startsWith("data:")) return path;

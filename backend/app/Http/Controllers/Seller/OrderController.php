@@ -17,15 +17,22 @@ class OrderController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $query = Order::where('seller_id', $request->user()->id)
-            ->with(['customer.profile', 'items.product', 'shippingAddress']);
+        $query = Order::select(
+                'id', 'seller_id', 'customer_id', 'status',
+                'total_amount', 'created_at', 'updated_at', 'shipping_address_id'
+            )
+            ->where('seller_id', $request->user()->id)
+            ->with([
+                'customer:id,name,email',
+                'customer.profile:user_id,avatar_url,contact_phone',
+                'items:id,order_id,product_id,quantity,unit_price,selected_options',
+                'items.product:id,title,slug',
+            ]);
 
-        // Filter by status
         if ($request->has('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
-        // Sort by creation date
         $query->orderBy('created_at', 'desc');
 
         return response()->json($query->paginate(10));

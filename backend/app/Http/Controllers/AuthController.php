@@ -23,15 +23,18 @@ class AuthController extends Controller
                 Auth::logout();
                 return response()->json([
                     'message' => 'Tài khoản của bạn đã bị khóa do vi phạm chính sách bảo mật của ShopDee.',
-                    'reason' => $user->ban_reason,
-                    'status' => 'banned'
+                    'reason'  => $user->ban_reason,
+                    'status'  => 'banned',
                 ], 403);
             }
 
-            $token = $user->createToken('test-token')->plainTextToken;
-            
+            $token = $user->createToken('auth-token')->plainTextToken;
+
+            // Eager load role với chỉ cột cần thiết (id, name)
+            $user->load('role:id,name');
+
             return response()->json([
-                'user' => $user->load('role'),
+                'user'  => $user,
                 'token' => $token,
             ]);
         }

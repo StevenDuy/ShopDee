@@ -83,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/chat/shop-products/{shopId}', [ChatController::class, 'shopProducts']);
     Route::get('/chat/{id}', [ChatController::class, 'messages']);
     Route::post('/chat/{id}', [ChatController::class, 'sendMessage']);
+    Route::post('/chat/{id}/typing', [ChatController::class, 'typing']);
     Route::delete('/chat/conversations/{id}', [ChatController::class, 'destroyConversation']);
 
     // Notifications

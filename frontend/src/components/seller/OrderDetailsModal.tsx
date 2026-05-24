@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
 type OrderItem = {
   id: number;

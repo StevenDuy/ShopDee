@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, LogIn, ShoppingBag, Chrome } from "lucide-react";
+import { Eye, EyeOff, LogIn, ShoppingBag, Chrome, Loader2 } from "lucide-react";
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
 function LoginContent() {
   const { t } = useTranslation();
@@ -125,7 +125,12 @@ function LoginContent() {
             )}
 
             <Button type="submit" disabled={loading} size="lg" className="w-full h-14 text-xs tracking-widest">
-              <LogIn size={18} className="mr-2" /> {t("auth.login_btn")}
+              {loading ? (
+                <Loader2 size={18} className="mr-2 animate-spin" />
+              ) : (
+                <LogIn size={18} className="mr-2" />
+              )}
+              {t("auth.login_btn")}
             </Button>
 
             <div className="relative flex items-center gap-4 py-2">

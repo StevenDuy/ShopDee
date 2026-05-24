@@ -20,7 +20,7 @@ import { EmailUpdateModal } from "@/components/profile/EmailUpdateModal";
 interface Profile { id: number; name: string; email: string; profile?: { phone?: string } }
 interface Address { id: number; type: string; address_line_1: string; city: string; country: string; is_default: boolean }
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
 export default function ProfilePage() {
   const { t } = useTranslation();

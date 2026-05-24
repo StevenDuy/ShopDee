@@ -8,7 +8,7 @@ import { Star, ArrowLeft, Search, MessageSquare, Calendar } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTranslation } from "react-i18next";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
 interface Review {
   id: number;
